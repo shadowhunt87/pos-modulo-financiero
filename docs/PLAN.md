@@ -1,6 +1,6 @@
 # Plan técnico — Finanzas dentro de la plataforma comercial multiempresa
 
-Fecha: 2026-10-08 · Autor: Arquitecto · **Versión 3**
+Fecha: 2026-10-08 · Autor: Arquitecto · **Versión 3.1** (v3 + correcciones del revisor-critico)
 Estado: **PROPUESTA, pendiente de aprobación de Carlos.**
 El veredicto de calidad de cada fase es de `qa`; la aprobación de negocio, de Carlos.
 
@@ -25,14 +25,23 @@ Consecuencias en este plan:
 | Usuarios y empresas | Tablas propias de NestJS | **Dueño: plataforma**. Finanzas guarda solo una referencia |
 | Base de datos | Postgres 18 propio | **Mismo servidor Postgres de plataforma**, base de datos **separada** |
 | RLS (aislamiento en la base) | Diseñado en Finanzas | Se mantiene igual en Finanzas; en plataforma, aislamiento por la aplicación (ver 2.5) |
-| Personalización | No existía | Campos personalizados, marca, roles a medida, funciones por plan, plantilla de factura |
-| Estimación VMV | 17–19 semanas | **21–24 semanas** (ver sección 6) |
+| Personalización | No existía | Piloto: marca, funciones por plan, campos personalizados en facturas y terceros (solo mostrar), plantilla de factura ajustable |
+| Salida al mercado | Versión mínima vendible de Finanzas | **Sin lanzamiento de Finanzas sola**: piloto con 1–2 empresas; el producto comercial es Finanzas + primer nicho |
+| Estimación | 17–19 semanas | Piloto **≈21–23 semanas**; primer producto de nicho ≈26–31 (ver sección 6) |
+
+Cambios de la v3.1 (revisión del revisor-critico): RLS en Finanzas con la empresa fijada una
+vez por petición (1B.4, reestimada); una sola función de pertenencia en plataforma y
+prohibición automática de consultas de Payload que salten el control de acceso; puente con
+lista cerrada de rutas; el pase solo lleva permisos `fin.*`; ambiente de pruebas separado;
+prueba de restauración con desincronización entre bases; quitar el superusuario antes de
+cualquier dato de Finanzas; alcance del piloto recortado; nicho y contador se consiguen ya;
+importación XML imprescindible; propiedad del código resuelta.
 
 Se **conservan** de la v2 (revisadas por el revisor-critico y siguen valiendo): copias de
 seguridad en Fase 0; bloqueo de tipos E sin e-CF y de serie B desde la fecha de cada empresa;
 duplicados RNC + NCF en la base; auditoría de solo agregar; reapertura de períodos con motivo;
 RLS en Finanzas; montos decimales exactos; modelo fiscal antes de la pantalla de facturas;
-e-CF por proveedor externo con importación de XML (5A) en la VMV y emisión (5B) después;
+e-CF por proveedor externo con importación de XML (6A, ahora imprescindible) y emisión (6B) después;
 606/607 con contador y herramienta oficial; presupuestos como trabajo adelantable; GitHub
 endurecido; eliminación del `postinstall` de Prisma y de dependencias sobrantes.
 
@@ -51,13 +60,12 @@ endurecido; eliminación del `postinstall` de Prisma y de dependencias sobrantes
 4. **Datos**: un solo servidor de base de datos (más fácil de respaldar), con **dos bases
    separadas** (una de plataforma, otra de negocio/finanzas) y usuarios de base de datos
    distintos, para que un error en una no pueda tocar la otra.
-5. **Personalización**: se construye **solo lo que un cliente real va a usar en la primera
-   versión** (campos personalizados, logo/colores, roles a medida, funciones según plan,
-   plantilla de factura ajustable). Los flujos de aprobación y las conexiones para nichos se
-   construyen **cuando exista el primer nicho**, diseñados contra él y no contra uno imaginario.
-6. **Tiempo**: ≈ **21–24 semanas** para una versión vendible de "Finanzas premium" (sin
-   nicho). El primer módulo de nicho se estima cuando Carlos lo defina; conviene decidirlo
-   antes de la semana 8.
+5. **Personalización en el piloto, acotada**: logo y colores, funciones según plan, campos
+   personalizados en facturas y terceros (solo para mostrar) y plantilla de factura ajustable.
+   Roles a medida, límites por plan, vistas guardadas y aprobaciones van después.
+6. **Estrategia**: Finanzas **no** se lanza sola. Se hace un **piloto con 1–2 empresas**
+   (≈21–23 semanas) y el producto comercial es **Finanzas + el primer nicho**, que se decide
+   **ya** para construirlo en paralelo (≈26–31 semanas en total). El contador se consigue ya.
 
 ---
 
@@ -194,16 +202,25 @@ Navegador ── cookie de sesión ──> 127.0.0.1:8032  plataforma-app (Next.
      cookie, pero se re-verifica en cada petición; la cookie sola nunca da acceso);
    - calcula permisos efectivos y funciones del plan;
    - firma un **pase** (JWT con firma Ed25519, librería `jose`, MIT, sin dependencias) con:
-     emisor `plataforma`, destinatario `finanzas`, usuario, empresa, permisos, funciones del
-     plan, IP y navegador del usuario, identificador único y **vencimiento de 60 segundos**;
+     emisor `plataforma`, destinatario `finanzas`, usuario, empresa, **solo los permisos
+     `fin.*`** (nunca los de plataforma u otros módulos), funciones del plan con prefijo `fin.`,
+     IP y navegador del usuario, un identificador **usado solo para auditoría** (no se
+     controla su reutilización) y **vencimiento de 60 segundos**;
    - llama a NestJS por la red interna con ese pase.
+   - **Una sola función de pertenencia** (`resolverAcceso(usuario, empresa)`) decide si la
+     persona pertenece a la empresa y con qué permisos; es **la única** que alimenta la firma
+     del pase (no hay otra forma de firmar) y tiene pruebas propias: usuario sin pertenencia,
+     pertenencia suspendida, empresa suspendida, administrador de plataforma, cambio de empresa.
 3. NestJS solo tiene la **clave pública**: puede verificar pases, **no fabricarlos**. Un fallo
    en Finanzas no permite suplantar a nadie.
 4. Dos caminos, una sola función de firma:
    - **Desde el servidor** (componentes de servidor y acciones de Next.js): la mayoría de pantallas.
    - **Puente `/api/fin/*`** para componentes interactivos (p. ej. buscar cuentas mientras se
      escribe un asiento): valida sesión, verifica origen de la petición (protección CSRF),
-     limita tamaño, firma el pase y reenvía. Nunca reenvía rutas `/internal/*`.
+     limita tamaño, firma el pase y reenvía. **Lista cerrada de rutas**: solo reenvía las
+     combinaciones método + ruta escritas explícitamente en una tabla (p. ej.
+     `GET /cuentas/buscar`); cualquier otra responde 404. Agregar una ruta es un cambio
+     revisado en código. `/internal/*` nunca está en la lista.
 5. Rutas internas de Finanzas (`/internal/...`: alta de empresa) exigen un permiso que solo el
    código de administración de plataforma pone en el pase.
 
@@ -220,6 +237,12 @@ por" en asientos, facturas y auditoría sin duplicar la gestión de usuarios.
 **Ids**: plataforma pasa a ids **UUID** (Payload lo permite con `idType: 'uuid'`). Hoy hay 1
 usuario de prueba: cambiarlo ahora cuesta horas; después, con datos, costaría una migración
 delicada. Finanzas ya usa UUID.
+
+**Regla automática en plataforma:** las consultas a Payload desde el código del servidor
+(Local API) **saltan el control de acceso por defecto**. Se prohíbe cualquier llamada de la
+Local API que no lleve `overrideAccess: false` y el usuario, salvo una lista corta de
+excepciones justificadas (p. ej. dentro de `resolverAcceso`), con una regla de lint que hace
+fallar la revisión automática si alguien lo omite.
 
 **Alternativas descartadas**
 | Opción | Por qué no |
@@ -238,6 +261,8 @@ delicada. Finanzas ya usa UUID.
   `negocio_owner` (solo para migraciones) y `negocio_app` (la aplicación: **sin** permiso para
   saltarse RLS, no dueño de las tablas). Payload no puede entrar a `negocio` ni Finanzas a
   `plataforma`.
+- **Orden obligatorio**: quitar el superusuario a Payload y crear los usuarios separados
+  (tarea 0.4) **antes** de que exista cualquier dato de Finanzas en el servidor.
 - Postgres 16 soporta todo lo necesario (RLS existe desde la 9.5). La v2 proponía Postgres 18;
   se descarta para no operar dos servidores. Subir de versión será una tarea única de devops.
 
@@ -259,11 +284,37 @@ Por qué así:
 **Finanzas (base `negocio`) — garantía en la base de datos (decisión de la v2, se mantiene):**
 - Todas las tablas con datos de empresa llevan `companyId` (se agrega a las tablas hijas que
   no lo tienen) y una regla RLS: "solo filas de la empresa activa".
-- En cada petición, dentro de la transacción: `set_config('app.empresa_id', <empresa del pase>, true)`.
-  La empresa sale **del pase firmado**, nunca de lo que mande el navegador.
-- Implementación con una extensión del cliente Prisma (patrón documentado por Prisma para RLS).
+- La empresa sale **del pase firmado**, nunca de lo que mande el navegador.
+- **Cómo se fija la empresa (decisión v3.1):** **una sola vez por petición**. Al entrar la
+  petición se abre **una transacción**, se ejecuta
+  `set_config('app.empresa_id', <empresa del pase>, true)` y esa transacción se guarda en un
+  **contexto de la petición** (`AsyncLocalStorage` de Node). Todo el código usa un cliente de
+  base de datos que **toma la transacción del contexto**; si no hay contexto, falla.
+  - Por qué no la "extensión del cliente Prisma": no funciona con las transacciones
+    interactivas que el código ya usa (**48** llamadas `$transaction(async ...)` en 14
+    archivos, más 3 de SQL directo).
+  - Por qué no `set_config` en cada una de las 48 transacciones: 48 lugares donde olvidarlo
+    hoy, y uno más cada vez que alguien escriba código nuevo.
+  - Librería candidata: `@nestjs-cls/transactional` con su adaptador de Prisma (MIT,
+    mantenida), que hace exactamente esto; si en la prueba corta no convence, son ≈150
+    líneas propias.
+  - Cambio en el código: las 48 `this.prisma.$transaction(async tx => ...)` pasan a usar la
+    transacción de la petición (los bloques internos se conservan casi igual).
+  - Redes de seguridad: (a) si una consulta llega sin empresa fijada, la regla RLS compara
+    contra "vacío" y **no devuelve ni acepta filas** (falla cerrado, nunca abierto);
+    (b) regla de lint que prohíbe usar `PrismaService` o `$transaction` fuera del módulo de
+    base de datos; (c) prueba que recorre todas las rutas de la API y falla si alguna toca la
+    base fuera del contexto.
+  - Costos: cada petición ocupa una conexión durante toda su duración; se fija un tiempo
+    máximo por petición y un tamaño de conjunto de conexiones medido en la prueba de
+    rendimiento (Fase 8). Los reportes pesados usan transacción de solo lectura.
 - SQL directo (`$queryRaw`) queda cubierto porque la regla está en la base.
 - Se mantienen además los filtros por empresa en el código (doble protección).
+- **Qué protege y qué no:** RLS protege contra **errores dentro de Finanzas** (una consulta
+  que olvida el filtro, una referencia a un tercero de otra empresa). **No protege contra
+  errores de plataforma**: si plataforma firma un pase con la empresa equivocada, Finanzas
+  obedece. Esa frontera la cuidan `resolverAcceso`, la regla de `overrideAccess: false` y sus
+  pruebas (2.3).
 
 **Plataforma (base `plataforma`) — garantía por la aplicación, de forma explícita:**
 - Plugin **oficial** `@payloadcms/plugin-multi-tenant` (MIT, misma versión 3.88.0): agrega la
@@ -276,9 +327,9 @@ Por qué así:
   va a la base `negocio`, con RLS.
 - Pruebas automáticas de acceso por colección (empresa A no ve nada de B) en cada cambio.
 
-Esto se le dice claro a Carlos: **el aislamiento "a prueba de errores del programador" está
-donde están los datos que importan (contabilidad y nichos); en plataforma depende de reglas de
-la aplicación bien probadas.**
+Esto se le dice claro a Carlos: **la base de datos protege los datos contables contra
+errores del propio programa de Finanzas; quién entra a qué empresa lo decide plataforma, y
+ahí la protección son reglas de la aplicación centralizadas, automáticas y probadas.**
 
 ### 2.6 Comunicación y alta de empresas
 
@@ -311,38 +362,43 @@ la aplicación bien probadas.**
 Regla rectora: **configuración con límites claros**, nunca un "constructor de aplicaciones".
 Cada punto de extensión tiene un tope explícito. Ver aviso de deuda en 7.
 
-### 3.1 Funciones por plan (feature flags) — VMV
+### 3.1 Funciones por plan (feature flags) — piloto: solo encender/apagar
 - Plataforma: colección `planes` (funciones incluidas y límites: usuarios, empresas,
   documentos al mes) y, por empresa, plan + excepciones puntuales.
+- **Piloto**: solo encender/apagar funciones. **Límites medidos** (usuarios, documentos al
+  mes) **después del piloto**.
 - Las funciones activas viajan en el pase; NestJS las exige con `@RequiereFuncion(...)`;
   las pantallas ocultan menús. Los límites se aplican donde vive el recurso.
 - Nombres de función con prefijo de módulo: `fin.presupuestos`, `fin.ecf.emision`,
   `fin.multimoneda`, `nicho_x....`.
 - Descartado: Unleash / GrowthBook (servicio extra pensado para experimentos, no para planes).
 
-### 3.2 Roles a medida — VMV
+### 3.2 Roles — piloto: 4 roles base; roles a medida después
 - Cada módulo declara su catálogo de permisos (lista fija en código).
-- Plataforma trae roles base (Administrador, Contador, Aprobador, Solo lectura) y permite a
-  cada empresa crear **roles propios** marcando permisos del catálogo.
+- **Piloto**: 4 roles base fijos (Administrador, Contador, Aprobador, Solo lectura), definidos
+  como conjuntos de permisos del catálogo (así los roles a medida no exigen rehacer nada).
+- **Después del piloto**: cada empresa crea **roles propios** marcando permisos del catálogo.
 - 2FA obligatorio para administradores de empresa y de plataforma.
 
-### 3.3 Marca y colores — VMV
+### 3.3 Marca y colores — piloto
 - Por empresa: logo, color principal y de acento, nombre comercial.
 - Se aplican cambiando las **variables de color del tema Tailwind** en tiempo de ejecución; el
   resto del sistema de diseño no cambia. Colores validados por contraste (legibilidad).
 - Archivos de marca en `media` **con dueño por empresa y sin lectura pública**.
 
-### 3.4 Campos personalizados — VMV
-- En Finanzas: definiciones por empresa (documento: factura, tercero, línea de factura,
-  asiento; nombre; tipo: texto, número, fecha, sí/no, lista; obligatorio; mostrar en
-  impresión / en reportes).
-- Valores en una columna JSONB en cada documento, **validados contra la definición** en la
-  misma transacción. Índice para filtrar en reportes.
-- Tope: 25 campos por tipo de documento. Sin fórmulas ni campos calculados en la primera versión.
+### 3.4 Campos personalizados — piloto: facturas y terceros, solo mostrar
+- **Piloto**: solo en **facturas y terceros**; solo para **capturar y mostrar** (en pantalla y
+  en la factura impresa). Sin filtros ni agrupaciones en reportes.
+- Definiciones por empresa: nombre; tipo (texto, número, fecha, sí/no, lista); obligatorio;
+  mostrar en impresión.
+- Valores en una columna JSONB del documento, **validados contra la definición** en la misma
+  transacción.
+- Tope: 25 campos por tipo de documento. Sin fórmulas ni campos calculados.
+- **Después del piloto**: líneas de factura y asientos; filtros en reportes (con índice).
 - Las pantallas dibujan esos campos automáticamente a partir de la definición.
 - Descartado: tablas genéricas "atributo-valor" (lentas y complejas de consultar).
 
-### 3.5 Plantilla de factura y reportes — VMV (versión acotada)
+### 3.5 Plantilla de factura — piloto (versión acotada)
 - **Primera versión**: 2–3 diseños base; por empresa se elige diseño, logo, colores, textos
   de encabezado/pie, columnas visibles y campos personalizados a mostrar.
 - Los elementos **fiscales obligatorios** (RNC, NCF/e-NCF, ITBIS, QR y código de seguridad
@@ -351,18 +407,18 @@ Cada punto de extensión tiene un tope explícito. Ver aviso de deuda en 7.
 - PDF generado en el servidor de Finanzas **sin navegador** (librería a confirmar con prueba
   corta; candidata `@react-pdf/renderer`, MIT). Descartado Chromium dentro del contenedor
   (≈300 MB extra y más superficie).
-- **Después de la VMV**, si los clientes lo piden: edición libre con un motor de plantillas
+- **Después del piloto**, si los clientes lo piden: edición libre con un motor de plantillas
   seguro (p. ej. `liquidjs`, MIT, sin ejecución de código).
-- Reportes: columnas y filtros guardables por usuario/empresa ("vistas guardadas"); no un
+- Reportes: "vistas guardadas" (columnas y filtros) **después del piloto**; nunca un
   diseñador de reportes.
 
-### 3.6 Flujos de aprobación — después de la VMV (salvo que Carlos lo pida antes)
+### 3.6 Flujos de aprobación — después del piloto (salvo que el nicho lo exija)
 - Diseño previsto, simple: reglas por empresa del tipo "factura de compra mayor a X requiere
   aprobación de un rol Y". Estados: borrador → pendiente de aprobación → aprobada → emitida.
 - Ya existe base: rol Aprobador y "aprobado por" en asientos.
 - Descartado: motores de flujo (Camunda, Temporal): enormes para esta necesidad.
 
-### 3.7 Conexión de módulos de nicho con Finanzas — con el primer nicho
+### 3.7 Conexión de módulos de nicho con Finanzas — en paralelo, con el nicho elegido
 **Dónde viven los nichos (recomendación):** como **módulos dentro del mismo servicio NestJS**
 (el servicio pasa a ser "backend de negocio"), cada uno con su schema en la base `negocio` y
 las mismas reglas RLS. Ventaja decisiva: un nicho puede crear "la cita cobrada **y** su
@@ -420,9 +476,9 @@ con éxito**; informe "pruebas e2e X de X en verde".
 | 0.1 | devops | Plataforma: crear repositorio git (previo permiso), `.gitignore` revisado, escaneo de secretos antes del primer commit. Ajustar dueños de archivos de `root` a `claude` y `.env` a permisos 600 (previo permiso). | S |
 | 0.2 | devops | Finanzas: mover el zip fuera del proyecto (previo permiso); escaneo de secretos del historial; rotar claves de la v2. | S |
 | 0.3 | dev-backend | Finanzas: lockfile regenerado, Node 24, quitar `bull`, `@nestjs/bull`, `@nestjs/observe`, `@nestjs/mau` y el `postinstall`; `CHECKPOINT_DISABLE=1`; imagen Docker de producción. | M |
-| 0.4 | devops | Postgres de plataforma: crear base `negocio`, usuarios `negocio_owner` / `negocio_app` (sin bypass de RLS) y usuario propio de Payload (deja de usar el superusuario). Unificar `DATABASE_URL`. | M |
+| 0.4 | devops | Postgres de plataforma: crear base `negocio`, usuarios `negocio_owner` / `negocio_app` (sin bypass de RLS) y usuario propio de Payload (deja de usar el superusuario). Unificar `DATABASE_URL`. **Bloqueante: debe estar hecha y verificada antes de cargar cualquier dato de Finanzas** (incluidas las pruebas 0.9). | M |
 | 0.5 | devops | Compose de plataforma: servicio `finanzas-api` (imagen versionada, sin puertos, red interna), pgAdmin bajo demanda con versión fija. **Sin reiniciar nada sin autorización.** | M |
-| 0.6 | devops | **Copias de seguridad** de ambas bases a la vez: diarias, cifradas, fuera del volumen Docker, 14 diarias + 8 semanales, **prueba de restauración documentada**; destino externo según decisión de Carlos. | M |
+| 0.6 | devops | **Copias de seguridad** de ambas bases a la vez: diarias, cifradas, fuera del volumen Docker, 14 diarias + 8 semanales; destino externo según decisión de Carlos. **Prueba de restauración documentada que incluye la desincronización entre las dos bases**: empresas que existen en una y no en la otra, usuarios referenciados que ya no existen; procedimiento escrito para detectarlas y repararlas (reconciliación con el alta idempotente de 2.6). | M |
 | 0.7 | devops | Base de pruebas separada para Finanzas. | S |
 | 0.8 | dev-backend | Finanzas: prefijo `/api/v1`, OpenAPI de entradas en `/api/docs` (solo red interna). | S |
 | 0.9 | qa | Correr las ~133 e2e contra la base de pruebas (aún con el login viejo); reportar fallas. | M |
@@ -432,7 +488,7 @@ con éxito**; informe "pruebas e2e X de X en verde".
 **Terminado cuando:** e2e corridas e informadas; nada escucha fuera de 127.0.0.1; restauración
 probada; `seguridad` firma que no hay secretos en git.
 
-### Fase 1A — Núcleo de plataforma (≈3 semanas)
+### Fase 1A — Núcleo de plataforma (≈3,5 semanas)
 **Entregable:** Carlos crea una empresa en el panel interno, invita a un usuario con un rol,
 ese usuario entra (con 2FA si es administrador), elige empresa y ve una pantalla de prueba que
 trae datos **reales de Finanzas** a través del pase firmado.
@@ -440,16 +496,18 @@ trae datos **reales de Finanzas** a través del pase firmado.
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
 | 1A.1 | dev-backend | Payload: ids UUID; pasar de `push` a **migraciones** (línea base); imagen de producción con el `Dockerfile` existente. | M |
-| 1A.2 | dev-backend | Colecciones: empresas, pertenencias con roles (vía plugin multi-tenant oficial), roles y catálogo de permisos, planes y funciones, administrador de plataforma. `media` por empresa y sin lectura pública. | L |
+| 1A.2 | dev-backend | Colecciones: empresas, pertenencias con uno de los 4 roles base (vía plugin multi-tenant oficial), catálogo de permisos, planes con funciones encender/apagar, administrador de plataforma. `media` por empresa y sin lectura pública. | L |
+| 1A.2b | dev-backend | **`resolverAcceso`**: única función de pertenencia y permisos, única entrada a la firma del pase; regla de lint que prohíbe Local API sin `overrideAccess: false` (con lista de excepciones). | M |
 | 1A.3 | dev-backend | Sesión endurecida: cookie Strict/Secure, bloqueo por intentos (ya existe en Payload, configurarlo), cierre de sesión real, 2FA TOTP para administradores (librería mantenida, p. ej. `otpauth`, MIT). | M |
-| 1A.4 | dev-backend | **Puente**: firma del pase (Ed25519, `jose`), cliente de servidor hacia Finanzas, ruta `/api/fin/*` con control de origen y tamaño; claves en variables de entorno. | M |
+| 1A.4 | dev-backend | **Puente**: firma del pase (Ed25519, `jose`; solo permisos `fin.*`), cliente de servidor hacia Finanzas, ruta `/api/fin/*` con **lista cerrada de rutas**, control de origen y tamaño; claves en variables de entorno. | M |
 | 1A.5 | dev-backend | Alta/actualización idempotente de empresa en Finanzas desde un *hook*, con estado "pendiente" y reintento. | S |
 | 1A.6 | dev-frontend | **Sistema de diseño**: limpiar restos de la plantilla, tokens de color/tipografía/espaciado, tipografía autoalojada, componentes base (campo, selector, tabla, diálogo, aviso, pestañas, menú, fecha, buscador), formatos es-DO, `lang="es"`. | L |
 | 1A.7 | dev-frontend | Login del cliente, selector de empresa, menú según permisos y funciones, páginas de error; marca por empresa vía variables de color. Eliminar la página de prueba con el error de `onClick`. | M |
-| 1A.8 | qa | Pruebas de acceso por colección (empresa A no ve nada de B, ni archivos); pase vencido/alterado/de otra audiencia rechazado. | M |
+| 1A.8 | qa | Pruebas de acceso por colección (empresa A no ve nada de B, ni archivos); pruebas de `resolverAcceso`; pase vencido/alterado/de otra audiencia rechazado; ruta fuera de la lista del puente devuelve 404. | M |
+| 1A.10 | devops | **Ambiente de pruebas separado** (plataforma + Finanzas + su propia base, en el mismo servidor, solo 127.0.0.1, datos ficticios): cada versión se instala y valida ahí antes de llegar a las empresas reales; procedimiento escrito de "pasar a producción". | M |
 | 1A.9 | seguridad | Revisión de sesión, pase, puente y permisos. | M |
 
-### Fase 1B — Núcleo financiero (≈3 semanas; ≈1,5 en paralelo con 1A)
+### Fase 1B — Núcleo financiero (≈3,5 semanas; ≈1,5 en paralelo con 1A)
 **Entregable:** informe de qa con cada corrección probada; Finanzas solo acepta pases válidos y
 la base rechaza accesos entre empresas aunque se salte el programa.
 
@@ -459,7 +517,10 @@ la base rechaza accesos entre empresas aunque se salte el programa.
 | 1B.1 | dev-backend | Asientos manuales por el motor único; anulación con quién/cuándo/por qué. | M |
 | 1B.2 | dev-backend | Período fiscal abierto obligatorio. | S |
 | 1B.3 | dev-backend | Reapertura de períodos: permiso específico, motivo obligatorio, registro, prohibida con año cerrado, aviso si ya hubo 606/607. | S |
-| 1B.4 | dev-backend | **RLS** (2.5) + validación de pertenencia de centros de costo y terceros en asientos y facturas. | L |
+| 1B.4a | dev-backend | Contexto de petición con transacción única y `set_config` (2.5); prueba corta de `@nestjs-cls/transactional` vs. código propio. | M |
+| 1B.4b | dev-backend | Migrar las 48 `$transaction` y las 3 de SQL directo al cliente del contexto; lint que prohíbe `PrismaService`/`$transaction` fuera del módulo de base. | L |
+| 1B.4c | dev-backend | Migración: `companyId` en tablas hijas, reglas RLS en todas las tablas de empresa (fallan cerradas sin empresa), permisos de `negocio_app`; validación de pertenencia de centros de costo y terceros. | L |
+| 1B.4d | qa | Prueba que recorre todas las rutas y falla si alguna toca la base fuera del contexto. | M |
 | 1B.5 | dev-backend | Montos decimales de punta a punta; eliminar los `Number(...)` de `invoicing.service.ts`. | M |
 | 1B.6 | dev-backend | Bloquear tipos E sin e-CF configurado; bloquear serie B desde fecha configurable por empresa; advertencia en compras B posteriores. | S |
 | 1B.7 | dev-backend | Duplicados RNC emisor + NCF con índice único parcial (excluye anuladas). | S |
@@ -470,17 +531,17 @@ la base rechaza accesos entre empresas aunque se salte el programa.
 | 1B.12 | seguridad | Revisión de RLS, usuarios de base de datos y guardias. | M |
 | 1B.13 | documentador | Reglas contables del sistema en lenguaje de contador. | S |
 
-### Fase 2 — Personalización base (≈2 semanas)
-**Entregable:** el administrador de una empresa cambia su logo y colores, crea un rol propio,
-define campos personalizados para facturas y terceros; Carlos asigna planes y ve cómo se
-encienden y apagan funciones.
+### Fase 2 — Personalización del piloto (≈1,5 semanas)
+**Entregable:** el administrador de una empresa cambia su logo y colores, invita usuarios con
+uno de los 4 roles base y define campos personalizados para facturas y terceros; Carlos asigna
+planes y ve cómo se encienden y apagan funciones.
 
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 2.1 | dev-backend | Campos personalizados en Finanzas (3.4): definiciones, JSONB, validación, índice. | M |
-| 2.2 | dev-frontend | Componente que dibuja campos personalizados en formularios y tablas. | M |
-| 2.3 | dev-frontend | Pantallas de administración de empresa: marca, usuarios e invitaciones, roles a medida. | L |
-| 2.4 | dev-backend | Planes: aplicación de funciones y límites en ambos lados. | M |
+| 2.1 | dev-backend | Campos personalizados en facturas y terceros (3.4): definiciones, JSONB, validación. | M |
+| 2.2 | dev-frontend | Componente que dibuja campos personalizados en formularios y en la vista del documento. | M |
+| 2.3 | dev-frontend | Pantallas de administración de empresa: marca, usuarios e invitaciones con rol base. | M |
+| 2.4 | dev-backend | Planes: aplicación de funciones (encender/apagar) en pantallas y API. | S |
 | 2.5 | qa | Un campo personalizado de A no aparece en B; un plan sin función bloquea pantalla **y** API. | M |
 | 2.6 | documentador | Guía "cómo personalizar tu empresa". | S |
 
@@ -512,7 +573,7 @@ Antes de la pantalla de facturas, para construirla una sola vez.
 
 **Terminado cuando:** el contador aprueba el mapeo por escrito y la migración pasa las pruebas.
 
-### Fase 5 — Operación, reportes y plantilla de factura (≈4,5 semanas)
+### Fase 5 — Operación, reportes y plantilla de factura (≈4 semanas)
 **Entregable:** facturar, cobrar, pagar, conciliar y ver estados financieros desde pantalla,
 con PDF de factura en la plantilla de la empresa, y Excel.
 
@@ -521,14 +582,16 @@ con PDF de factura en la plantilla de la empresa, y Excel.
 | 5.1 | dev-frontend | Facturas de venta y compra, notas, totales en vivo, campos fiscales, estado e-CF, campos personalizados. | L |
 | 5.2 | dev-frontend | Cobros y pagos, notas aplicadas, estado de cuenta, antigüedad. | L |
 | 5.3 | dev-frontend | Tesorería: extracto CSV con vista previa, reglas, conciliación. | L |
-| 5.4 | dev-frontend | Reportes con navegación al asiento de origen y vistas guardadas. | L |
+| 5.4 | dev-frontend | Reportes con navegación al asiento de origen. | L |
 | 5.5 | dev-backend | PDF en servidor con plantillas configurables (3.5) y Excel; adjuntos en disco del servidor; contratos de respuesta pendientes. | L |
 | 5.6 | dev-frontend | Pantalla de configuración de plantilla con vista previa. | M |
 | 5.7 | qa | Un mes contable completo verificado contra el cálculo manual del contador. | M |
 | 5.8 | documentador | Manual de operación diaria. | M |
 
 ### Fase 6 — e-CF con proveedor externo
-**6A — Importación de XML e-CF (≈1,5 semanas, en la VMV)**. El XML e-CF tiene formato
+**6A — Importación de XML e-CF (≈1,5 semanas) — IMPRESCINDIBLE para el piloto**: desde el
+15/11/2026 las empresas piloto emitirán y recibirán e-CF con su proveedor; sin importación,
+el piloto no tiene datos reales que contabilizar. El XML e-CF tiene formato
 estándar DGII, igual para todos los proveedores: compras de suplidores y ventas emitidas en el
 portal del proveedor se importan, se validan duplicados RNC+NCF, se contabilizan y quedan
 listas para 606/607. Lectura con `fast-xml-parser` (MIT), con protección contra entidades
@@ -590,60 +653,62 @@ Igual que en la v2: presupuesto anual por cuenta y centro de costo, mes a mes; b
 aprobado → archivado; reporte presupuesto vs. real; copiar del año anterior; Excel. Requiere
 1B (centros de costo) y 1A (sistema de diseño). Se activa por plan (`fin.presupuestos`).
 
-### Con el primer nicho — Conexión de nichos (≈1 semana + el módulo)
+### Primer nicho — en paralelo desde que Carlos lo decida (≈1 semana + el módulo)
 Puerta pública interna de Finanzas, avisos de eventos, permisos y funciones del nicho (3.7).
-El módulo de nicho en sí se estima cuando Carlos lo defina.
+El análisis del nicho empieza en cuanto Carlos lo elija; el desarrollo del módulo arranca
+tras la Fase 1B (necesita el contexto de petición y RLS) y corre en paralelo con las Fases
+3–7. El módulo en sí se estima con el nicho definido (orientativo 4–8 semanas).
 
 ---
 
-## 6. Estimación y versión mínima vendible
+## 6. Estimación, piloto y primer producto comercial
 
-Supuestos: equipo de agentes continuo; Carlos revisa cada entregable en 1–2 días. **No incluye**
-esperas de terceros (contador, proveedor e-CF), que pueden sumar semanas.
+**Estrategia (v3.1):** no hay lanzamiento comercial de Finanzas sola. Se hace un **piloto con
+1–2 empresas reales** y el producto que se vende es **Finanzas + el primer nicho**.
+
+Supuestos: equipo de agentes continuo; Carlos revisa cada entregable en 1–2 días. **No
+incluye** esperas de terceros (contador, proveedor e-CF), que pueden sumar semanas: por eso
+el contador se consigue **ya**.
 
 | Fase | Semanas |
 |---|---|
 | 0 Saneamiento, git, copias, integración en compose | 1,5 |
-| 1A Núcleo de plataforma | 3 |
-| 1B Núcleo financiero (se solapa ≈1,5 con 1A) | +1,5 a +3 |
-| 2 Personalización base | 2 |
+| 1A Núcleo de plataforma + ambiente de pruebas | 3,5 |
+| 1B Núcleo financiero con RLS por contexto (se solapa ≈1,5 con 1A) | +2 |
+| 2 Personalización del piloto | 1,5 |
 | 3 Pantallas de contabilidad | 2,5 |
 | 4 Modelo fiscal y origen | 1 |
-| 5 Operación, reportes, plantilla de factura | 4,5 |
-| 6A Importación XML e-CF | 1,5 |
+| 5 Operación, reportes, plantilla de factura | 4 |
+| 6A Importación XML e-CF (imprescindible) | 1,5 |
 | 7 606/607 | 2 |
 | 8 Endurecimiento y salida | 2 |
-| **VMV "Finanzas premium"** | **≈21–24 semanas (≈5–5,5 meses)** |
-| 6B Emisión e-CF vía proveedor | +2–3 (tras su documentación) |
-| Presupuestos | +0–2 (adelantable) |
-| Flujos de aprobación | +1,5 |
-| Cobro de suscripciones en línea | +2 (si se elige pasarela) |
-| Conexión de nichos + primer módulo de nicho | +1 + (a estimar; orientativo 4–8) |
+| **Piloto de Finanzas (1–2 empresas)** | **≈21,5 → rango ≈21–23 semanas (≈5 meses)** |
+| Conexión de nichos + primer módulo (en paralelo desde la semana ≈9) | 1 + 4–8 |
+| **Primer producto comercial (Finanzas + nicho)** | **≈26–31 semanas (≈6–7 meses)**, según el nicho |
 
-**Por qué sube respecto a la v2 (17–19):** se suma el núcleo de plataforma que hoy no existe
-(empresas, permisos, planes, marca, puente, migraciones) y la personalización (≈+6 semanas);
-se compensa en parte porque Payload ya trae sesiones, bloqueo por intentos y panel interno, y
-desaparecen la instalación de Vite y el login propio de Finanzas (≈−2).
+Qué cambió en los números: 1B.4 sube de ≈1 a ≈1,5–2 semanas (48 transacciones a migrar) y se
+añade el ambiente de pruebas (+0,5); se compensa con el recorte de alcance (roles a medida,
+límites por plan, campos personalizados en reportes y vistas guardadas fuera: ≈−1,5).
+El primer producto comercial depende de que el nicho se decida ya: si se decide en la
+semana 8, el rango sube a ≈29–35.
 
-**VMV "Finanzas premium"** — lo mínimo para cobrarle a una empresa real, aún sin nicho:
-- Una instalación multiempresa; aislamiento garantizado por la base en todo dato contable;
-  roles base y a medida; 2FA para administradores.
-- Personalización: logo y colores, campos personalizados, plantilla de factura ajustable,
-  funciones según plan.
+**Piloto de Finanzas** — lo que deben poder usar las 1–2 empresas piloto:
+- Una instalación multiempresa; datos contables aislados por la base; 4 roles base; 2FA
+  para administradores.
+- Logo y colores; funciones según plan; campos personalizados en facturas y terceros (solo
+  mostrar); plantilla de factura ajustable.
 - Alta de empresa con plan de cuentas, impuestos, conceptos y **saldos iniciales**.
 - Contabilidad completa, facturas, cobros y pagos, CxC/CxP, bancos y conciliación, estados
   financieros con PDF/Excel.
-- e-CF por **importación de XML**; serie B bloqueada desde la fecha de cada empresa.
+- **Importación de XML e-CF**; serie B bloqueada desde la fecha de cada empresa.
 - **606 y 607** validados con la herramienta oficial y aprobados por el contador.
-- Copias de seguridad probadas, revisión de seguridad aprobada, manual de usuario.
+- Ambiente de pruebas separado; copias probadas (incluida la desincronización entre bases);
+  revisión de seguridad aprobada; manual de usuario.
 
-**Fuera de la VMV:** emisión e-CF (6B), presupuestos, flujos de aprobación, 608, cobro de
-suscripciones en línea, edición libre de plantillas, conexión de nichos.
-**Cierre de año**: imprescindible antes del primer cierre anual de un cliente.
-
-**Recomendación de calendario:** decidir el primer nicho **antes de la semana 8** (fin de la
-Fase 2). Así su módulo puede empezar en paralelo con las Fases 5–7 y el primer producto de
-nicho llegaría ≈2–3 meses después de la VMV en vez de empezar de cero entonces.
+**Después del piloto:** roles a medida, límites medidos por plan, campos personalizados en
+más documentos y en reportes, vistas guardadas, flujos de aprobación (salvo que el nicho los
+exija), emisión e-CF (6B), presupuestos, 608, cobro de suscripciones en línea, edición libre
+de plantillas. **Cierre de año**: imprescindible antes del primer cierre anual de un cliente.
 
 ---
 
@@ -671,14 +736,19 @@ nicho llegaría ≈2–3 meses después de la VMV en vez de empezar de cero ento
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| Propiedad del código de Finanzas no clara ("Sirtech", "Yovanny") | No se puede vender legalmente | Decisión 1 antes de invertir más |
 | Fuga de datos entre empresas | Gravísimo | RLS en `negocio`; usuarios de BD separados; plugin + pruebas en plataforma; la empresa sale del pase firmado, nunca del navegador |
 | Suplantación entre servicios | Grave | Finanzas solo tiene la clave pública; pases de 60 s con audiencia; Finanzas sin puerto publicado |
+| Plataforma firma un pase con la empresa equivocada | Grave (RLS no lo detiene) | Única función `resolverAcceso` con pruebas; lint de `overrideAccess: false`; puente con lista cerrada |
+| Código de Finanzas que consulta sin empresa fijada | Errores visibles, no fugas | RLS falla cerrado; lint; prueba que recorre todas las rutas |
+| Una petición larga ocupa una conexión | Lentitud con muchos usuarios | Tiempo máximo por petición; tamaño del conjunto de conexiones medido en Fase 8 |
+| Versión nueva rompe a las empresas piloto | Pérdida de confianza | Ambiente de pruebas separado y procedimiento de paso a producción |
+| Copias de las dos bases no coinciden al restaurar | Empresas o usuarios "huérfanos" | Prueba de restauración con desincronización y procedimiento de reparación |
 | Pérdida de datos | Gravísimo | Copias desde Fase 0 de ambas bases a la vez, restauración probada, copia fuera del servidor |
 | Plataforma sin historial de código | Cambios irrecuperables | git + GitHub privado en Fase 0 |
 | Payload altera la base sola (`push`) | Pérdida de datos | Migraciones en 1A.1; base contable separada |
 | Alta de empresa a medias (plataforma sí, Finanzas no) | Cliente sin acceso a Finanzas | Alta idempotente con estado "pendiente" y reintento |
-| Personalización crece sin control | Retraso de meses | Topes explícitos; ampliaciones solo con decisión de Carlos |
+| Personalización crece sin control | Retraso de meses | Topes explícitos y alcance del piloto recortado; ampliaciones solo con decisión de Carlos |
+| Nicho o contador se deciden tarde | El calendario se alarga semana a semana | Pedirlos ya; el nicho corre en paralelo solo si se decide antes de la semana ≈9 |
 | Clientes ya facturan e-CF en otro lado | Doble trabajo | Importación de XML estándar (6A) |
 | Reglas fiscales mal interpretadas | Multas a clientes | Contador por escrito + herramienta DGII + normativa archivada |
 | Errores de centavos | Estados que no cuadran | Decimales de punta a punta |
@@ -698,47 +768,48 @@ que se cambia en un solo lugar.
 
 ## 10. Lo que Carlos debe decidir o conseguir
 
-**(!) Frenan el avance:**
-1. **Propiedad del código de Finanzas.** ¿Quién lo escribió y con qué acuerdo? ¿Son tú (y tu
-   socio) dueños para venderlo? Incluye el acuerdo entre socios. Sin esto por escrito, todo lo
-   construido encima queda en riesgo legal.
-2. **¿Una cuenta por empresa?** Propuesta: cada empresa con su RNC es una cuenta; si un
-   cliente tiene varias empresas, la misma persona entra a todas y cambia de una a otra.
-   ¿Te sirve, o necesitas reportes que sumen varias empresas de un grupo?
-3. **Permisos de esta etapa**: crear el historial de cambios (git) de plataforma y su
+**Resuelto:** la propiedad del código de Finanzas es de Carlos y su socio. **Recomendación**
+(no bloquea): dejar por escrito, firmado por ambos, quién es dueño de qué (Finanzas,
+plataforma, módulos de nicho futuros) y qué pasa si uno de los dos se retira.
+
+**(!) Se necesitan YA:**
+1. **El primer nicho.** ¿Para qué tipo de negocio será el primer producto? Cada semana de
+   espera retrasa el producto comercial.
+2. **Contador asesor** que apruebe el mapeo 606/607 y responda por escrito cómo se reportan
+   los e-CF.
+3. **Las 1–2 empresas piloto**: ¿cuáles? ¿Aceptan usar el sistema con sus datos reales,
+   acompañadas, a cambio de condiciones especiales? Y XML e-CF reales de ejemplo.
+4. **¿Una cuenta por empresa?** Propuesta: cada empresa con su RNC es una cuenta; si un
+   cliente tiene varias, la misma persona entra a todas y cambia de una a otra. ¿Sirve, o hacen
+   falta reportes que sumen varias empresas de un grupo?
+5. **Permisos de esta etapa**: crear el historial de cambios (git) de plataforma y su
    repositorio privado en GitHub; mover el zip con claves y cambiar esas claves; corregir
    permisos de archivos de `root`; retirar los documentos de IA que describen cosas que no
    existen.
-4. **Dónde guardar las copias de seguridad fuera del servidor.**
-5. **Contador asesor** que apruebe el mapeo 606/607 y responda por escrito cómo se reportan los e-CF.
+6. **Dónde guardar las copias de seguridad fuera del servidor.**
 
-**Del negocio:**
-6. **¿Vendemos "Finanzas premium" sola** mientras se define el nicho, o esperamos al nicho
-   para salir al mercado?
-7. **¿Cuál es el primer nicho y para cuándo lo decides?** Recomendado: antes de la semana 8.
-8. **Planes**: ¿cuántos (p. ej. Básico / Profesional) y qué incluye cada uno? ¿Límites de
-   usuarios o facturas por mes?
-9. **Cobro de las suscripciones**: al principio, ¿lo haces tú manualmente (transferencia +
-   factura) o quieres cobro con tarjeta en línea desde el día uno? Recomendado: manual al inicio.
-10. **¿Quién crea las cuentas de los clientes?** Recomendado al inicio: tú o tu equipo (no
-    registro libre por internet).
-11. **Factura personalizada**: ¿basta con elegir diseño + logo + colores + textos + qué
-    columnas y campos se ven, o tus clientes esperan diseñar la factura a su gusto?
-12. **¿Necesitas aprobaciones** (p. ej. "compras de más de X las aprueba el gerente") en la
-    primera versión?
-13. **Dominio**: ¿una sola dirección para todos (p. ej. `app.tumarca.com`) o una por cliente
-    (`cliente.tumarca.com`)? Recomendado: una sola al inicio.
+**Del negocio (antes de la Fase 2):**
+7. **Planes**: ¿cuántos y qué funciones incluye cada uno? (Los límites de usuarios o
+   documentos llegan después del piloto.)
+8. **Cobro de las suscripciones**: al principio, ¿manual (transferencia + factura) o con
+   tarjeta en línea? Recomendado: manual.
+9. **¿Quién crea las cuentas de los clientes?** Recomendado: tú o tu equipo.
+10. **Factura personalizada**: ¿basta con elegir diseño + logo + colores + textos + columnas y
+    campos visibles, o los clientes esperan diseñarla a su gusto?
+11. **Aprobaciones** (p. ej. "compras de más de X las aprueba el gerente"): ¿las necesita el
+    nicho elegido?
+12. **Dominio**: ¿una dirección para todos (`app.tumarca.com`) o una por cliente? Recomendado:
+    una sola al inicio.
 
-**De la v2, siguen abiertas:**
-14. Proveedor e-CF (para 6B): hacerle las 9 preguntas de la Fase 6.
-15. Cómo ver las pantallas sin publicarlas: túnel SSH o VPN privada (se dará paso a paso).
-16. Nombre y marca del producto.
-17. GitHub: cuenta u organización, acceso del socio, aceptar GitHub Pro/Team (de pago) para
+**Siguen abiertas de la v2:**
+13. Proveedor e-CF (para 6B): hacerle las 9 preguntas de la Fase 6.
+14. Cómo ver las pantallas sin publicarlas: túnel SSH o VPN privada (se dará paso a paso).
+15. Nombre y marca del producto.
+16. GitHub: cuenta u organización, acceso del socio, aceptar GitHub Pro/Team (de pago) para
     proteger la rama principal en repos privados.
-18. Empresa piloto (datos reales o de prueba) y XML e-CF reales de ejemplo.
-19. Cierre de año en la Fase 1B o en la 8; 608 sí/no.
-20. Presupuestos: ¿solo ingresos y gastos? ¿versiones? ¿quién aprueba?
-21. Monedas: solo pesos o también dólares (ya soportado).
+17. Cierre de año en la Fase 1B o en la 8; 608 sí/no.
+18. Presupuestos: ¿solo ingresos y gastos? ¿versiones? ¿quién aprueba?
+19. Monedas: solo pesos o también dólares (ya soportado).
 
 ---
 
