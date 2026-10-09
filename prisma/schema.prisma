@@ -1,0 +1,1090 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// ============================================================
+// EMPRESA (multi-tenant) + CONFIGURACIÓN CONTABLE
+// ============================================================
+
+model Company {
+  id                   String  @id @default(uuid())
+  name                 String
+  legalName            String?
+  taxId                String  @unique // RNC
+  baseCurrency         String  @default("DOP")
+  country              String  @default("DO")
+  fiscalYearStartMonth Int     @default(1) // 1 = enero
+  address              String?
+  phone                String?
+  email                String?
+  logoUrl              String?
+  active               Boolean @default(true)
+
+  users               User[]
+  accounts            Account[]
+  partners            Partner[]
+  invoices            Invoice[]
+  bankAccounts        BankAccount[]
+  bankConnections     BankConnection[]
+  bankReconciliations BankReconciliation[]
+  bankRules           BankRule[]
+  cashRegisters       CashRegister[]
+  budgets             Budget[]
+  fiscalYears         FiscalYear[]
+  fiscalPeriods       FiscalPeriod[]
+  ncfSequences        NcfSequence[]
+  documentSequences   DocumentSequence[]
+  taxRates            TaxRate[]
+  costCenters         CostCenter[]
+  auditLogs           AuditLog[]
+  journals            Journal[]
+  journalEntries      JournalEntry[]
+  exchangeRates       ExchangeRate[]
+  payments            Payment[]
+  attachments         Attachment[]
+  financialSnapshots  FinancialRatioSnapshot[]
+  accountingSettings  AccountingSettings?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Cuentas por defecto que usa el sistema para generar asientos
+// automáticos (facturas, pagos, cierre de año, diferencia cambiaria).
+// Una fila por empresa.
+model AccountingSettings {
+  id        String  @id @default(uuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id])
+
+  receivableAccountId        String? // Cuentas por cobrar clientes
+  payableAccountId           String? // Cuentas por pagar proveedores
+  salesIncomeAccountId       String? // Ingresos por ventas
+  purchaseExpenseAccountId   String? // Compras / gastos por defecto
+  salesDiscountAccountId     String?
+  customerAdvanceAccountId   String? // Anticipos de clientes
+  supplierAdvanceAccountId   String? // Anticipos a proveedores
+  retainedEarningsAccountId  String? // Utilidades acumuladas
+  currentYearResultAccountId String? // Resultado del ejercicio (cierre)
+  fxGainAccountId            String? // Ganancia cambiaria
+  fxLossAccountId            String? // Pérdida cambiaria
+  roundingAccountId          String?
+
+  receivableAccount        Account? @relation("SettingsReceivable", fields: [receivableAccountId], references: [id])
+  payableAccount           Account? @relation("SettingsPayable", fields: [payableAccountId], references: [id])
+  salesIncomeAccount       Account? @relation("SettingsSalesIncome", fields: [salesIncomeAccountId], references: [id])
+  purchaseExpenseAccount   Account? @relation("SettingsPurchaseExpense", fields: [purchaseExpenseAccountId], references: [id])
+  salesDiscountAccount     Account? @relation("SettingsSalesDiscount", fields: [salesDiscountAccountId], references: [id])
+  customerAdvanceAccount   Account? @relation("SettingsCustomerAdvance", fields: [customerAdvanceAccountId], references: [id])
+  supplierAdvanceAccount   Account? @relation("SettingsSupplierAdvance", fields: [supplierAdvanceAccountId], references: [id])
+  retainedEarningsAccount  Account? @relation("SettingsRetainedEarnings", fields: [retainedEarningsAccountId], references: [id])
+  currentYearResultAccount Account? @relation("SettingsCurrentYearResult", fields: [currentYearResultAccountId], references: [id])
+  fxGainAccount            Account? @relation("SettingsFxGain", fields: [fxGainAccountId], references: [id])
+  fxLossAccount            Account? @relation("SettingsFxLoss", fields: [fxLossAccountId], references: [id])
+  roundingAccount          Account? @relation("SettingsRounding", fields: [roundingAccountId], references: [id])
+
+  updatedAt DateTime @updatedAt
+}
+
+// Numeración correlativa de documentos internos (facturas, pagos, notas...)
+model DocumentSequence {
+  id         String  @id @default(uuid())
+  companyId  String
+  company    Company @relation(fields: [companyId], references: [id])
+  docType    String // "INVOICE_SALE", "INVOICE_PURCHASE", "PAYMENT_RECEIVED", ...
+  prefix     String  @default("")
+  nextNumber Int     @default(1)
+  padding    Int     @default(6)
+
+  @@unique([companyId, docType])
+}
+
+// ============================================================
+// USUARIOS Y PERMISOS
+// ============================================================
+
+model User {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  email       String    @unique
+  password    String
+  name        String
+  role        UserRole  @default(ACCOUNTANT)
+  active      Boolean   @default(true)
+  lastLoginAt DateTime?
+
+  journalEntriesCreated  JournalEntry[]       @relation("JournalEntryCreatedBy")
+  journalEntriesApproved JournalEntry[]       @relation("JournalEntryApprovedBy")
+  journalEntriesVoided   JournalEntry[]       @relation("JournalEntryVoidedBy")
+  invoicesCreated        Invoice[]            @relation("InvoiceCreatedBy")
+  paymentsCreated        Payment[]            @relation("PaymentCreatedBy")
+  reconciliations        BankReconciliation[] @relation("ReconciliationCompletedBy")
+  cashRegistersHeld      CashRegister[]       @relation("CashRegisterCustodian")
+  attachmentsUploaded    Attachment[]
+  auditLogs              AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+enum UserRole {
+  ADMIN // acceso total, incluye cerrar períodos fiscales
+  ACCOUNTANT // crea/edita asientos, facturas
+  APPROVER // aprueba asientos, concilia bancos
+  VIEWER // solo lectura, reportes
+}
+
+// ============================================================
+// CONTABILIDAD / LIBRO MAYOR
+// ============================================================
+
+model Account {
+  id        String      @id @default(uuid())
+  companyId String
+  company   Company     @relation(fields: [companyId], references: [id])
+  code      String
+  name      String
+  type      AccountType
+  parentId  String?
+  parent    Account?    @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children  Account[]   @relation("AccountHierarchy")
+
+  // --- Clasificación para estados financieros y razones (NIIF/IFRS) ---
+  category         AccountCategory? // ubicación en balance / resultados
+  cashFlowCategory CashFlowCategory? // clasificación para flujo de efectivo
+  isContra         Boolean           @default(false) // cuenta de naturaleza contraria (ej: depreciación acumulada)
+  isPostable       Boolean           @default(true) // false = cuenta de título/agrupadora, no recibe movimientos
+  subledger        SubledgerType? // auxiliar que controla la cuenta (CxC, CxP, banco)
+  currency         String? // si es cuenta en moneda extranjera
+  description      String?
+
+  lines               JournalEntryLine[]
+  budgetLines         BudgetLine[]
+  bankAccounts        BankAccount[]
+  cashRegisters       CashRegister[]
+  invoiceLines        InvoiceLine[]
+  bankRules           BankRule[]
+  taxSalesAccounts    TaxRate[]          @relation("TaxSalesAccount")
+  taxPurchaseAccounts TaxRate[]          @relation("TaxPurchaseAccount")
+
+  settingsReceivable        AccountingSettings[] @relation("SettingsReceivable")
+  settingsPayable           AccountingSettings[] @relation("SettingsPayable")
+  settingsSalesIncome       AccountingSettings[] @relation("SettingsSalesIncome")
+  settingsPurchaseExpense   AccountingSettings[] @relation("SettingsPurchaseExpense")
+  settingsSalesDiscount     AccountingSettings[] @relation("SettingsSalesDiscount")
+  settingsCustomerAdvance   AccountingSettings[] @relation("SettingsCustomerAdvance")
+  settingsSupplierAdvance   AccountingSettings[] @relation("SettingsSupplierAdvance")
+  settingsRetainedEarnings  AccountingSettings[] @relation("SettingsRetainedEarnings")
+  settingsCurrentYearResult AccountingSettings[] @relation("SettingsCurrentYearResult")
+  settingsFxGain            AccountingSettings[] @relation("SettingsFxGain")
+  settingsFxLoss            AccountingSettings[] @relation("SettingsFxLoss")
+  settingsRounding          AccountingSettings[] @relation("SettingsRounding")
+
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([companyId, type])
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+// Clasificación fina (base de balance clasificado, estado de resultados
+// por función y razones financieras).
+enum AccountCategory {
+  CASH_AND_EQUIVALENTS
+  ACCOUNTS_RECEIVABLE
+  INVENTORY
+  PREPAID_AND_OTHER_CURRENT_ASSETS
+  PROPERTY_PLANT_EQUIPMENT
+  INTANGIBLE_ASSETS
+  OTHER_NON_CURRENT_ASSETS
+  ACCOUNTS_PAYABLE
+  SHORT_TERM_DEBT
+  TAXES_PAYABLE
+  OTHER_CURRENT_LIABILITIES
+  LONG_TERM_DEBT
+  OTHER_NON_CURRENT_LIABILITIES
+  SHARE_CAPITAL
+  RETAINED_EARNINGS
+  CURRENT_YEAR_RESULT
+  OTHER_EQUITY
+  OPERATING_REVENUE
+  OTHER_REVENUE
+  COST_OF_SALES
+  OPERATING_EXPENSE
+  DEPRECIATION_AMORTIZATION
+  FINANCE_COST
+  OTHER_EXPENSE
+  INCOME_TAX
+}
+
+enum CashFlowCategory {
+  OPERATING
+  INVESTING
+  FINANCING
+  CASH_EQUIVALENT // las cuentas de efectivo en sí
+}
+
+enum SubledgerType {
+  RECEIVABLE // auxiliar de clientes
+  PAYABLE // auxiliar de proveedores
+  BANK
+  CASH
+}
+
+// Año fiscal: agrupa períodos y registra el asiento de cierre.
+model FiscalYear {
+  id             String             @id @default(uuid())
+  companyId      String
+  company        Company            @relation(fields: [companyId], references: [id])
+  name           String // ej: "2027"
+  startDate      DateTime
+  endDate        DateTime
+  status         FiscalPeriodStatus @default(OPEN)
+  closingEntryId String?            @unique
+  closingEntry   JournalEntry?      @relation("FiscalYearClosingEntry", fields: [closingEntryId], references: [id])
+  closedById     String?
+  closedAt       DateTime?
+
+  periods FiscalPeriod[]
+
+  @@unique([companyId, startDate, endDate])
+  @@index([companyId])
+}
+
+// Un período CLOSED bloquea nuevos asientos o modificaciones
+// dentro de su rango de fechas.
+model FiscalPeriod {
+  id           String             @id @default(uuid())
+  companyId    String
+  company      Company            @relation(fields: [companyId], references: [id])
+  fiscalYearId String?
+  fiscalYear   FiscalYear?        @relation(fields: [fiscalYearId], references: [id])
+  name         String // ej: "Enero 2027"
+  startDate    DateTime
+  endDate      DateTime
+  status       FiscalPeriodStatus @default(OPEN)
+  closedById   String?
+  closedAt     DateTime?
+
+  journalEntries JournalEntry[]
+
+  @@unique([companyId, startDate, endDate])
+  @@index([companyId])
+  @@index([fiscalYearId])
+}
+
+enum FiscalPeriodStatus {
+  OPEN
+  CLOSED
+}
+
+// Diarios contables (Libro Diario General, de Ventas, de Compras, Bancos...)
+model Journal {
+  id         String      @id @default(uuid())
+  companyId  String
+  company    Company     @relation(fields: [companyId], references: [id])
+  code       String // ej: "DG", "VEN", "COM", "BCO"
+  name       String
+  type       JournalType @default(GENERAL)
+  nextNumber Int         @default(1)
+  active     Boolean     @default(true)
+
+  entries JournalEntry[]
+
+  @@unique([companyId, code])
+}
+
+enum JournalType {
+  GENERAL
+  SALES
+  PURCHASES
+  BANK
+  CASH
+  ADJUSTMENT
+  OPENING
+  CLOSING
+}
+
+model JournalEntry {
+  id             String             @id @default(uuid())
+  companyId      String
+  company        Company            @relation(fields: [companyId], references: [id])
+  number         String? // correlativo legible: "DG-000123" (lo asigna el service)
+  journalId      String?
+  journal        Journal?           @relation(fields: [journalId], references: [id])
+  fiscalPeriodId String?
+  fiscalPeriod   FiscalPeriod?      @relation(fields: [fiscalPeriodId], references: [id])
+  type           JournalEntryType   @default(STANDARD)
+  date           DateTime
+  description    String
+  reference      String? // ej: número de factura relacionada
+  lines          JournalEntryLine[]
+
+  // Trazabilidad: de qué documento nació el asiento (para drill-down)
+  sourceType SourceDocumentType @default(MANUAL)
+  sourceId   String?
+
+  // Moneda del asiento (las líneas guardan además su monto en moneda original)
+  currency     String  @default("DOP")
+  exchangeRate Decimal @default(1) @db.Decimal(19, 6)
+
+  status     JournalEntryStatus @default(POSTED)
+  reconciled Boolean            @default(false)
+
+  createdById  String
+  createdBy    User      @relation("JournalEntryCreatedBy", fields: [createdById], references: [id])
+  postedAt     DateTime?
+  approvedById String?
+  approvedBy   User?     @relation("JournalEntryApprovedBy", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+  voidedById   String?
+  voidedBy     User?     @relation("JournalEntryVoidedBy", fields: [voidedById], references: [id])
+  voidedAt     DateTime?
+  voidReason   String?
+
+  // Asiento de reversión
+  reversalOfId String?       @unique
+  reversalOf   JournalEntry? @relation("EntryReversal", fields: [reversalOfId], references: [id])
+  reversedBy   JournalEntry? @relation("EntryReversal")
+
+  closedFiscalYear FiscalYear?  @relation("FiscalYearClosingEntry")
+  invoices         Invoice[]
+  payments         Payment[]
+  attachments      Attachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, number])
+  @@index([companyId, date])
+  @@index([companyId, status, date])
+  @@index([companyId, sourceType, sourceId])
+  @@index([fiscalPeriodId])
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  VOIDED
+}
+
+enum JournalEntryType {
+  STANDARD
+  OPENING // asiento de apertura / saldos iniciales
+  CLOSING // cierre de año
+  ADJUSTMENT
+  REVERSAL
+  FX_REVALUATION // ajuste por diferencia cambiaria
+}
+
+enum SourceDocumentType {
+  MANUAL
+  INVOICE
+  PAYMENT
+  BANK_TRANSACTION
+  CASH_EXPENSE
+  YEAR_END_CLOSING
+  OTHER
+}
+
+model JournalEntryLine {
+  id             String       @id @default(uuid())
+  journalEntryId String
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id])
+  accountId      String
+  account        Account      @relation(fields: [accountId], references: [id])
+  costCenterId   String?
+  costCenter     CostCenter?  @relation(fields: [costCenterId], references: [id])
+  // Auxiliar: cliente/proveedor al que pertenece el movimiento (mayores auxiliares)
+  partnerId      String?
+  partner        Partner?     @relation(fields: [partnerId], references: [id])
+
+  debit         Decimal  @default(0) @db.Decimal(19, 4) // en moneda base
+  credit        Decimal  @default(0) @db.Decimal(19, 4) // en moneda base
+  // Moneda original (si difiere de la base)
+  currency      String?
+  exchangeRate  Decimal? @db.Decimal(19, 6)
+  amountForeign Decimal? @db.Decimal(19, 4) // monto firmado en moneda original
+  description   String?
+
+  bankMatches BankMatch[]
+
+  @@index([accountId])
+  @@index([journalEntryId])
+  @@index([accountId, partnerId])
+  @@index([partnerId])
+  @@index([costCenterId])
+}
+
+// Centros de costo
+model CostCenter {
+  id           String             @id @default(uuid())
+  companyId    String
+  company      Company            @relation(fields: [companyId], references: [id])
+  name         String
+  code         String?
+  lines        JournalEntryLine[]
+  invoiceLines InvoiceLine[]
+  active       Boolean            @default(true)
+
+  @@unique([companyId, name])
+}
+
+// ============================================================
+// MULTI-MONEDA
+// ============================================================
+
+model ExchangeRate {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  fromCurrency String // ej: "USD"
+  toCurrency   String // ej: "DOP"
+  rate         Decimal  @db.Decimal(19, 6)
+  date         DateTime
+  source       String? // "BCRD", "MANUAL", etc.
+
+  @@unique([companyId, fromCurrency, toCurrency, date])
+}
+
+// ============================================================
+// CLIENTES / PROVEEDORES (auxiliares)
+// ============================================================
+
+model Partner {
+  id                 String      @id @default(uuid())
+  companyId          String
+  company            Company     @relation(fields: [companyId], references: [id])
+  type               PartnerType
+  name               String
+  tradeName          String?
+  taxId              String? // RNC/Cédula
+  taxIdType          TaxIdType?
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  country            String      @default("DO")
+  creditLimit        Decimal?    @db.Decimal(19, 4)
+  paymentTermsDays   Int         @default(0)
+  defaultNcfType     String? // ej: "B01" para clientes que piden crédito fiscal
+  isWithholdingAgent Boolean     @default(false)
+  active             Boolean     @default(true)
+
+  invoices     Invoice[]
+  payments     Payment[]
+  journalLines JournalEntryLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([companyId, taxId])
+}
+
+enum PartnerType {
+  CUSTOMER
+  SUPPLIER
+  BOTH
+}
+
+enum TaxIdType {
+  RNC
+  CEDULA
+  PASSPORT
+  FOREIGN_ID
+}
+
+// ============================================================
+// IMPUESTOS Y RETENCIONES (ITBIS, ISR, etc.)
+// ============================================================
+
+model TaxRate {
+  id                String     @id @default(uuid())
+  companyId         String
+  company           Company    @relation(fields: [companyId], references: [id])
+  name              String // ej: "ITBIS 18%"
+  rate              Decimal    @db.Decimal(5, 2) // ej: 18.00
+  type              TaxType    @default(ITBIS)
+  appliesTo         TaxApplies @default(BOTH)
+  isWithholding     Boolean    @default(false) // retención (resta del total a cobrar/pagar)
+  dgiiCode          String? // código para reportes 606/607/IT-1
+  salesAccountId    String? // ej: ITBIS por pagar
+  salesAccount      Account?   @relation("TaxSalesAccount", fields: [salesAccountId], references: [id])
+  purchaseAccountId String? // ej: ITBIS adelantado
+  purchaseAccount   Account?   @relation("TaxPurchaseAccount", fields: [purchaseAccountId], references: [id])
+
+  invoiceLines        InvoiceLine[]
+  invoiceWithholdings InvoiceWithholding[]
+  active              Boolean              @default(true)
+
+  @@index([companyId])
+}
+
+enum TaxType {
+  ITBIS
+  ISC
+  PROPINA_LEGAL
+  ISR_WITHHOLDING
+  ITBIS_WITHHOLDING
+  OTHER
+}
+
+enum TaxApplies {
+  SALES
+  PURCHASES
+  BOTH
+}
+
+// ============================================================
+// FACTURACIÓN
+// ============================================================
+
+// Secuencias de NCF (B01, B02, B14, B15, E31...). Cada tipo tiene su
+// rango autorizado por DGII y su consecutivo.
+model NcfSequence {
+  id               String    @id @default(uuid())
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id])
+  ncfType          String // "B01", "B02", "E31"...
+  prefix           String
+  rangeStart       Int
+  rangeEnd         Int
+  currentNumber    Int
+  warningThreshold Int       @default(50) // avisar cuando queden N comprobantes
+  expirationDate   DateTime?
+  active           Boolean   @default(true)
+
+  @@unique([companyId, ncfType])
+}
+
+model Invoice {
+  id               String      @id @default(uuid())
+  companyId        String
+  company          Company     @relation(fields: [companyId], references: [id])
+  partnerId        String
+  partner          Partner     @relation(fields: [partnerId], references: [id])
+  type             InvoiceType
+  number           String // numeración interna correlativa
+  ncf              String? // Número de Comprobante Fiscal (emitido o recibido)
+  ncfType          String? // "B01", "B02"...
+  ncfExpiration    DateTime?
+  // Nota de crédito/débito: factura que modifica (campo "NCF modificado" en DGII)
+  relatedInvoiceId String?
+  relatedInvoice   Invoice?    @relation("InvoiceRelated", fields: [relatedInvoiceId], references: [id])
+  relatedDocuments Invoice[]   @relation("InvoiceRelated")
+
+  currency     String        @default("DOP")
+  exchangeRate Decimal       @default(1) @db.Decimal(19, 6)
+  issueDate    DateTime
+  dueDate      DateTime?
+  status       InvoiceStatus @default(DRAFT)
+
+  // Clasificación DGII para reportes 606 / 607
+  dgiiExpenseType String? // 606: "01".."11"
+  dgiiIncomeType  String? // 607: "01".."06"
+
+  lines              InvoiceLine[]
+  withholdings       InvoiceWithholding[]
+  paymentAllocations PaymentAllocation[]
+  attachments        Attachment[]
+
+  subtotal         Decimal @db.Decimal(19, 4)
+  discountTotal    Decimal @default(0) @db.Decimal(19, 4)
+  taxTotal         Decimal @default(0) @db.Decimal(19, 4)
+  withholdingTotal Decimal @default(0) @db.Decimal(19, 4)
+  total            Decimal @db.Decimal(19, 4)
+  amountPaid       Decimal @default(0) @db.Decimal(19, 4)
+  balance          Decimal @default(0) @db.Decimal(19, 4) // saldo pendiente (base de CxC/CxP)
+  notes            String?
+
+  journalEntryId String?
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  issuedAt       DateTime?
+  voidedAt       DateTime?
+  voidReason     String?
+  voidReasonCode String? // código de anulación DGII (608)
+
+  createdById String
+  createdBy   User   @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, type, issueDate])
+  @@index([companyId, ncf])
+  @@index([partnerId, status])
+  @@index([dueDate])
+}
+
+enum InvoiceType {
+  SALE // ingreso
+  PURCHASE // egreso
+  CREDIT_NOTE
+  DEBIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  VOIDED
+  OVERDUE
+}
+
+model InvoiceLine {
+  id           String      @id @default(uuid())
+  invoiceId    String
+  invoice      Invoice     @relation(fields: [invoiceId], references: [id])
+  description  String
+  quantity     Decimal     @db.Decimal(19, 4)
+  unitPrice    Decimal     @db.Decimal(19, 4)
+  discount     Decimal     @default(0) @db.Decimal(19, 4) // monto de descuento
+  taxRateId    String?
+  taxRate      TaxRate?    @relation(fields: [taxRateId], references: [id])
+  taxAmount    Decimal     @default(0) @db.Decimal(19, 4)
+  total        Decimal     @db.Decimal(19, 4)
+  // Cuenta contable de ingreso/gasto (si no, usa AccountingSettings)
+  accountId    String?
+  account      Account?    @relation(fields: [accountId], references: [id])
+  costCenterId String?
+  costCenter   CostCenter? @relation(fields: [costCenterId], references: [id])
+
+  @@index([invoiceId])
+}
+
+// Retenciones aplicadas a una factura (ISR, ITBIS retenido)
+model InvoiceWithholding {
+  id        String  @id @default(uuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  taxRateId String
+  taxRate   TaxRate @relation(fields: [taxRateId], references: [id])
+  base      Decimal @db.Decimal(19, 4)
+  amount    Decimal @db.Decimal(19, 4)
+
+  @@index([invoiceId])
+}
+
+// ============================================================
+// PAGOS Y CUENTAS POR COBRAR/PAGAR
+// ============================================================
+
+// Un pago puede cubrir varias facturas (tabla intermedia).
+// RECEIVED = cobro a cliente, MADE = pago a proveedor.
+model Payment {
+  id             String           @id @default(uuid())
+  companyId      String
+  company        Company          @relation(fields: [companyId], references: [id])
+  number         String?
+  partnerId      String
+  partner        Partner          @relation(fields: [partnerId], references: [id])
+  direction      PaymentDirection
+  amount         Decimal          @db.Decimal(19, 4)
+  currency       String           @default("DOP")
+  exchangeRate   Decimal          @default(1) @db.Decimal(19, 6)
+  date           DateTime
+  method         PaymentMethod
+  reference      String? // nº cheque, nº transferencia
+  notes          String?
+  status         PaymentStatus    @default(POSTED)
+  bankAccountId  String?
+  bankAccount    BankAccount?     @relation(fields: [bankAccountId], references: [id])
+  cashRegisterId String?
+  cashRegister   CashRegister?    @relation(fields: [cashRegisterId], references: [id])
+
+  journalEntryId String?
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  allocations PaymentAllocation[]
+  attachments Attachment[]
+
+  createdById String
+  createdBy   User     @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, date])
+  @@index([partnerId])
+  @@index([bankAccountId])
+}
+
+model PaymentAllocation {
+  id        String  @id @default(uuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id])
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  amount    Decimal @db.Decimal(19, 4) // cuánto de este pago aplica a esta factura
+
+  @@index([paymentId])
+  @@index([invoiceId])
+}
+
+enum PaymentDirection {
+  RECEIVED
+  MADE
+}
+
+enum PaymentStatus {
+  DRAFT
+  POSTED
+  VOIDED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  CARD
+}
+
+// ============================================================
+// TESORERÍA: BANCOS, CONEXIONES, CAJA Y CONCILIACIÓN
+// ============================================================
+
+// Conexión con un banco/agregador (Open Banking, Plaid, API directa)
+// o importación manual de extractos (CSV/OFX/MT940).
+model BankConnection {
+  id               String                 @id @default(uuid())
+  companyId        String
+  company          Company                @relation(fields: [companyId], references: [id])
+  provider         BankConnectionProvider
+  institutionName  String
+  status           BankConnectionStatus   @default(ACTIVE)
+  externalId       String? // id de la conexión en el proveedor
+  credentialsEnc   String? // tokens CIFRADOS (nunca en texto plano)
+  consentExpiresAt DateTime?
+  syncCursor       String? // cursor de sincronización incremental
+  lastSyncedAt     DateTime?
+  lastError        String?
+
+  bankAccounts BankAccount[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+enum BankConnectionProvider {
+  MANUAL_IMPORT // CSV / OFX / MT940
+  PLAID
+  OPEN_BANKING
+  DIRECT_API
+  SFTP_FILE
+}
+
+enum BankConnectionStatus {
+  ACTIVE
+  EXPIRED
+  ERROR
+  DISCONNECTED
+}
+
+model BankAccount {
+  id                 String          @id @default(uuid())
+  companyId          String
+  company            Company         @relation(fields: [companyId], references: [id])
+  bankName           String
+  accountNumber      String
+  iban               String?
+  swift              String?
+  type               BankAccountType @default(CHECKING)
+  currency           String          @default("DOP")
+  openingBalance     Decimal         @default(0) @db.Decimal(19, 4)
+  openingBalanceDate DateTime?
+  // Cuenta contable (activo) que representa este banco en el mayor
+  glAccountId        String?
+  glAccount          Account?        @relation(fields: [glAccountId], references: [id])
+  // Conexión automática (opcional)
+  connectionId       String?
+  connection         BankConnection? @relation(fields: [connectionId], references: [id])
+  externalAccountId  String?
+  lastSyncedAt       DateTime?
+  active             Boolean         @default(true)
+
+  transactions    BankTransaction[]
+  payments        Payment[]
+  reconciliations BankReconciliation[]
+  rules           BankRule[]
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([glAccountId])
+}
+
+enum BankAccountType {
+  CHECKING
+  SAVINGS
+  CREDIT_CARD
+  LOAN
+}
+
+model BankTransaction {
+  id               String                @id @default(uuid())
+  bankAccountId    String
+  bankAccount      BankAccount           @relation(fields: [bankAccountId], references: [id])
+  date             DateTime
+  valueDate        DateTime?
+  description      String
+  reference        String?
+  amount           Decimal               @db.Decimal(19, 4) // positivo = entrada, negativo = salida
+  balanceAfter     Decimal?              @db.Decimal(19, 4)
+  currency         String?
+  externalId       String? // id del banco: evita importar duplicados
+  source           BankTransactionSource @default(MANUAL)
+  status           BankTransactionStatus @default(PENDING)
+  reconciled       Boolean               @default(false)
+  importBatchId    String? // agrupa transacciones de un mismo extracto
+  reconciliationId String?
+  reconciliation   BankReconciliation?   @relation(fields: [reconciliationId], references: [id])
+
+  matches BankMatch[]
+
+  importedAt DateTime @default(now())
+
+  @@unique([bankAccountId, externalId])
+  @@index([bankAccountId, reconciled])
+  @@index([bankAccountId, date])
+  @@index([importBatchId])
+}
+
+enum BankTransactionSource {
+  MANUAL
+  FILE_IMPORT
+  API_SYNC
+}
+
+enum BankTransactionStatus {
+  PENDING
+  MATCHED
+  RECONCILED
+  IGNORED
+}
+
+// Vínculo muchos-a-muchos: una transacción bancaria puede cubrir varias
+// líneas del mayor y viceversa (ej: un depósito que agrupa 3 cobros).
+model BankMatch {
+  id                 String           @id @default(uuid())
+  bankTransactionId  String
+  bankTransaction    BankTransaction  @relation(fields: [bankTransactionId], references: [id])
+  journalEntryLineId String
+  journalEntryLine   JournalEntryLine @relation(fields: [journalEntryLineId], references: [id])
+  amount             Decimal          @db.Decimal(19, 4)
+  createdAt          DateTime         @default(now())
+
+  @@unique([bankTransactionId, journalEntryLineId])
+  @@index([journalEntryLineId])
+}
+
+// Conciliación bancaria por cuenta y fecha de corte (extracto vs. libros).
+model BankReconciliation {
+  id               String               @id @default(uuid())
+  companyId        String
+  company          Company              @relation(fields: [companyId], references: [id])
+  bankAccountId    String
+  bankAccount      BankAccount          @relation(fields: [bankAccountId], references: [id])
+  statementDate    DateTime // fecha de corte del extracto
+  statementBalance Decimal              @db.Decimal(19, 4)
+  bookBalance      Decimal              @db.Decimal(19, 4)
+  difference       Decimal              @default(0) @db.Decimal(19, 4)
+  status           ReconciliationStatus @default(DRAFT)
+  completedById    String?
+  completedBy      User?                @relation("ReconciliationCompletedBy", fields: [completedById], references: [id])
+  completedAt      DateTime?
+  notes            String?
+
+  transactions BankTransaction[]
+  attachments  Attachment[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([bankAccountId, statementDate])
+  @@index([companyId])
+}
+
+enum ReconciliationStatus {
+  DRAFT
+  COMPLETED
+}
+
+// Reglas de autocategorización de movimientos bancarios
+// (ej: descripción contiene "COMISION" -> cuenta Gastos bancarios).
+model BankRule {
+  id            String       @id @default(uuid())
+  companyId     String
+  company       Company      @relation(fields: [companyId], references: [id])
+  bankAccountId String?
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
+  name          String
+  matchText     String
+  accountId     String
+  account       Account      @relation(fields: [accountId], references: [id])
+  priority      Int          @default(100)
+  active        Boolean      @default(true)
+
+  @@index([companyId])
+}
+
+// Caja chica
+model CashRegister {
+  id             String   @id @default(uuid())
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id])
+  name           String // ej: "Caja Chica Oficina Central"
+  currency       String   @default("DOP")
+  glAccountId    String?
+  glAccount      Account? @relation(fields: [glAccountId], references: [id])
+  custodianId    String?
+  custodian      User?    @relation("CashRegisterCustodian", fields: [custodianId], references: [id])
+  openingBalance Decimal  @default(0) @db.Decimal(19, 4)
+  active         Boolean  @default(true)
+
+  payments Payment[]
+
+  @@index([companyId])
+}
+
+// ============================================================
+// PRESUPUESTOS Y PROYECCIONES
+// ============================================================
+
+model Budget {
+  id        String       @id @default(uuid())
+  companyId String
+  company   Company      @relation(fields: [companyId], references: [id])
+  name      String // ej: "Presupuesto 2027"
+  year      Int
+  status    BudgetStatus @default(DRAFT)
+  notes     String?
+  lines     BudgetLine[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, year, name])
+}
+
+enum BudgetStatus {
+  DRAFT
+  APPROVED
+  ARCHIVED
+}
+
+model BudgetLine {
+  id            String  @id @default(uuid())
+  budgetId      String
+  budget        Budget  @relation(fields: [budgetId], references: [id])
+  accountId     String
+  account       Account @relation(fields: [accountId], references: [id])
+  month         Int // 1-12
+  plannedAmount Decimal @db.Decimal(19, 4)
+
+  @@unique([budgetId, accountId, month])
+}
+
+// ============================================================
+// ANÁLISIS FINANCIERO (razones) — histórico de cálculos
+// Las razones se calculan en vivo desde el mayor; esta tabla guarda
+// "fotos" por período para tendencias y comparativos rápidos.
+// ============================================================
+
+model FinancialRatioSnapshot {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  asOfDate   DateTime
+  periodType String   @default("MONTH") // MONTH | QUARTER | YEAR
+  // { liquidity: {...}, leverage: {...}, profitability: {...}, activity: {...} }
+  ratios     Json
+  createdAt  DateTime @default(now())
+
+  @@unique([companyId, asOfDate, periodType])
+}
+
+// ============================================================
+// ADJUNTOS (facturas escaneadas, comprobantes, extractos)
+// ============================================================
+
+model Attachment {
+  id               String              @id @default(uuid())
+  companyId        String
+  company          Company             @relation(fields: [companyId], references: [id])
+  invoiceId        String?
+  invoice          Invoice?            @relation(fields: [invoiceId], references: [id])
+  paymentId        String?
+  payment          Payment?            @relation(fields: [paymentId], references: [id])
+  journalEntryId   String?
+  journalEntry     JournalEntry?       @relation(fields: [journalEntryId], references: [id])
+  reconciliationId String?
+  reconciliation   BankReconciliation? @relation(fields: [reconciliationId], references: [id])
+  fileName         String
+  fileUrl          String // ruta en storage (S3, disco, etc.)
+  mimeType         String
+  sizeBytes        Int?
+  uploadedById     String?
+  uploadedBy       User?               @relation(fields: [uploadedById], references: [id])
+  uploadedAt       DateTime            @default(now())
+
+  @@index([companyId])
+  @@index([invoiceId])
+  @@index([paymentId])
+  @@index([journalEntryId])
+}
+
+// ============================================================
+// AUDITORÍA — quién hizo qué y cuándo
+// ============================================================
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  companyId  String
+  company    Company     @relation(fields: [companyId], references: [id])
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  entityName String // ej: "Invoice", "JournalEntry"
+  entityId   String
+  action     AuditAction
+  changes    Json? // diff antes/después
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  @@index([companyId, entityName, entityId])
+  @@index([companyId, createdAt])
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VOID
+  APPROVE
+  POST
+  CLOSE
+  RECONCILE
+  LOGIN
+}
