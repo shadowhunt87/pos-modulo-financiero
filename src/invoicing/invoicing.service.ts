@@ -14,10 +14,7 @@ import { NcfService, isValidNcfFormat } from '../masters/ncf/ncf.service.js';
 import { DocumentSequencesService, type DocType } from '../masters/sequences/document-sequences.service.js';
 import { AccountingSettingsService } from '../masters/accounting-settings/accounting-settings.service.js';
 import { PostingService, type PostLine } from '../posting/posting.service.js';
-import {
-  CreateInvoiceDto, IssueInvoiceDto, ListInvoicesQuery, UpdateInvoiceDto, VoidInvoiceDto,
-  type InvoiceLineDto, type InvoiceWithholdingDto,
-} from './dto/invoice.dto.js';
+import { CreateInvoiceDto, IssueInvoiceDto, ListInvoicesQuery, UpdateInvoiceDto, VoidInvoiceDto } from './dto/invoice.dto.js';
 
 type Tx = Prisma.TransactionClient;
 type Dec = Prisma.Decimal;
@@ -35,6 +32,26 @@ const LABEL: Record<InvoiceType, string> = {
   SALE: 'Factura de venta', PURCHASE: 'Factura de compra', CREDIT_NOTE: 'Nota de crédito', DEBIT_NOTE: 'Nota de débito',
 };
 
+/**
+ * Montos de entrada: number (viene del JSON del cliente) o Decimal (viene de la BD).
+ * Un borrador guardado NUNCA se pasa por Number(): un double pierde precisión desde ~16 dígitos
+ * y editar o emitir cambiaría centavos en silencio.
+ */
+type Amount = Dec | number | string;
+interface DocLine {
+  description: string;
+  quantity: Amount;
+  unitPrice: Amount;
+  discount?: Amount | null;
+  taxRateId?: string;
+  accountId?: string;
+  costCenterId?: string;
+}
+interface DocWithholding {
+  taxRateId: string;
+  base?: Amount | null;
+}
+
 /** Estado de entrada (de un DTO o de un borrador guardado) para calcular el documento. */
 interface DocInput {
   type: InvoiceType;
@@ -42,15 +59,15 @@ interface DocInput {
   issueDate: Date;
   dueDate?: Date | null;
   currency?: string | null;
-  exchangeRate?: number | null;
+  exchangeRate?: Amount | null;
   ncfType?: string | null;
   ncf?: string | null;
   relatedInvoiceId?: string | null;
   dgiiExpenseType?: string | null;
   dgiiIncomeType?: string | null;
   notes?: string | null;
-  lines: InvoiceLineDto[];
-  withholdings: InvoiceWithholdingDto[];
+  lines: DocLine[];
+  withholdings: DocWithholding[];
 }
 
 @Injectable()
@@ -219,21 +236,21 @@ export class InvoicingService {
         issueDate: dto.issueDate ? new Date(dto.issueDate) : cur.issueDate,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : dto.issueDate || dto.partnerId ? null : cur.dueDate,
         currency: dto.currency ?? cur.currency,
-        exchangeRate: dto.exchangeRate ?? (dto.currency ? null : Number(cur.exchangeRate)),
+        exchangeRate: dto.exchangeRate ?? (dto.currency ? null : cur.exchangeRate),
         ncfType: dto.ncfType ?? cur.ncfType, ncf: dto.ncf ?? cur.ncf,
         relatedInvoiceId: dto.relatedInvoiceId ?? cur.relatedInvoiceId,
         dgiiExpenseType: dto.dgiiExpenseType ?? cur.dgiiExpenseType,
         dgiiIncomeType: dto.dgiiIncomeType ?? cur.dgiiIncomeType,
         notes: dto.notes ?? cur.notes,
         lines: dto.lines ?? cur.lines.map((l) => ({
-          description: l.description, quantity: Number(l.quantity), unitPrice: Number(l.unitPrice), discount: Number(l.discount),
+          description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount,
           taxRateId: l.taxRateId ?? undefined, accountId: l.accountId ?? undefined, costCenterId: l.costCenterId ?? undefined,
         })),
-        withholdings: dto.withholdings ?? cur.withholdings.map((w) => ({ taxRateId: w.taxRateId, base: Number(w.base) })),
+        withholdings: dto.withholdings ?? cur.withholdings.map((w) => ({ taxRateId: w.taxRateId, base: w.base })),
       });
       await tx.invoiceLine.deleteMany({ where: { invoiceId: id } });
       await tx.invoiceWithholding.deleteMany({ where: { invoiceId: id } });
-      await tx.invoice.update({ where: { id }, data: built.header });
+      await tx.invoice.update({ where: { id, companyId: user.companyId }, data: built.header });
       await this.persistChildren(tx, id, built);
       await writeAudit(tx, user, 'Invoice', id, AuditAction.UPDATE, { total: built.header.total.toString() });
     });
@@ -247,7 +264,7 @@ export class InvoicingService {
       if (res.status !== InvoiceStatus.DRAFT) throw new UnprocessableEntityException('Solo se eliminan borradores; una emitida se anula');
       await tx.invoiceLine.deleteMany({ where: { invoiceId: id } });
       await tx.invoiceWithholding.deleteMany({ where: { invoiceId: id } });
-      await tx.invoice.delete({ where: { id } });
+      await tx.invoice.delete({ where: { id, companyId: user.companyId } });
       await writeAudit(tx, user, 'Invoice', id, AuditAction.DELETE, { number: res.number });
     });
     return { deleted: true };
@@ -277,13 +294,13 @@ export class InvoicingService {
     // Se recalcula contra el estado actual de maestros (impuestos, tercero, tasas)
     const built = await this.build(tx, user, {
       type: inv.type, partnerId: inv.partnerId, issueDate: inv.issueDate, dueDate: inv.dueDate,
-      currency: inv.currency, exchangeRate: Number(inv.exchangeRate), ncfType: dto.ncfType ?? inv.ncfType, ncf: dto.ncf ?? inv.ncf,
+      currency: inv.currency, exchangeRate: inv.exchangeRate, ncfType: dto.ncfType ?? inv.ncfType, ncf: dto.ncf ?? inv.ncf,
       relatedInvoiceId: inv.relatedInvoiceId, dgiiExpenseType: inv.dgiiExpenseType, dgiiIncomeType: inv.dgiiIncomeType, notes: inv.notes,
       lines: inv.lines.map((l) => ({
-        description: l.description, quantity: Number(l.quantity), unitPrice: Number(l.unitPrice), discount: Number(l.discount),
+        description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount,
         taxRateId: l.taxRateId ?? undefined, accountId: l.accountId ?? undefined, costCenterId: l.costCenterId ?? undefined,
       })),
-      withholdings: inv.withholdings.map((w) => ({ taxRateId: w.taxRateId, base: Number(w.base) })),
+      withholdings: inv.withholdings.map((w) => ({ taxRateId: w.taxRateId, base: w.base })),
     });
     const { side, partner } = built;
     const reversed = inv.type === InvoiceType.CREDIT_NOTE;
@@ -344,7 +361,7 @@ export class InvoicingService {
     const entry = await this.postEntry(tx, user, { inv: { ...inv, number }, built, reversed });
 
     await tx.invoice.update({
-      where: { id },
+      where: { id, companyId: user.companyId },
       data: { ...built.header, number, ncf, ncfType, status: InvoiceStatus.ISSUED, issuedAt: new Date(), journalEntryId: entry.id },
     });
     // Los renglones calculados al emitir reemplazan a los del borrador (misma data, impuestos actualizados)

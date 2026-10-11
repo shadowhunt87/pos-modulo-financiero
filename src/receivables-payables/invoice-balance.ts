@@ -20,23 +20,23 @@ export function statusFor(balance: Dec, amountPaid: Dec, dueDate: Date | null, n
  * Descuenta `amount` del saldo. El UPDATE condicional es atómico: si dos
  * cobros simultáneos intentan consumir el mismo saldo, solo pasa el que cabe.
  */
-export async function applyToInvoice(tx: Tx, invoiceId: string, amount: Dec) {
+export async function applyToInvoice(tx: Tx, companyId: string, invoiceId: string, amount: Dec) {
   const res = await tx.invoice.updateMany({
-    where: { id: invoiceId, status: { in: OPEN_STATUSES }, balance: { gte: amount } },
+    where: { id: invoiceId, companyId, status: { in: OPEN_STATUSES }, balance: { gte: amount } },
     data: { balance: { decrement: amount }, amountPaid: { increment: amount } },
   });
   if (res.count === 0) throw new ConflictException('El saldo de la factura cambió; reintenta');
-  const inv = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
-  await tx.invoice.update({ where: { id: invoiceId }, data: { status: statusFor(inv.balance, inv.amountPaid, inv.dueDate) } });
+  const inv = await tx.invoice.findFirstOrThrow({ where: { id: invoiceId, companyId } });
+  await tx.invoice.update({ where: { id: invoiceId, companyId }, data: { status: statusFor(inv.balance, inv.amountPaid, inv.dueDate) } });
 }
 
 /** Revierte una aplicación (anulación de pago). */
-export async function releaseFromInvoice(tx: Tx, invoiceId: string, amount: Dec) {
+export async function releaseFromInvoice(tx: Tx, companyId: string, invoiceId: string, amount: Dec) {
   const res = await tx.invoice.updateMany({
-    where: { id: invoiceId, status: { not: InvoiceStatus.VOIDED } },
+    where: { id: invoiceId, companyId, status: { not: InvoiceStatus.VOIDED } },
     data: { balance: { increment: amount }, amountPaid: { decrement: amount } },
   });
   if (res.count === 0) return;
-  const inv = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
-  await tx.invoice.update({ where: { id: invoiceId }, data: { status: statusFor(inv.balance, inv.amountPaid, inv.dueDate) } });
+  const inv = await tx.invoice.findFirstOrThrow({ where: { id: invoiceId, companyId } });
+  await tx.invoice.update({ where: { id: invoiceId, companyId }, data: { status: statusFor(inv.balance, inv.amountPaid, inv.dueDate) } });
 }

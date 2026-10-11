@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
-import { AccountType, JournalEntryStatus } from '../../generated/prisma/enums.js';
+import { AccountType, JournalEntryStatus, JournalEntryType } from '../../generated/prisma/enums.js';
 import type { AuthUser } from '../../auth/types/auth-user.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { IncomeStatementQuery } from '../dto/reports-queries.dto.js';
@@ -28,9 +28,9 @@ export interface IncomeStatementResult {
  * Ingreso y Gasto son "nominales": no se habla de saldo inicial, solo del
  * movimiento DENTRO del período — por eso esto NO reutiliza
  * generalLedgerSummary() (que sí arrastra saldo inicial, correcto para
- * Activo/Pasivo/Patrimonio pero incorrecto aquí). Como este sistema no
- * tiene todavía un asiento de cierre que resetee Ingreso/Gasto a cero,
- * el único from/to confiable es el del rango que pide quien consulta.
+ * Activo/Pasivo/Patrimonio pero incorrecto aquí). Los asientos de cierre de
+ * año (type CLOSING) se excluyen: llevan Ingreso/Gasto a cero y, si se
+ * contaran, el estado de un año ya cerrado saldría vacío.
  */
 @Injectable()
 export class IncomeStatementGenerator {
@@ -54,6 +54,7 @@ export class IncomeStatementGenerator {
         journalEntry: {
           companyId: user.companyId,
           status: JournalEntryStatus.POSTED,
+          type: { not: JournalEntryType.CLOSING }, // el cierre anula el resultado; el reporte debe mostrarlo
           date: { gte: from, lte: to },
         },
         account: { type: { in: [AccountType.INCOME, AccountType.EXPENSE] } },

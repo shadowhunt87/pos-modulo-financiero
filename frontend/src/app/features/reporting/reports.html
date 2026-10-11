@@ -1,0 +1,312 @@
+<div class="page">
+  <div class="page-head">
+    <div><h1>Estados financieros</h1><p class="sub">Consulta, filtra y exporta los reportes contables a partir de los asientos contabilizados.</p></div>
+    @if (exportSpec(); as ex) { <app-export-buttons [path]="ex.path" [query]="ex.query" [name]="ex.name" /> }
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Reportes">
+    @for (t of TABS; track t.id) {
+      <button type="button" class="tab" role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="setTab(t.id)">{{ t.label }}</button>
+    }
+  </div>
+
+  <form class="toolbar" [formGroup]="form" (ngSubmit)="apply()" novalidate>
+    @if (tab() === 'balance') {
+      <div class="field"><label for="r-asof">Corte al</label><input id="r-asof" class="input" type="date" formControlName="asOf" /></div>
+      <div class="field"><label for="r-ps">Inicio del ejercicio</label><input id="r-ps" class="input" type="date" formControlName="periodStart" /><span class="hint">Opcional; por defecto el año fiscal.</span></div>
+    } @else {
+      <div class="field"><label for="r-from">Desde</label><input id="r-from" class="input" type="date" formControlName="from" /></div>
+      <div class="field"><label for="r-to">Hasta</label><input id="r-to" class="input" type="date" formControlName="to" /></div>
+    }
+    @if (tab() === 'account') {
+      <div class="field wide" role="group" aria-labelledby="lb-acc"><span id="lb-acc" class="label">Cuenta</span>
+        <app-combobox formControlName="accountId" [options]="accountOptions()" placeholder="Código o nombre de la cuenta" /></div>
+      <div class="field wide" role="group" aria-labelledby="lb-par"><span id="lb-par" class="label">Tercero (opcional)</span>
+        <app-combobox formControlName="partnerId" [options]="partnerOptions()" placeholder="Todos los terceros" /></div>
+    }
+    @if (tab() === 'subledger') {
+      <div class="field wide" role="group" aria-labelledby="lb-sub"><span id="lb-sub" class="label">Cuenta de control</span>
+        <app-combobox formControlName="accountId" [options]="subledgerOptions()" placeholder="Cuentas por cobrar, por pagar…" /></div>
+    }
+    <button type="submit" class="btn btn-primary" [disabled]="loading()">{{ loading() ? 'Cargando…' : 'Actualizar' }}</button>
+  </form>
+
+  <div class="btn-row presets no-print">
+    @if (tab() === 'balance') {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('today')">Hoy</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('prevMonthEnd')">Fin del mes anterior</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('prevYearEnd')">Fin del año anterior</button>
+    } @else {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('month')">Este mes</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('prevMonth')">Mes anterior</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('year')">Este año</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="preset('prevYear')">Año anterior</button>
+      @if (tab() === 'trial' || tab() === 'ledger' || tab() === 'journal' || tab() === 'account' || tab() === 'subledger') {
+        <button type="button" class="btn btn-ghost btn-sm" (click)="preset('all')">Todo el historial</button>
+      }
+    }
+  </div>
+
+  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  @if (message()) { <div class="notice info" role="status">{{ message() }}</div> }
+  @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+
+  <!-- Fila de árbol reutilizable: indentación por jerarquía del plan de cuentas -->
+  <ng-template #treeRows let-rows let-blank="blank" let-cols="cols">
+    @for (r of rows; track r.key) {
+      <tr [class.sub-row]="r.group">
+        <td class="mono nowrap">{{ r.code }}</td>
+        <td [style.padding-left.px]="12 + r.depth * 18">
+          @if (r.line) { <button type="button" class="linkbtn" (click)="openAccount(r.line.accountId)" title="Ver el mayor de esta cuenta">{{ r.name }}</button> } @else { {{ r.name }} }
+        </td>
+        @for (s of r.sums; track $index) { <td class="num" [class.neg]="s.startsWith('-')">{{ s | money: blank }}</td> }
+      </tr>
+    } @empty {
+      <tr><td [attr.colspan]="2 + cols" class="table-empty">Sin movimientos en este rango.</td></tr>
+    }
+  </ng-template>
+
+  @if (!loading() && !message()) {
+    @switch (tab()) {
+
+      @case ('income') {
+        @if (income(); as r) {
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">Ingresos</div><div class="f-value">{{ r.totalIncome | money }}</div></div>
+            <div class="figure"><div class="f-label">Gastos</div><div class="f-value">{{ r.totalExpenses | money }}</div></div>
+            <div class="figure"><div class="f-label">{{ r.netIncome.startsWith('-') ? 'Pérdida neta' : 'Utilidad neta' }}</div><div class="f-value" [class.neg]="r.netIncome.startsWith('-')">{{ r.netIncome | money }}</div><div class="f-note">Del {{ r.from | fdate }} al {{ r.to | fdate }}</div></div>
+          </div>
+          @if (incomeChart(); as cfg) {
+            <section class="panel panel-pad" style="margin-bottom:16px"><h2 style="margin-bottom:8px">Ingresos contra gastos</h2><app-chart [config]="cfg" height="220px" /></section>
+          }
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Código</th><th>Cuenta</th><th class="num">Monto</th></tr></thead>
+            <tbody>
+              <tr class="sec-title"><td colspan="3">Ingresos</td></tr>
+              <ng-container *ngTemplateOutlet="treeRows; context: { $implicit: incomeTree(), blank: false, cols: 1 }" />
+              <tr class="total-row"><td colspan="2">Total de ingresos</td><td class="num">{{ r.totalIncome | money }}</td></tr>
+              <tr class="sec-title"><td colspan="3">Gastos</td></tr>
+              <ng-container *ngTemplateOutlet="treeRows; context: { $implicit: expenseTree(), blank: false, cols: 1 }" />
+              <tr class="total-row"><td colspan="2">Total de gastos</td><td class="num">{{ r.totalExpenses | money }}</td></tr>
+              <tr class="grand"><td colspan="2">Resultado neto</td><td class="num" [class.neg]="r.netIncome.startsWith('-')">{{ r.netIncome | money }}</td></tr>
+            </tbody>
+          </table></div></section>
+          <p class="hint" style="margin-top:8px">Los asientos de cierre de año no se cuentan, para que un año cerrado siga mostrando su resultado.</p>
+        }
+      }
+
+      @case ('balance') {
+        @if (balance(); as b) {
+          @if (!b.balanced) { <div class="notice warn" role="alert" style="margin-bottom:12px">El balance no cuadra: el activo difiere del pasivo más el patrimonio en {{ balanceDiff() | money }}. Revisa los asientos y la clasificación de cuentas.</div> }
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">Total activo</div><div class="f-value">{{ b.totalAssets | money }}</div><div class="f-note">Al {{ b.asOf | fdate }}</div></div>
+            <div class="figure"><div class="f-label">Total pasivo</div><div class="f-value">{{ b.totalLiabilities | money }}</div></div>
+            <div class="figure"><div class="f-label">Total patrimonio</div><div class="f-value">{{ b.totalEquity | money }}</div></div>
+            <div class="figure"><div class="f-label">Estado</div><div class="f-value" style="font-size:18px"><span class="badge" [class.pos]="b.balanced" [class.neg]="!b.balanced">{{ b.balanced ? 'Cuadrado' : 'Descuadrado' }}</span></div></div>
+          </div>
+          <div class="cols-2">
+            <section class="panel"><div class="table-wrap"><table class="table">
+              <thead><tr><th>Código</th><th>Activo</th><th class="num">Saldo</th></tr></thead>
+              <tbody>
+                <ng-container *ngTemplateOutlet="treeRows; context: { $implicit: assetTree(), blank: false, cols: 1 }" />
+                <tr class="grand"><td colspan="2">Total activo</td><td class="num">{{ b.totalAssets | money }}</td></tr>
+              </tbody>
+            </table></div></section>
+            <section class="panel"><div class="table-wrap"><table class="table">
+              <thead><tr><th>Código</th><th>Pasivo y patrimonio</th><th class="num">Saldo</th></tr></thead>
+              <tbody>
+                <tr class="sec-title"><td colspan="3">Pasivo</td></tr>
+                <ng-container *ngTemplateOutlet="treeRows; context: { $implicit: liabilityTree(), blank: false, cols: 1 }" />
+                <tr class="total-row"><td colspan="2">Total pasivo</td><td class="num">{{ b.totalLiabilities | money }}</td></tr>
+                <tr class="sec-title"><td colspan="3">Patrimonio</td></tr>
+                <ng-container *ngTemplateOutlet="treeRows; context: { $implicit: equityTree(), blank: false, cols: 1 }" />
+                <tr><td></td><td style="padding-left:12px">Resultado del ejercicio en curso</td><td class="num" [class.neg]="b.netIncomeOfPeriod.startsWith('-')">{{ b.netIncomeOfPeriod | money }}</td></tr>
+                <tr><td></td><td style="padding-left:12px">Resultados de ejercicios anteriores sin cerrar</td><td class="num" [class.neg]="b.netIncomePriorPeriods.startsWith('-')">{{ b.netIncomePriorPeriods | money }}</td></tr>
+                <tr class="total-row"><td colspan="2">Total patrimonio</td><td class="num">{{ b.totalEquity | money }}</td></tr>
+                <tr class="grand"><td colspan="2">Total pasivo y patrimonio</td><td class="num">{{ addDec(b.totalLiabilities, b.totalEquity) | money }}</td></tr>
+              </tbody>
+            </table></div></section>
+          </div>
+          <p class="hint" style="margin-top:8px">El ejercicio en curso se calcula desde el {{ b.periodStart | fdate }}. Lo que no se ha cerrado a utilidades acumuladas se suma al patrimonio para que el balance cuadre.</p>
+        }
+      }
+
+      @case ('cash') {
+        @if (cash(); as c) {
+          @for (w of c.warnings; track $index) { <div class="notice warn" role="alert" style="margin-bottom:8px">{{ w }}</div> }
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">Efectivo al inicio</div><div class="f-value">{{ c.cashAtBeginning | money }}</div></div>
+            <div class="figure"><div class="f-label">Variación del efectivo</div><div class="f-value" [class.neg]="c.netChangeInCash.startsWith('-')">{{ c.netChangeInCash | money }}</div></div>
+            <div class="figure"><div class="f-label">Efectivo al final</div><div class="f-value">{{ c.cashAtEnd | money }}</div><div class="f-note">Del {{ c.from | fdate }} al {{ c.to | fdate }}</div></div>
+          </div>
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Código</th><th>Concepto (método indirecto)</th><th class="num">Monto</th></tr></thead>
+            <tbody>
+              @for (s of cashSections(); track s.title) {
+                <tr class="sec-title"><td colspan="3">{{ s.title }}</td></tr>
+                @for (l of s.sec.lines; track $index) {
+                  <tr>
+                    <td class="mono nowrap">{{ l.code }}</td>
+                    <td class="indent-1">@if (l.accountId) { <button type="button" class="linkbtn" (click)="openAccount(l.accountId)">{{ l.name }}</button> } @else { {{ l.name }} }</td>
+                    <td class="num" [class.neg]="l.amount.startsWith('-')">{{ l.amount | money }}</td>
+                  </tr>
+                } @empty { <tr><td colspan="3" class="dim indent-1">Sin movimientos.</td></tr> }
+                <tr class="total-row"><td colspan="2">Neto de esta actividad</td><td class="num" [class.neg]="s.sec.total.startsWith('-')">{{ s.sec.total | money }}</td></tr>
+              }
+              <tr class="grand"><td colspan="2">Variación neta del efectivo calculada</td><td class="num">{{ c.calculatedChange | money }}</td></tr>
+              <tr><td colspan="2">Variación real del efectivo</td><td class="num">{{ c.netChangeInCash | money }}</td></tr>
+              <tr><td colspan="2">Diferencia</td><td class="num" [class.neg]="c.difference !== '0' && !c.balanced">{{ c.difference | money }}</td></tr>
+            </tbody>
+          </table></div></section>
+          <p class="hint" style="margin-top:8px">Para que el flujo cuadre, cada cuenta de balance debe tener su categoría de flujo en la clasificación de cuentas.</p>
+        }
+      }
+
+      @case ('trial') {
+        @if (trial(); as t) {
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">Total débitos</div><div class="f-value">{{ t.totalDebit | money }}</div></div>
+            <div class="figure"><div class="f-label">Total créditos</div><div class="f-value">{{ t.totalCredit | money }}</div></div>
+            <div class="figure"><div class="f-label">Estado</div><div class="f-value" style="font-size:18px"><span class="badge" [class.pos]="t.balanced" [class.neg]="!t.balanced">{{ t.balanced ? 'Cuadrada' : 'Descuadrada' }}</span></div></div>
+          </div>
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Código</th><th>Cuenta</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo (deudor + / acreedor −)</th></tr></thead>
+            <tbody><ng-container *ngTemplateOutlet="treeRows; context: { $implicit: trialTree(), blank: true, cols: 3 }" /></tbody>
+            <tfoot><tr><td colspan="2">Totales</td><td class="num">{{ t.totalDebit | money }}</td><td class="num">{{ t.totalCredit | money }}</td><td class="num">{{ subDec(t.totalDebit, t.totalCredit) | money }}</td></tr></tfoot>
+          </table></div></section>
+        }
+      }
+
+      @case ('ledger') {
+        @if (gl(); as g) {
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Código</th><th>Cuenta</th><th class="num">Saldo inicial</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo final</th></tr></thead>
+            <tbody><ng-container *ngTemplateOutlet="treeRows; context: { $implicit: glTree(), blank: true, cols: 4 }" /></tbody>
+            <tfoot><tr><td colspan="3">Movimiento del período</td><td class="num">{{ g.totalDebit | money }}</td><td class="num">{{ g.totalCredit | money }}</td><td></td></tr></tfoot>
+          </table></div></section>
+          <p class="hint" style="margin-top:8px">Los saldos están expresados según la naturaleza de cada cuenta. Pulsa el nombre de una cuenta para ver sus movimientos.</p>
+        }
+      }
+
+      @case ('journal') {
+        @if (journal(); as j) {
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">Asientos</div><div class="f-value">{{ j.total }}</div></div>
+            <div class="figure"><div class="f-label">Total débitos</div><div class="f-value">{{ j.totalDebit | money }}</div></div>
+            <div class="figure"><div class="f-label">Total créditos</div><div class="f-value">{{ j.totalCredit | money }}</div></div>
+          </div>
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Fecha</th><th>Cuenta</th><th>Detalle</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
+            <tbody>
+              @for (e of j.data; track e.id) {
+                <tr class="sub-row">
+                  <td class="nowrap">{{ e.date | fdate }}</td>
+                  <td colspan="2"><a [routerLink]="['/entries', e.id]">{{ e.description }}</a>@if (e.reference) { <span class="dim"> · Ref. {{ e.reference }}</span> }</td>
+                  <td class="num">{{ e.totalDebit | money }}</td><td class="num">{{ e.totalCredit | money }}</td>
+                </tr>
+                @for (l of e.lines; track $index) {
+                  <tr class="entry-lines">
+                    <td></td>
+                    <td [class.indent-2]="nz(l.credit) && !nz(l.debit)" class="indent-1"><span class="mono">{{ l.code }}</span> {{ l.name }}</td>
+                    <td class="dim">{{ l.description }}</td>
+                    <td class="num">{{ l.debit | money: true }}</td><td class="num">{{ l.credit | money: true }}</td>
+                  </tr>
+                }
+              } @empty { <tr><td colspan="5" class="table-empty">No hay asientos contabilizados en este rango.</td></tr> }
+            </tbody>
+          </table></div>
+          <app-pagination [page]="jPage()" [limit]="pageSize" [total]="j.total" (pageChange)="goJournal($event)" /></section>
+        }
+      }
+
+      @case ('account') {
+        @if (detail(); as d) {
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">{{ d.account.code }} · {{ d.account.name }}</div><div class="f-value" style="font-size:16px">{{ d.account.type | lbl: ACCOUNT_TYPE }}</div><div class="f-note">Naturaleza {{ d.account.nature === 'DEBIT' ? 'deudora' : 'acreedora' }}</div></div>
+            <div class="figure"><div class="f-label">Saldo inicial</div><div class="f-value">{{ d.openingBalance | money }}</div></div>
+            <div class="figure"><div class="f-label">Débitos / créditos</div><div class="f-value" style="font-size:18px">{{ d.totalDebit | money }} / {{ d.totalCredit | money }}</div></div>
+            <div class="figure"><div class="f-label">Saldo final</div><div class="f-value">{{ d.closingBalance | money }}</div></div>
+          </div>
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Fecha</th><th>Asiento</th><th>Descripción</th><th>Tercero</th><th>Documento origen</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo</th></tr></thead>
+            <tbody>
+              <tr class="sub-row"><td colspan="7">Saldo inicial</td><td class="num">{{ d.openingBalance | money }}</td></tr>
+              @for (m of d.movements; track m.lineId) {
+                <tr>
+                  <td class="nowrap">{{ m.date | fdate }}</td>
+                  <td><a [routerLink]="['/entries', m.entryId]">{{ m.entryNumber || 'Ver asiento' }}</a><div class="dim">{{ m.entryType | lbl: ENTRY_TYPE }}</div></td>
+                  <td>{{ m.lineDescription || m.description }}@if (m.reference) { <div class="dim">Ref. {{ m.reference }}</div> }</td>
+                  <td>{{ m.partner?.name }}</td>
+                  <td>@if (m.source?.href; as href) { <a [routerLink]="href">{{ sourceText(m) }}</a> } @else { {{ sourceText(m) }} }</td>
+                  <td class="num">{{ m.debit | money: true }}</td><td class="num">{{ m.credit | money: true }}</td>
+                  <td class="num" [class.neg]="m.balance.startsWith('-')">{{ m.balance | money }}</td>
+                </tr>
+              } @empty { <tr><td colspan="8" class="table-empty">No hay movimientos de esta cuenta en el rango.</td></tr> }
+            </tbody>
+            <tfoot><tr><td colspan="5">Totales del rango</td><td class="num">{{ d.totalDebit | money }}</td><td class="num">{{ d.totalCredit | money }}</td><td class="num">{{ d.closingBalance | money }}</td></tr></tfoot>
+          </table></div>
+          <app-pagination [page]="dPage()" [limit]="pageSize" [total]="d.total" (pageChange)="goDetail($event)" /></section>
+          <p class="hint" style="margin-top:8px">El saldo corrido sigue la naturaleza de la cuenta y continúa entre páginas.</p>
+        }
+      }
+
+      @case ('subledger') {
+        @if (subledger(); as s) {
+          @for (w of s.warnings; track $index) { <div class="notice warn" role="alert" style="margin-bottom:8px">{{ w }}</div> }
+          <div class="figures" style="margin-bottom:16px">
+            <div class="figure"><div class="f-label">{{ s.account.code }} · {{ s.account.name }}</div><div class="f-value" style="font-size:16px">{{ s.partners.length }} terceros</div></div>
+            <div class="figure"><div class="f-label">Saldo inicial</div><div class="f-value">{{ s.totals.openingBalance | money }}</div></div>
+            <div class="figure"><div class="f-label">Saldo final</div><div class="f-value">{{ s.totals.closingBalance | money }}</div></div>
+          </div>
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Tercero</th><th>RNC / cédula</th><th class="num">Saldo inicial</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo final</th></tr></thead>
+            <tbody>
+              @for (p of s.partners; track p.partnerId ?? 'none') {
+                <tr>
+                  <td><button type="button" class="linkbtn" (click)="openAccount(s.account.id, p.partnerId ?? '')" title="Ver los movimientos de este tercero">{{ p.name }}</button></td>
+                  <td class="mono">{{ p.taxId }}</td>
+                  <td class="num">{{ p.openingBalance | money }}</td><td class="num">{{ p.debit | money: true }}</td><td class="num">{{ p.credit | money: true }}</td>
+                  <td class="num" [class.neg]="p.closingBalance.startsWith('-')">{{ p.closingBalance | money }}</td>
+                </tr>
+              } @empty { <tr><td colspan="6" class="table-empty">Esta cuenta no tiene movimientos en el rango.</td></tr> }
+            </tbody>
+            <tfoot><tr><td colspan="2">Totales</td><td class="num">{{ s.totals.openingBalance | money }}</td><td class="num">{{ s.totals.debit | money }}</td><td class="num">{{ s.totals.credit | money }}</td><td class="num">{{ s.totals.closingBalance | money }}</td></tr></tfoot>
+          </table></div></section>
+        }
+      }
+
+      @case ('ratios') {
+        @if (ratios(); as r) {
+          @for (w of r.warnings; track $index) { <div class="notice warn" role="alert" style="margin-bottom:8px">{{ w }}</div> }
+          @if (statementFigures().length) {
+            <div class="figures" style="margin-bottom:16px">
+              @for (f of statementFigures(); track f.label) { <div class="figure"><div class="f-label">{{ f.label }}</div><div class="f-value" style="font-size:20px" [class.neg]="f.value.startsWith('-')">{{ f.value | money }}</div></div> }
+            </div>
+          }
+          <div class="cols-2">
+            @for (g of ratioGroups(); track g.key) {
+              <section class="panel"><div class="panel-head"><h2>{{ g.label }}</h2></div><div class="table-wrap"><table class="table">
+                <thead><tr><th>Razón</th><th class="num">Valor</th></tr></thead>
+                <tbody>
+                  @for (x of g.items; track x.key) {
+                    <tr>
+                      <td>{{ x.label }}<div class="dim ratio-formula">{{ x.formula }}</div>@if (x.note) { <div class="faint ratio-formula">{{ x.note }}</div> }</td>
+                      <td class="num">{{ ratioText(x) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table></div></section>
+            }
+          </div>
+          @if (r.unclassified.length) {
+            <section class="panel" style="margin-top:16px"><div class="panel-head"><h2>Cuentas sin categoría</h2><span class="dim">Clasifícalas para que las razones sean completas</span></div><div class="table-wrap"><table class="table">
+              <thead><tr><th>Cuenta</th><th>Sección</th><th class="num">Monto</th></tr></thead>
+              <tbody>@for (u of r.unclassified; track u.accountId) { <tr><td><span class="mono">{{ u.code }}</span> {{ u.name }}</td><td>{{ sectionLabel[u.section] || u.section }}</td><td class="num">{{ u.amount | money }}</td></tr> }</tbody>
+            </table></div></section>
+          }
+          <p class="hint" style="margin-top:8px">Período de {{ r.periodDays }} días; los saldos se toman {{ r.balancesBasis === 'average' ? 'como promedio entre el inicio y el cierre' : 'al cierre' }}.</p>
+        }
+      }
+    }
+  }
+</div>

@@ -1,0 +1,194 @@
+<div class="page">
+  @if (loading()) {
+    <div class="loading"><span class="spinner"></span> Cargando…</div>
+  } @else if (error()) {
+    <div class="notice neg" role="alert">{{ error() }}</div>
+    <p style="margin-top:12px"><a class="btn" routerLink="/invoices">Volver a facturas</a></p>
+  } @else if (inv(); as i) {
+    <div class="page-head">
+      <div>
+        <h1>{{ i.type | lbl: INVOICE_TYPE }} <span class="mono">{{ isDraft() ? 'en borrador' : i.number }}</span></h1>
+        <p class="sub"><app-status [value]="i.status" [map]="INVOICE_STATUS" />
+          @if (i.ncf) { · NCF <span class="mono">{{ i.ncf }}</span> }
+          · {{ i.partner.name }}</p>
+      </div>
+      <div class="btn-row no-print">
+        <a class="btn" routerLink="/invoices">Volver</a>
+        <button type="button" class="btn" (click)="print()">Imprimir</button>
+        @if (isDraft() && canWrite) {
+          <a class="btn" [routerLink]="['/invoices', i.id, 'edit']">Editar</a>
+          <button type="button" class="btn btn-danger" (click)="remove()">Eliminar borrador</button>
+          <button type="button" class="btn btn-primary" (click)="openIssue()">Emitir factura</button>
+        }
+        @if (canMakeNote()) {
+          <a class="btn" routerLink="/invoices/new" [queryParams]="{ type: 'CREDIT_NOTE', related: i.id }">Nota de crédito</a>
+          <a class="btn" routerLink="/invoices/new" [queryParams]="{ type: 'DEBIT_NOTE', related: i.id }">Nota de débito</a>
+        }
+        @if (isOpen() && canVoid) { <button type="button" class="btn btn-danger" (click)="openVoid()">Anular</button> }
+      </div>
+    </div>
+
+    @if (i.status === 'VOIDED') {
+      <div class="notice neg" role="status" style="margin-bottom:16px">
+        <div><strong>Factura anulada</strong> el {{ i.voidedAt | fdate }}.
+          Motivo: {{ i.voidReason }}@if (i.voidReasonCode) { <span> (código {{ i.voidReasonCode }})</span> }</div>
+      </div>
+    }
+    @if (isDraft()) {
+      <div class="notice info" role="status" style="margin-bottom:16px">Este borrador todavía no tiene número, NCF ni asiento. Se generan al emitirlo.</div>
+    }
+
+    <div class="figures" style="margin-bottom:16px">
+      <div class="figure"><div class="f-label">Total</div><div class="f-value">{{ i.total | money }}</div><div class="f-note">{{ i.currency }}@if (i.currency !== 'DOP' && i.exchangeRate !== '1') { · tasa {{ i.exchangeRate }} }</div></div>
+      <div class="figure"><div class="f-label">Pagado</div><div class="f-value">{{ paidDisplay() | money }}</div></div>
+      <div class="figure"><div class="f-label">Saldo</div><div class="f-value" [class.neg]="i.status === 'OVERDUE'">{{ i.balance | money }}</div>
+        @if (i.dueDate) { <div class="f-note">Vence {{ i.dueDate | fdate }}</div> }</div>
+    </div>
+
+    <div class="cols-2">
+      <section class="panel panel-pad">
+        <h2 style="margin-bottom:12px">Datos del documento</h2>
+        <dl class="kv">
+          <dt>Tercero</dt><dd><strong>{{ i.partner.name }}</strong>@if (i.partner.taxId) { <span class="mono dim"> · {{ i.partner.taxId }}</span> }</dd>
+          <dt>Fecha de emisión</dt><dd>{{ i.issueDate | fdate }}</dd>
+          <dt>Vencimiento</dt><dd>{{ i.dueDate | fdate }}</dd>
+          @if (i.ncfType) { <dt>Tipo de comprobante</dt><dd class="mono">{{ i.ncfType }}</dd> }
+          @if (i.ncfExpiration) { <dt>Vence el NCF</dt><dd>{{ i.ncfExpiration | fdate }}</dd> }
+          @if (i.relatedInvoice; as r) { <dt>Modifica la factura</dt><dd><a class="mono" [routerLink]="['/invoices', r.id]">{{ r.number }}</a>@if (r.ncf) { <span class="dim mono"> · {{ r.ncf }}</span> }</dd> }
+          @if (i.dgiiIncomeType) { <dt>Tipo de ingreso (607)</dt><dd>{{ i.dgiiIncomeType }} · {{ DGII_INCOME_TYPE[i.dgiiIncomeType] }}</dd> }
+          @if (i.dgiiExpenseType) { <dt>Tipo de gasto (606)</dt><dd>{{ i.dgiiExpenseType }} · {{ DGII_EXPENSE_TYPE[i.dgiiExpenseType] }}</dd> }
+          @if (i.issuedAt) { <dt>Emitida el</dt><dd>{{ i.issuedAt | fdatetime }}</dd> }
+          @if (i.notes) { <dt>Notas</dt><dd>{{ i.notes }}</dd> }
+        </dl>
+      </section>
+      <section class="panel panel-pad">
+        <h2 style="margin-bottom:12px">Asiento contable</h2>
+        @if (i.journalEntry; as e) {
+          <dl class="kv">
+            <dt>Asiento</dt><dd><a class="mono" [routerLink]="['/entries', e.id]">{{ e.number }}</a></dd>
+            <dt>Estado</dt><dd><app-status [value]="e.status" [map]="ENTRY_STATUS" /></dd>
+          </dl>
+          <p class="hint" style="margin-top:10px">Abre el asiento para ver los débitos y créditos generados.</p>
+        } @else {
+          <p class="dim">{{ isDraft() ? 'Se genera al emitir la factura.' : 'Esta factura no tiene asiento.' }}</p>
+        }
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:16px">
+      <div class="panel-head"><h2>Líneas</h2></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Descripción</th><th class="num">Cantidad</th><th class="num">Precio</th><th class="num">Descuento</th><th>Impuesto</th><th class="num">ITBIS / impuesto</th><th>Cuenta</th><th class="num">Importe</th></tr></thead>
+          <tbody>
+            @for (l of i.lines; track l.id) {
+              <tr>
+                <td>{{ l.description }}</td>
+                <td class="num">{{ l.quantity | money }}</td>
+                <td class="num">{{ l.unitPrice | money }}</td>
+                <td class="num">{{ l.discount | money: 'blank' }}</td>
+                <td>{{ l.taxRate?.name }}</td>
+                <td class="num">{{ l.taxAmount | money: 'blank' }}</td>
+                <td class="dim">{{ accountName(l.accountId) || 'Predeterminada' }}</td>
+                <td class="num">{{ l.total | money }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr><td colspan="7" class="num">Subtotal</td><td class="num">{{ i.subtotal | money }}</td></tr>
+            <tr><td colspan="7" class="num">Impuestos</td><td class="num">{{ i.taxTotal | money }}</td></tr>
+            <tr><td colspan="7" class="num">Total</td><td class="num">{{ i.total | money }}</td></tr>
+            @if (i.withholdings.length) {
+              @for (w of i.withholdings; track w.id) {
+                <tr><td colspan="7" class="num">Retención: {{ w.taxRate?.name }} (base {{ w.base | money }})</td><td class="num">−{{ w.amount | money }}</td></tr>
+              }
+              <tr><td colspan="7" class="num">Neto a {{ isPurchase() ? 'pagar' : 'cobrar' }}</td><td class="num">{{ i.balance | money }}</td></tr>
+            }
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    @if (i.status !== 'DRAFT') {
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Pagos aplicados</h2></div>
+        @if (payments().length) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Pago</th><th>Fecha</th><th>Método</th><th>Estado</th><th class="num">Monto aplicado</th></tr></thead>
+              <tbody>
+                @for (p of payments(); track p.payment.id) {
+                  <tr>
+                    <td><a class="mono" [routerLink]="['/payments', p.payment.id]">{{ p.payment.number ?? 'Ver pago' }}</a></td>
+                    <td>{{ p.payment.date | fdate }}</td>
+                    <td>{{ p.payment.method | lbl: PAYMENT_METHOD }}</td>
+                    <td><app-status [value]="p.payment.status" [map]="PAYMENT_STATUS" /></td>
+                    <td class="num">{{ p.amount | money }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="dim panel-pad">{{ paidDisplay() === '0.00' ? 'Todavía no tiene pagos aplicados.' : 'El pago o crédito aplicado no aparece en el detalle de cobros y pagos.' }}</p>
+        }
+        @if (paymentsNote()) { <p class="hint panel-pad" style="padding-top:0">{{ paymentsNote() }}</p> }
+      </section>
+    }
+
+    <div class="no-print" style="margin-top:16px">
+      <app-attachments parent="invoiceId" [parentId]="i.id" [canEdit]="canAttach" />
+    </div>
+  }
+</div>
+
+<app-modal [open]="issueOpen()" title="Emitir factura" width="520px" (closed)="issueOpen.set(false)">
+  @if (inv(); as i) {
+    <form id="issue-form" [formGroup]="issueForm" (ngSubmit)="issue()" novalidate>
+      <p class="dim" style="margin-bottom:14px">Al emitir se asigna el número interno, se consume el NCF y se genera el asiento contable. Después ya no se puede editar.</p>
+      <div class="form-grid">
+        @if (i.type === 'SALE') {
+          <div class="field span-all"><label for="is-type">Tipo de comprobante (NCF)</label>
+            <select id="is-type" class="select" formControlName="ncfType"><option value="">Elige…</option>
+              @for (n of salesNcf(); track n.code) { <option [value]="n.code">{{ n.code }} · {{ n.name }}</option> }</select>
+            <span class="hint">Se toma de la siguiente secuencia disponible de este tipo.</span></div>
+        } @else if (i.type === 'PURCHASE') {
+          <div class="field span-all"><label for="is-ncf">NCF del proveedor</label>
+            <input id="is-ncf" class="input mono" formControlName="ncf" maxlength="13" placeholder="B0100000001" /></div>
+          <div class="field span-all"><label for="is-own">Comprobante propio</label>
+            <select id="is-own" class="select" formControlName="ncfType"><option value="">No, usar el NCF del proveedor</option>
+              <option value="B11">B11 · Proveedor informal</option><option value="B13">B13 · Gastos menores</option></select></div>
+        } @else {
+          <div class="field span-all"><label for="is-ncf2">NCF recibido (opcional)</label>
+            <input id="is-ncf2" class="input mono" formControlName="ncf" maxlength="13" />
+            <span class="hint">Solo si la nota viene de un proveedor. En ventas el NCF se asigna solo.</span></div>
+        }
+      </div>
+      @if (actionError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ actionError() }}</div> }
+    </form>
+  }
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="issueOpen.set(false)">Cancelar</button>
+    <button type="submit" form="issue-form" class="btn btn-primary" [disabled]="busy()">{{ busy() ? 'Emitiendo…' : 'Emitir factura' }}</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="voidOpen()" title="Anular factura" width="520px" (closed)="voidOpen.set(false)">
+  <form id="void-form" [formGroup]="voidForm" (ngSubmit)="doVoid()" novalidate>
+    <p class="dim" style="margin-bottom:14px">La factura queda anulada y su asiento se revierte. Si tiene pagos aplicados, anúlalos primero.</p>
+    <div class="form-grid">
+      <div class="field span-all"><label for="v-reason">Motivo</label>
+        <textarea id="v-reason" class="textarea" formControlName="reason" rows="3" maxlength="500"></textarea>
+        @if (voidForm.controls.reason.touched && voidForm.controls.reason.invalid) { <span class="error-text">Escribe el motivo de la anulación.</span> }</div>
+      <div class="field span-all"><label for="v-code">Código de anulación DGII {{ needsVoidCode() ? '' : '(opcional)' }}</label>
+        <select id="v-code" class="select" formControlName="reasonCode"><option value="">Elige…</option>
+          @for (c of voidCodes; track c[0]) { <option [value]="c[0]">{{ c[0] }} · {{ c[1] }}</option> }</select>
+        <span class="hint">{{ needsVoidCode() ? 'Obligatorio porque el comprobante lo emitiste tú (reporte 608).' : 'Se reporta en el 608 solo si el comprobante es tuyo.' }}</span></div>
+    </div>
+    @if (actionError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ actionError() }}</div> }
+  </form>
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="voidOpen.set(false)">Cancelar</button>
+    <button type="submit" form="void-form" class="btn btn-danger" [disabled]="busy()">{{ busy() ? 'Anulando…' : 'Anular factura' }}</button>
+  </ng-container>
+</app-modal>

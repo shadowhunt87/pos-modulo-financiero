@@ -1,5 +1,7 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 
 /**
@@ -25,5 +27,29 @@ export async function createApp(options: { silent?: boolean } = {}): Promise<INe
       transform: true,
     }),
   );
+
+  const config = app.get(ConfigService);
+
+  // Cabeceras de seguridad (nosniff, HSTS, sin X-Powered-By, etc.)
+  app.use(helmet());
+
+  // Detrás de nginx/Cloudflare/load balancer hay que decir cuántos proxies son; si no, todos los
+  // clientes parecen tener la IP del proxy y el límite de intentos de login castigaría a todos juntos.
+  // Con TRUST_PROXY=0 (default) se ignora X-Forwarded-For: nadie puede falsear su IP.
+  // Number(): ConfigService puede devolver '1' (texto) y Express lo leería como una IP, no como "1 proxy"
+  const hops = Number(config.get('TRUST_PROXY') ?? 0);
+  if (hops > 0) app.getHttpAdapter().getInstance().set('trust proxy', hops);
+
+  // CORS apagado por defecto. Solo se abre a los orígenes listados (frontend), nunca a '*'.
+  const origins = (config.get<string>('CORS_ORIGINS') ?? '').split(',').map((o) => o.trim()).filter(Boolean);
+  if (origins.length) {
+    app.enableCors({
+      origin: origins,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      allowedHeaders: ['Authorization', 'Content-Type'],
+      exposedHeaders: ['Content-Disposition', 'Retry-After'],
+      maxAge: 600,
+    });
+  }
   return app;
 }

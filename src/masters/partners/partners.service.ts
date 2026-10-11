@@ -97,7 +97,7 @@ export class PartnersService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.partner.update({ where: { id }, data });
+      const updated = await tx.partner.update({ where: { id, companyId: user.companyId }, data });
       await writeAudit(tx, user, 'Partner', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return updated;
     });

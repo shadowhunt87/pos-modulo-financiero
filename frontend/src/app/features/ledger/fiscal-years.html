@@ -1,0 +1,128 @@
+<div class="page">
+  <div class="page-head">
+    <div><h1>Años fiscales y cierre</h1><p class="sub">Define el ejercicio contable y ciérralo cuando termine.</p></div>
+    @if (isAdmin) { <button type="button" class="btn btn-primary" (click)="openNew()">Nuevo año fiscal</button> }
+  </div>
+
+  <div class="notice info" role="note">
+    <div>
+      <strong>Qué pasa al cerrar un año.</strong>
+      Se crea un asiento de cierre que deja en cero todas las cuentas de ingresos y gastos del año y pasa la ganancia o pérdida a la cuenta de utilidades acumuladas.
+      También se cierran los períodos del año, de modo que ya no se pueden registrar ni anular asientos con fecha dentro de él.
+      Si te equivocas, <em>reabrir</em> anula el asiento de cierre y vuelve a abrir los períodos. Antes de cerrar usa la vista previa para ver el resultado.
+    </div>
+  </div>
+
+  @if (error()) { <div class="notice neg" role="alert" style="margin-top:14px">{{ error() }}</div> }
+  <section class="panel" style="margin-top:16px">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Año</th><th>Desde</th><th>Hasta</th><th class="num">Períodos</th><th>Estado</th><th>Cerrado el</th><th></th></tr></thead>
+        <tbody>
+          @if (loading()) { <tr><td colspan="7"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
+          @for (y of years(); track y.id) {
+            <tr>
+              <td><strong>{{ y.name }}</strong></td>
+              <td>{{ y.startDate | fdate }}</td><td>{{ y.endDate | fdate }}</td>
+              <td class="num">{{ y._count?.periods ?? 0 }}</td>
+              <td><app-status [value]="y.status" [map]="PERIOD_STATUS" /></td>
+              <td>{{ y.closedAt | fdate }}</td>
+              <td class="actions">
+                @if (y.status === 'OPEN') {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="openPreview(y)">Vista previa de cierre</button>
+                } @else {
+                  @if (y.closingEntryId) { <a class="btn btn-ghost btn-sm" [routerLink]="['/entries', y.closingEntryId]">Ver asiento de cierre</a> }
+                  @if (isAdmin) { <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === y.id" (click)="reopen(y)">Reabrir</button> }
+                }
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading()) { <tr><td colspan="7" class="table-empty">Todavía no hay años fiscales. Crea el primero para generar sus períodos mensuales.</td></tr> }
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<app-modal [open]="modalOpen()" title="Nuevo año fiscal" width="560px" (closed)="modalOpen.set(false)">
+  <form id="year-form" [formGroup]="form" (ngSubmit)="create()" novalidate>
+    <div class="form-grid">
+      <div class="field span-all"><label for="y-name">Nombre</label><input id="y-name" class="input" formControlName="name" maxlength="100" placeholder="2027" />
+        @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Escribe el nombre del año.</span> }</div>
+      <div class="field"><label for="y-from">Desde</label><input id="y-from" type="date" class="input" formControlName="startDate" /></div>
+      <div class="field"><label for="y-to">Hasta</label><input id="y-to" type="date" class="input" formControlName="endDate" /></div>
+      <label class="check span-all"><input type="checkbox" formControlName="generatePeriods" /> Generar los períodos mensuales</label>
+    </div>
+    <p class="hint" style="margin-top:10px">Si lo desmarcas no se crean períodos: se enlazan al año los que ya existan dentro de su rango. El año no puede solaparse con otro.</p>
+    @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }
+  </form>
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="modalOpen.set(false)">Cancelar</button>
+    <button type="submit" form="year-form" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Crear año' }}</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="previewOpen()" [title]="previewTitle()" width="900px" (closed)="previewOpen.set(false)">
+  @if (previewLoading()) { <div class="loading"><span class="spinner"></span> Calculando el cierre…</div> }
+  @if (previewError()) { <div class="notice neg" role="alert">{{ previewError() }}</div> }
+  @if (preview(); as p) {
+    @if (p.issues.length) {
+      <div class="notice warn" role="alert">
+        <div><strong>Antes de cerrar hay que resolver:</strong>
+          <ul style="margin:6px 0 0 18px">@for (i of p.issues; track i) { <li>{{ i }}</li> }</ul></div>
+      </div>
+    } @else {
+      <div class="notice pos" role="status">Todo listo: el año se puede cerrar.</div>
+    }
+    @if (closeIssues().length) {
+      <div class="notice neg" style="margin-top:12px" role="alert">
+        <div><strong>No se pudo cerrar el año:</strong>
+          <ul style="margin:6px 0 0 18px">@for (i of closeIssues(); track i) { <li>{{ i }}</li> }</ul></div>
+      </div>
+    }
+
+    <div class="figures" style="margin-top:16px">
+      <div class="figure"><div class="f-label">Ingresos del año</div><div class="f-value">{{ p.totalIncome | money }}</div></div>
+      <div class="figure"><div class="f-label">Gastos del año</div><div class="f-value">{{ p.totalExpenses | money }}</div></div>
+      <div class="figure"><div class="f-label">{{ sign(p.netResult) < 0 ? 'Pérdida' : 'Ganancia' }}</div>
+        <div class="f-value" [class.neg]="sign(p.netResult) < 0" [class.pos]="sign(p.netResult) > 0">{{ p.netResult | money }}</div>
+        <div class="f-note">Va a {{ p.retainedEarningsAccount ? p.retainedEarningsAccount.code + ' · ' + p.retainedEarningsAccount.name : 'utilidades acumuladas (sin configurar)' }}</div></div>
+    </div>
+
+    <div class="cols-2" style="margin-top:16px">
+      <section class="panel">
+        <div class="panel-head"><h2>Ingresos</h2></div>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>Cuenta</th><th class="num">Saldo</th></tr></thead>
+          <tbody>@for (a of p.income; track a.accountId) { <tr><td><span class="mono">{{ a.code }}</span> {{ a.name }}</td><td class="num">{{ a.balance | money }}</td></tr> }
+            @empty { <tr><td colspan="2" class="table-empty">Sin ingresos en el año.</td></tr> }</tbody>
+        </table></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Gastos</h2></div>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>Cuenta</th><th class="num">Saldo</th></tr></thead>
+          <tbody>@for (a of p.expenses; track a.accountId) { <tr><td><span class="mono">{{ a.code }}</span> {{ a.name }}</td><td class="num">{{ a.balance | money }}</td></tr> }
+            @empty { <tr><td colspan="2" class="table-empty">Sin gastos en el año.</td></tr> }</tbody>
+        </table></div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:16px">
+      <div class="panel-head"><h2>Asiento de cierre que se generará</h2></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Cuenta</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
+        <tbody>@for (l of p.entryLines; track $index) {
+          <tr><td><span class="mono">{{ l.code }}</span> {{ l.name }}</td><td class="num">{{ l.debit | money: 'blank' }}</td><td class="num">{{ l.credit | money: 'blank' }}</td></tr>
+        } @empty { <tr><td colspan="3" class="table-empty">No hay saldos que trasladar: el año se cierra sin asiento.</td></tr> }</tbody>
+      </table></div>
+    </section>
+  }
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="previewOpen.set(false)">Cerrar ventana</button>
+    @if (isAdmin && preview(); as p) {
+      <button type="button" class="btn btn-danger" [disabled]="!p.canClose || closing()" (click)="closeYear()">{{ closing() ? 'Cerrando…' : 'Cerrar año fiscal' }}</button>
+    }
+  </ng-container>
+</app-modal>

@@ -1,0 +1,126 @@
+<div class="page">
+  <div class="page-head">
+    <div><h1>DGII 606 · 607 · 608</h1><p class="sub">Revisa los formatos de envío del mes, corrige lo que falte y genera el archivo para la Oficina Virtual.</p></div>
+    <div class="period-box">
+      <button type="button" class="btn" (click)="shift(-1)" aria-label="Mes anterior">‹</button>
+      <div class="field"><label for="period">Período</label><input id="period" class="input" type="month" [value]="period()" (change)="setPeriod($any($event.target).value)" /></div>
+      <button type="button" class="btn" (click)="shift(1)" aria-label="Mes siguiente">›</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Formatos">
+    @for (f of FORMATS; track f.id) {
+      <button type="button" class="tab" role="tab" [class.active]="tab() === f.id" [attr.aria-selected]="tab() === f.id" (click)="setTab(f.id)">
+        {{ f.label }}
+        @if (!loading()) {
+          @if (reports()[f.id]; as rp) {
+            <span class="badge" [class.neg]="rp.errors.length > 0" [class.pos]="rp.errors.length === 0" style="margin-left:6px">{{ rp.errors.length > 0 ? rp.errors.length + (rp.errors.length === 1 ? ' error' : ' errores') : rp.count }}</span>
+          }
+        }
+      </button>
+    }
+  </div>
+
+  @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+  @else if (loadError()) { <div class="notice neg" role="alert">{{ loadError() }}</div> }
+  @else if (report(); as r) {
+    <div class="panel panel-pad" style="margin-bottom:16px">
+      <div class="page-head" style="margin-bottom:0">
+        <dl class="kv">
+          <dt>Empresa</dt><dd>{{ r.company.name }}</dd>
+          <dt>RNC</dt><dd class="mono">{{ r.company.rnc || 'Sin RNC' }}</dd>
+          <dt>Período</dt><dd>{{ periodLabel(r.period) }}</dd>
+          <dt>Registros</dt><dd>{{ r.count }}</dd>
+          <dt>Archivo</dt><dd class="mono">{{ r.fileName }}</dd>
+        </dl>
+        <div class="btn-row no-print">
+          <button type="button" class="btn btn-primary" [disabled]="!r.canExport || downloading()" (click)="downloadTxt()">{{ downloading() ? 'Generando…' : 'Descargar TXT oficial' }}</button>
+          <app-export-buttons [path]="'/exports/dgii/' + r.format" [query]="exportQuery()" [name]="'dgii-' + r.format" />
+        </div>
+      </div>
+    </div>
+
+    @if (r.errors.length) {
+      <div class="notice neg" role="alert" style="margin-bottom:12px"><div>
+        <strong>{{ r.errors.length }} {{ r.errors.length === 1 ? 'error impide' : 'errores impiden' }} generar el TXT.</strong> Corrige cada documento y vuelve a cargar el período.
+      </div></div>
+      <section class="panel" style="margin-bottom:16px"><div class="table-wrap"><table class="table">
+        <thead><tr><th>Documento</th><th>NCF</th><th>Qué corregir</th></tr></thead>
+        <tbody>
+          @for (e of r.errors; track $index) {
+            <tr>
+              <td>@if (e.invoiceId) { <a [routerLink]="['/invoices', e.invoiceId]">{{ e.invoiceNumber }}</a> } @else { <span class="dim">General</span> }</td>
+              <td class="mono">{{ e.ncf }}</td><td>{{ e.message }}</td>
+            </tr>
+          }
+        </tbody>
+      </table></div></section>
+    } @else {
+      <div class="notice pos" role="status" style="margin-bottom:16px">El {{ r.format }} no tiene errores. Ya puedes descargar el archivo TXT.</div>
+    }
+
+    @if (r.warnings.length) {
+      <section class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Avisos ({{ r.warnings.length }})</h2><span class="dim">No bloquean el archivo</span></div><div class="table-wrap"><table class="table">
+        <thead><tr><th>Documento</th><th>NCF</th><th>Aviso</th></tr></thead>
+        <tbody>
+          @for (w of r.warnings; track $index) {
+            <tr>
+              <td>@if (w.invoiceId) { <a [routerLink]="['/invoices', w.invoiceId]">{{ w.invoiceNumber }}</a> }</td>
+              <td class="mono">{{ w.ncf }}</td><td>{{ w.message }}</td>
+            </tr>
+          }
+        </tbody>
+      </table></div></section>
+    }
+
+    @if (r.totals; as t) {
+      <div class="figures" style="margin-bottom:16px">
+        <div class="figure"><div class="f-label">Total facturado</div><div class="f-value">{{ t.totalInvoiced | money }}</div><div class="f-note">Las notas de crédito restan</div></div>
+        <div class="figure"><div class="f-label">ITBIS</div><div class="f-value">{{ t.itbis | money }}</div></div>
+        <div class="figure"><div class="f-label">ITBIS retenido</div><div class="f-value">{{ t.itbisWithheld | money }}</div></div>
+        <div class="figure"><div class="f-label">ISR retenido</div><div class="f-value">{{ t.isrWithheld | money }}</div></div>
+      </div>
+    }
+
+    @if (r.consumerSummary; as cs) {
+      @if (cs.count > 0) {
+        <div class="notice info" style="margin-bottom:16px"><div>
+          <strong>Resumen de facturas de consumo ({{ cs.count }}).</strong> No van en el detalle; captura estas cifras en la Oficina Virtual al enviar el archivo:
+          monto {{ cs.amount | money }}, ITBIS {{ cs.itbis | money }}, total {{ cs.total | money }}.
+        </div></div>
+      }
+    }
+
+    <section class="panel">
+      <div class="panel-head"><h2>{{ r.format === '606' ? 'Compras' : r.format === '607' ? 'Ventas' : 'Comprobantes anulados' }}</h2><span class="dim">{{ r.count }} registros</span></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr>@for (c of cols(); track c.key) { <th [class.num]="c.type === 'money'">{{ c.label }}</th> }</tr></thead>
+        <tbody>
+          @for (row of pageRows(); track $index) {
+            <tr>
+              @for (c of cols(); track c.key) {
+                @switch (c.type) {
+                  @case ('money') { <td class="num">{{ row[c.key] | money }}</td> }
+                  @case ('invoice') {
+                    <td class="nowrap"><a [routerLink]="['/invoices', row['invoiceId']]">{{ row[c.key] }}</a>
+                      @if (row['docType'] && row['docType'] !== 'SALE' && row['docType'] !== 'PURCHASE') { <div class="dim">{{ row['docType'] | lbl: INVOICE_TYPE }}</div> }
+                      @if (row['kind'] === 'RETENTION_REPORT') { <span class="badge info" title="Factura de un mes anterior que quedó saldada en este período: se informa para declarar sus retenciones.">Retención</span> }
+                    </td>
+                  }
+                  @default { <td [class.mono]="c.mono" [class.nowrap]="c.type === 'date'">{{ cell(row, c) }}</td> }
+                }
+              }
+            </tr>
+          } @empty { <tr><td [attr.colspan]="cols().length" class="table-empty">No hay registros para este período.</td></tr> }
+        </tbody>
+      </table></div>
+      <app-pagination [page]="page()" [limit]="pageSize" [total]="r.rows.length" (pageChange)="goTo($event)" />
+    </section>
+
+    @if (r.assumptions.length) {
+      <details class="assume"><summary>Cómo se calcula este formato</summary>
+        <ul>@for (a of r.assumptions; track $index) { <li>{{ a }}</li> }</ul>
+      </details>
+    }
+  }
+</div>

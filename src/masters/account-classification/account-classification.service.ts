@@ -94,7 +94,7 @@ export class AccountClassificationService {
     for (const i of dto.items) this.validate(byId.get(i.accountId)!.type, byId.get(i.accountId)!.code, i);
 
     await this.prisma.$transaction(async (tx) => {
-      for (const { accountId, ...data } of dto.items) await tx.account.update({ where: { id: accountId }, data });
+      for (const { accountId, ...data } of dto.items) await tx.account.update({ where: { id: accountId, companyId: user.companyId }, data });
       await writeAudit(tx, user, 'Account', 'classification', AuditAction.UPDATE, { accounts: ids.length });
     });
     return { updated: ids.length };
@@ -123,7 +123,7 @@ export class AccountClassificationService {
       await this.prisma.$transaction(async (tx) => {
         for (const p of proposals) {
           await tx.account.update({
-            where: { id: p.id },
+            where: { id: p.id, companyId: user.companyId },
             data: { category: p.category, cashFlowCategory: p.cashFlowCategory, isContra: p.isContra, ...(p.subledger ? { subledger: p.subledger } : {}) },
           });
         }

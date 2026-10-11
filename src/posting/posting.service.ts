@@ -51,6 +51,11 @@ export class PostingService {
     if (period?.status === FiscalPeriodStatus.CLOSED) {
       throw new UnprocessableEntityException(`El período fiscal "${period.name}" está cerrado`);
     }
+    // Un año fiscal cerrado bloquea sus fechas aunque no existan períodos definidos
+    const year = await tx.fiscalYear.findFirst({
+      where: { companyId, status: FiscalPeriodStatus.CLOSED, startDate: { lte: date }, endDate: { gte: date } },
+    });
+    if (year) throw new UnprocessableEntityException(`El año fiscal "${year.name}" está cerrado`);
     return period;
   }
 

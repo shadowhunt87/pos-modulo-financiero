@@ -19,6 +19,24 @@ services:
       timeout: 5s
       retries: 5
 
+  # Base SOLO para tests e2e (los tests borran datos): puerto 5434, sin volumen (datos en RAM)
+  postgres-test:
+    image: postgres:18-alpine
+    container_name: financial-db-test
+    environment:
+      POSTGRES_USER: financial_user
+      POSTGRES_PASSWORD: financial_pass
+      POSTGRES_DB: financial_test
+    ports:
+      - "127.0.0.1:5434:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financial_user -d financial_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: financial-pgadmin

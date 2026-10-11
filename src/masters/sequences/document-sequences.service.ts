@@ -59,7 +59,7 @@ export class DocumentSequencesService {
       if (dto.nextNumber !== undefined && dto.nextNumber < current.nextNumber) {
         throw new UnprocessableEntityException('nextNumber solo puede aumentar: no se reutilizan números');
       }
-      const row = await tx.documentSequence.update({ where: { id: current.id }, data: dto });
+      const row = await tx.documentSequence.update({ where: { id: current.id, companyId: user.companyId }, data: dto });
       await writeAudit(tx, user, 'DocumentSequence', row.id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return row;
     });

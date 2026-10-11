@@ -9,6 +9,7 @@ import { UserRole } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { AttemptLimiter, TooManyAttemptsException, loginPairKey, loginRules } from './attempt-limiter.js';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -29,6 +30,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly limiter: AttemptLimiter,
   ) {}
 
   /**
@@ -58,7 +60,12 @@ export class AuthService {
     return this.toPublicUser(user);
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, ip: string) {
+    // Antes de tocar la BD o bcrypt: un atacante bloqueado tampoco gasta CPU del servidor
+    const rules = loginRules(dto.email, ip);
+    const wait = this.limiter.check(rules);
+    if (wait > 0) throw new TooManyAttemptsException(wait);
+
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { company: { select: { active: true } } },
@@ -70,9 +77,17 @@ export class AuthService {
     );
 
     if (!user || !user.active || !user.company.active || !passwordMatches) {
+      this.limiter.recordFailure(rules);
       throw new UnauthorizedException('Credenciales inválidas');
     }
+    this.limiter.clear([loginPairKey(dto.email, ip)]);
 
+    await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    return this.buildAuthResponse(user);
+  }
+
+  /** Token nuevo para un usuario ya autenticado (p. ej. tras cambiar su clave). */
+  issueToken(user: UserView) {
     return this.buildAuthResponse(user);
   }
 

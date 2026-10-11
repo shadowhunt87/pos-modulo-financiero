@@ -1,0 +1,176 @@
+<div class="page">
+  <p class="dim" style="margin-bottom:8px"><a routerLink="/budgets">‹ Presupuestos</a></p>
+
+  @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+  @else if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  @else if (budget(); as b) {
+    <div class="page-head">
+      <div>
+        <h1>{{ b.name }} <app-status [value]="b.status" [map]="BUDGET_STATUS" /></h1>
+        <p class="sub">Año {{ b.year }}@if (b.notes) { · {{ b.notes }} }</p>
+      </div>
+      <div class="btn-row no-print">
+        @if (editable()) { <button type="button" class="btn" (click)="openMeta()">Editar datos</button> }
+        @if (b.status === 'DRAFT' && canApprove) { <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="transition('approve')">Aprobar</button> }
+        @if (b.status === 'APPROVED' && isAdmin) {
+          <button type="button" class="btn" [disabled]="busy()" (click)="transition('reopen')">Reabrir</button>
+          <button type="button" class="btn" [disabled]="busy()" (click)="transition('archive')">Archivar</button>
+        }
+        @if (editable()) { <button type="button" class="btn btn-danger" (click)="remove()">Eliminar</button> }
+      </div>
+    </div>
+
+    @if (b.status === 'APPROVED') { <div class="notice info" style="margin-bottom:14px">Este presupuesto está aprobado y sus líneas están bloqueadas. @if (isAdmin) { Reábrelo si necesitas corregirlo. } @else { Pide a un administrador que lo reabra para corregirlo. }</div> }
+    @if (b.status === 'ARCHIVED') { <div class="notice" style="margin-bottom:14px">Presupuesto archivado: solo consulta.</div> }
+    @if (b.status === 'DRAFT' && !canEdit) { <div class="notice info" style="margin-bottom:14px">Tu rol puede consultar este borrador, pero no editarlo.</div> }
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" [class.active]="tab() === 'lines'" [attr.aria-selected]="tab() === 'lines'" (click)="setTab('lines')">Líneas del presupuesto</button>
+      <button type="button" class="tab" role="tab" [class.active]="tab() === 'vs'" [attr.aria-selected]="tab() === 'vs'" (click)="setTab('vs')">Presupuesto vs real</button>
+    </div>
+
+    @if (tab() === 'lines') {
+      @if (editable()) {
+        <div class="toolbar">
+          <div class="field add-box" role="group" aria-labelledby="lb-add"><span id="lb-add" class="label">Agregar cuenta de ingreso o gasto</span>
+            <app-combobox [formControl]="addCtl" [options]="addOptions()" placeholder="Código o nombre de la cuenta" [clearable]="false" /></div>
+          <button type="button" class="btn btn-primary" [disabled]="saving() || !dirty()" (click)="saveLines()">{{ saving() ? 'Guardando…' : 'Guardar líneas' }}</button>
+          @if (dirty()) { <span class="badge warn">Cambios sin guardar</span> }
+        </div>
+        <p class="hint" style="margin:-6px 0 12px">Escribe el importe de cada mes; deja en blanco los meses sin presupuesto. Solo se presupuestan cuentas de ingreso y gasto que reciben movimientos.</p>
+      }
+      @if (saveError()) { <div class="notice neg" role="alert" style="margin-bottom:12px">{{ saveError() }}</div> }
+
+      <section class="panel">
+        <div class="table-wrap"><table class="table grid">
+          <thead><tr>
+            <th scope="col">Cuenta</th>
+            @for (m of monthIdx; track m) { <th scope="col" class="num">{{ MONTHS_SHORT[m] }}</th> }
+            <th scope="col" class="num">Total</th>
+            @if (editable()) { <th scope="col"></th> }
+          </tr></thead>
+          <tbody>
+            @if (rows().length === 0) { <tr><td [attr.colspan]="editable() ? 15 : 14" class="table-empty">Este presupuesto aún no tiene líneas.@if (editable()) { Agrega una cuenta para empezar. }</td></tr> }
+            @for (sec of [{ t: 'Ingresos', r: incomeRows() }, { t: 'Gastos', r: expenseRows() }]; track sec.t) {
+              @if (sec.r.length) {
+                <tr class="sec-title"><td [attr.colspan]="editable() ? 15 : 14">{{ sec.t }}</td></tr>
+                @for (r of sec.r; track r.accountId) {
+                  <tr>
+                    <td><span class="mono">{{ r.code }}</span> {{ r.name }}</td>
+                    @for (m of monthIdx; track m) {
+                      <td class="num">
+                        @if (editable()) {
+                          <input class="input num cell" type="number" min="0" step="0.01" inputmode="decimal" [value]="r.cells[m]" [attr.aria-label]="r.code + ' ' + MONTHS[m]" (input)="setCell(r.accountId, m, $any($event.target).value)" />
+                        } @else { {{ r.cells[m] | money: true }} }
+                      </td>
+                    }
+                    <td class="num total">{{ rowTotal(r) | money }}</td>
+                    @if (editable()) {
+                      <td class="actions">
+                        <button type="button" class="btn btn-ghost btn-sm" title="Copia el primer importe a los 12 meses" (click)="fillYear(r.accountId)">Repetir</button>
+                        <button type="button" class="btn btn-ghost btn-sm" [attr.aria-label]="'Quitar ' + r.code" (click)="removeRow(r.accountId)">Quitar</button>
+                      </td>
+                    }
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+          @if (rows().length) {
+            <tfoot>
+              <tr><td>Total ingresos</td>@for (m of monthIdx; track m) { <td class="num">{{ colTotals().income[m] | money: true }}</td> }<td class="num">{{ colTotals().incomeTotal | money }}</td>@if (editable()) { <td></td> }</tr>
+              <tr><td>Total gastos</td>@for (m of monthIdx; track m) { <td class="num">{{ colTotals().expense[m] | money: true }}</td> }<td class="num">{{ colTotals().expenseTotal | money }}</td>@if (editable()) { <td></td> }</tr>
+              <tr><td>Resultado presupuestado</td>@for (m of monthIdx; track m) { <td class="num" [class.neg]="colTotals().net[m].startsWith('-')">{{ colTotals().net[m] | money: true }}</td> }<td class="num" [class.neg]="colTotals().netTotal.startsWith('-')">{{ colTotals().netTotal | money }}</td>@if (editable()) { <td></td> }</tr>
+            </tfoot>
+          }
+        </table></div>
+      </section>
+    }
+
+    @if (tab() === 'vs') {
+      <div class="toolbar">
+        <div class="field"><label for="vs-from">Desde el mes</label>
+          <select id="vs-from" class="select" [value]="fromMonth()" (change)="setRange('from', $any($event.target).value)">@for (m of monthIdx; track m) { <option [value]="m + 1" [selected]="fromMonth() === m + 1">{{ MONTHS[m] }}</option> }</select></div>
+        <div class="field"><label for="vs-to">Hasta el mes</label>
+          <select id="vs-to" class="select" [value]="toMonth()" (change)="setRange('to', $any($event.target).value)">@for (m of monthIdx; track m) { <option [value]="m + 1" [selected]="toMonth() === m + 1">{{ MONTHS[m] }}</option> }</select></div>
+        <button type="button" class="btn" [disabled]="vsLoading()" (click)="loadVs()">Actualizar</button>
+      </div>
+
+      @if (vsError()) { <div class="notice neg" role="alert">{{ vsError() }}</div> }
+      @if (vsLoading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+      @else if (vs(); as v) {
+        <div class="figures" style="margin-bottom:16px">
+          <div class="figure"><div class="f-label">Ingresos: real / presupuesto</div><div class="f-value" style="font-size:20px">{{ v.totals.income.actual | money }}</div><div class="f-note">de {{ v.totals.income.planned | money }} · <span [class.pos]="fav('INCOME', v.totals.income)" [class.neg]="!fav('INCOME', v.totals.income)">{{ v.totals.income.variance | money }}</span></div></div>
+          <div class="figure"><div class="f-label">Gastos: real / presupuesto</div><div class="f-value" style="font-size:20px">{{ v.totals.expense.actual | money }}</div><div class="f-note">de {{ v.totals.expense.planned | money }} · <span [class.pos]="fav('EXPENSE', v.totals.expense)" [class.neg]="!fav('EXPENSE', v.totals.expense)">{{ v.totals.expense.variance | money }}</span></div></div>
+          <div class="figure"><div class="f-label">Resultado: real / presupuesto</div><div class="f-value" style="font-size:20px" [class.neg]="v.totals.netResult.actual.startsWith('-')">{{ v.totals.netResult.actual | money }}</div><div class="f-note">de {{ v.totals.netResult.planned | money }} · <span [class.pos]="fav('NET', v.totals.netResult)" [class.neg]="!fav('NET', v.totals.netResult)">{{ v.totals.netResult.variance | money }}</span></div></div>
+        </div>
+
+        @if (vsChart(); as cfg) {
+          <section class="panel panel-pad" style="margin-bottom:16px"><h2 style="margin-bottom:8px">Resultado por mes: presupuesto contra real</h2><app-chart [config]="cfg" height="240px" /></section>
+        }
+
+        <section class="panel">
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th>Cuenta</th><th class="num">Presupuesto</th><th class="num">Real</th><th class="num">Variación</th><th class="num">%</th><th>Resultado</th></tr></thead>
+            <tbody>
+              @for (sec of [{ t: 'Ingresos', k: 'INCOME', r: vsIncome(), tot: v.totals.income }, { t: 'Gastos', k: 'EXPENSE', r: vsExpense(), tot: v.totals.expense }]; track sec.t) {
+                <tr class="sec-title"><td colspan="6">{{ sec.t }}</td></tr>
+                @for (r of sec.r; track r.accountId) {
+                  <tr>
+                    <td>
+                      <button type="button" class="linkbtn" [attr.aria-expanded]="expanded().has(r.accountId)" (click)="toggle(r.accountId)">{{ expanded().has(r.accountId) ? '▾' : '▸' }}</button>
+                      <span class="mono">{{ r.code }}</span> {{ r.name }}
+                      @if (!r.budgeted) { <span class="badge warn" title="Hubo movimiento real pero esta cuenta no tiene presupuesto en el rango.">Sin presupuesto</span> }
+                    </td>
+                    <td class="num">{{ r.planned | money }}</td><td class="num">{{ r.actual | money }}</td>
+                    <td class="num" [class.pos]="r.favorable" [class.neg]="!r.favorable">{{ r.variance | money }}</td>
+                    <td class="num">{{ pctText(r.variancePct) }}</td>
+                    <td><span class="badge" [class.pos]="r.favorable" [class.neg]="!r.favorable">{{ r.favorable ? 'Favorable' : 'Desfavorable' }}</span></td>
+                  </tr>
+                  @if (expanded().has(r.accountId)) {
+                    @for (c of r.months; track c.month) {
+                      <tr class="month-row">
+                        <td style="padding-left:40px">{{ MONTHS[c.month - 1] }}</td>
+                        <td class="num">{{ c.planned | money }}</td><td class="num">{{ c.actual | money }}</td>
+                        <td class="num" [class.pos]="c.favorable" [class.neg]="!c.favorable">{{ c.variance | money }}</td>
+                        <td class="num">{{ pctText(c.variancePct) }}</td><td></td>
+                      </tr>
+                    }
+                  }
+                } @empty { <tr><td colspan="6" class="dim" style="padding-left:28px">Sin cuentas en este rango.</td></tr> }
+                <tr class="total-row">
+                  <td>Total {{ sec.t.toLowerCase() }}</td>
+                  <td class="num">{{ sec.tot.planned | money }}</td><td class="num">{{ sec.tot.actual | money }}</td>
+                  <td class="num" [class.pos]="fav(sec.k === 'INCOME' ? 'INCOME' : 'EXPENSE', sec.tot)" [class.neg]="!fav(sec.k === 'INCOME' ? 'INCOME' : 'EXPENSE', sec.tot)">{{ sec.tot.variance | money }}</td>
+                  <td class="num">{{ totalPct(sec.tot) }}</td><td></td>
+                </tr>
+              }
+              <tr class="grand">
+                <td>Resultado neto</td>
+                <td class="num">{{ v.totals.netResult.planned | money }}</td><td class="num">{{ v.totals.netResult.actual | money }}</td>
+                <td class="num" [class.pos]="fav('NET', v.totals.netResult)" [class.neg]="!fav('NET', v.totals.netResult)">{{ v.totals.netResult.variance | money }}</td>
+                <td class="num">{{ totalPct(v.totals.netResult) }}</td><td></td>
+              </tr>
+            </tbody>
+          </table></div>
+        </section>
+        <p class="hint" style="margin-top:8px">Variación = real − presupuesto. En ingresos es favorable si lo real es igual o mayor; en gastos, si es igual o menor. Solo cuenta lo contabilizado, sin los asientos de cierre de año.</p>
+      }
+    }
+  }
+
+  <app-modal [open]="metaOpen()" title="Editar presupuesto" width="520px" (closed)="metaOpen.set(false)">
+    <form id="meta-form" [formGroup]="metaForm" (ngSubmit)="saveMeta()" novalidate>
+      <div class="form-grid">
+        <div class="field span-all"><label for="m-name">Nombre</label><input id="m-name" class="input" formControlName="name" />
+          @if (metaForm.controls.name.touched && metaForm.controls.name.invalid) { <span class="error-text">Escribe un nombre de al menos 2 caracteres.</span> }</div>
+        <div class="field span-all"><label for="m-notes">Notas</label><textarea id="m-notes" class="textarea" formControlName="notes" maxlength="500"></textarea></div>
+      </div>
+      @if (metaError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ metaError() }}</div> }
+    </form>
+    <ng-container modal-actions>
+      <button type="button" class="btn" (click)="metaOpen.set(false)">Cancelar</button>
+      <button type="submit" form="meta-form" class="btn btn-primary" [disabled]="busy()">{{ busy() ? 'Guardando…' : 'Guardar' }}</button>
+    </ng-container>
+  </app-modal>
+</div>

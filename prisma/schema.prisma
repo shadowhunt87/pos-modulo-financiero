@@ -75,6 +75,9 @@ model AccountingSettings {
   fxLossAccountId            String? // Pérdida cambiaria
   roundingAccountId          String?
 
+  // Si está activo, los asientos manuales quedan en borrador hasta que un aprobador los apruebe
+  requireEntryApproval Boolean @default(false)
+
   receivableAccount        Account? @relation("SettingsReceivable", fields: [receivableAccountId], references: [id])
   payableAccount           Account? @relation("SettingsPayable", fields: [payableAccountId], references: [id])
   salesIncomeAccount       Account? @relation("SettingsSalesIncome", fields: [salesIncomeAccountId], references: [id])
@@ -118,6 +121,8 @@ model User {
   role        UserRole  @default(ACCOUNTANT)
   active      Boolean   @default(true)
   lastLoginAt DateTime?
+  // Los tokens emitidos antes de esta fecha dejan de servir (cambio/reseteo de clave)
+  passwordChangedAt DateTime?
 
   journalEntriesCreated  JournalEntry[]       @relation("JournalEntryCreatedBy")
   journalEntriesApproved JournalEntry[]       @relation("JournalEntryApprovedBy")
@@ -356,6 +361,8 @@ model JournalEntry {
   approvedById String?
   approvedBy   User?     @relation("JournalEntryApprovedBy", fields: [approvedById], references: [id])
   approvedAt   DateTime?
+  rejectReason String?
+  rejectedAt   DateTime?
   voidedById   String?
   voidedBy     User?     @relation("JournalEntryVoidedBy", fields: [voidedById], references: [id])
   voidedAt     DateTime?
@@ -382,9 +389,10 @@ model JournalEntry {
 }
 
 enum JournalEntryStatus {
-  DRAFT
+  DRAFT // pendiente de aprobación: no afecta libros ni reportes
   POSTED
   VOIDED
+  REJECTED // borrador rechazado: no afecta libros ni reportes
 }
 
 enum JournalEntryType {
@@ -1087,4 +1095,5 @@ enum AuditAction {
   CLOSE
   RECONCILE
   LOGIN
+  REJECT
 }

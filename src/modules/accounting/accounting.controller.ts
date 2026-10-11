@@ -18,7 +18,7 @@ import type { AuthUser } from '../../auth/types/auth-user.js';
 import { AccountingService } from './accounting.service.js';
 import { CreateAccountDto } from '../dto/create-account.dto.js';
 import { UpdateAccountDto } from '../dto/update-account.dto.js';
-import { CreateJournalEntryDto } from '../dto/create-journal-entry.dto.js';
+import { CreateJournalEntryDto, UpdateJournalEntryDto } from '../dto/create-journal-entry.dto.js';
 import { VoidJournalEntryDto } from '../dto/void-journal-entry.dto.js';
 import { CreateFiscalPeriodDto } from '../dto/create-fiscal-period.dto.js';
 import {
@@ -102,6 +102,34 @@ export class AccountingController {
   @Get('journal-entries/:id')
   getJournalEntry(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
     return this.accounting.getJournalEntry(id, user);
+  }
+
+  // Corregir un borrador o un asiento rechazado (queda otra vez pendiente)
+  @Roles(ADMIN, ACCOUNTANT)
+  @Patch('journal-entries/:id')
+  updateJournalEntry(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateJournalEntryDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.accounting.updateJournalEntry(id, dto, user);
+  }
+
+  // Aprobar: APPROVER o ADMIN, nunca quien creó el asiento
+  @Roles(ADMIN, APPROVER)
+  @Post('journal-entries/:id/approve')
+  approveJournalEntry(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.accounting.approveJournalEntry(id, user);
+  }
+
+  @Roles(ADMIN, APPROVER, ACCOUNTANT)
+  @Post('journal-entries/:id/reject')
+  rejectJournalEntry(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VoidJournalEntryDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.accounting.rejectJournalEntry(id, dto.reason, user);
   }
 
   @Roles(ADMIN, APPROVER)

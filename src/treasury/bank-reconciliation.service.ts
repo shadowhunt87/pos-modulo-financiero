@@ -58,7 +58,7 @@ export class BankReconciliationService {
       const sum = nets.reduce((s, n) => s.plus(n), ZERO);
       if (!sum.equals(bt.amount)) throw new UnprocessableEntityException(`Las líneas suman ${sum} y el movimiento es ${bt.amount}`);
 
-      const claimed = await db.bankTransaction.updateMany({ where: { id: txId, status: BankTransactionStatus.PENDING }, data: { status: BankTransactionStatus.MATCHED } });
+      const claimed = await db.bankTransaction.updateMany({ where: { id: txId, bankAccount: { companyId: user.companyId }, status: BankTransactionStatus.PENDING }, data: { status: BankTransactionStatus.MATCHED } });
       if (claimed.count === 0) throw new ConflictException('El movimiento cambió de estado; reintenta');
       await db.bankMatch.createMany({ data: lines.map((l, i) => ({ bankTransactionId: txId, journalEntryLineId: l.id, amount: nets[i] })) });
       await writeAudit(db, user, 'BankTransaction', txId, AuditAction.UPDATE, { matchedLines: ids.length });
@@ -245,7 +245,7 @@ export class BankReconciliationService {
       const rec = await db.bankReconciliation.findFirst({ where: { id, companyId: user.companyId }, include: { bankAccount: true } });
       if (!rec) throw new NotFoundException('Conciliación no encontrada');
       const claimed = await db.bankReconciliation.updateMany({
-        where: { id, status: ReconciliationStatus.DRAFT },
+        where: { id, companyId: user.companyId, status: ReconciliationStatus.DRAFT },
         data: { status: ReconciliationStatus.COMPLETED, completedById: user.id, completedAt: new Date() },
       });
       if (claimed.count === 0) throw new ConflictException('La conciliación ya está completada');
@@ -265,7 +265,7 @@ export class BankReconciliationService {
       const entryIds = [...new Set(links.map((l) => l.journalEntryLine.journalEntryId))];
       // Un asiento conciliado ya no se puede anular
       await db.journalEntry.updateMany({ where: { id: { in: entryIds } }, data: { reconciled: true } });
-      await db.bankReconciliation.update({ where: { id }, data: { bookBalance: s.bookBalance, difference: s.difference } });
+      await db.bankReconciliation.update({ where: { id, companyId: user.companyId }, data: { bookBalance: s.bookBalance, difference: s.difference } });
       await writeAudit(db, user, 'BankReconciliation', id, AuditAction.RECONCILE, { transactions: txIds.length, entries: entryIds.length });
       return { id, status: ReconciliationStatus.COMPLETED, reconciledTransactions: txIds.length, reconciledEntries: entryIds.length };
     });
@@ -288,7 +288,7 @@ export class BankReconciliationService {
       const entryIds = [...new Set(links.map((l) => l.journalEntryLine.journalEntryId))];
       await db.bankTransaction.updateMany({ where: { id: { in: txIds } }, data: { status: BankTransactionStatus.MATCHED, reconciled: false, reconciliationId: null } });
       await db.journalEntry.updateMany({ where: { id: { in: entryIds } }, data: { reconciled: false } });
-      await db.bankReconciliation.update({ where: { id }, data: { status: ReconciliationStatus.DRAFT, completedById: null, completedAt: null } });
+      await db.bankReconciliation.update({ where: { id, companyId: user.companyId }, data: { status: ReconciliationStatus.DRAFT, completedById: null, completedAt: null } });
       await writeAudit(db, user, 'BankReconciliation', id, AuditAction.UPDATE, { reopened: true });
       return { id, status: ReconciliationStatus.DRAFT };
     });

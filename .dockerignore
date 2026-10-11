@@ -1,0 +1,16 @@
+node_modules
+dist
+coverage
+test
+uploads
+.git
+.env
+.env.*
+!.env.example
+!.env.test.example
+!.env.production.example
+*.log
+*.tsbuildinfo
+docker-compose*.yml
+Dockerfile
+README.md

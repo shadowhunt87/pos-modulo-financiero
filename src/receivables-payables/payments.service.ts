@@ -178,7 +178,7 @@ export class PaymentsService {
 
       if (settles.length) {
         await tx.paymentAllocation.createMany({ data: settles.map((s) => ({ paymentId: pay.id, invoiceId: s.inv.id, amount: s.amount })) });
-        for (const s of settles) await applyToInvoice(tx, s.inv.id, s.amount);
+        for (const s of settles) await applyToInvoice(tx, companyId, s.inv.id, s.amount);
       }
 
       const lines = await this.settlementLines(user, {
@@ -193,7 +193,7 @@ export class PaymentsService {
         sourceType: SourceDocumentType.PAYMENT, sourceId: pay.id,
         currency, exchangeRate: rate, lines,
       });
-      await tx.payment.update({ where: { id: pay.id }, data: { journalEntryId: entry.id } });
+      await tx.payment.update({ where: { id: pay.id, companyId }, data: { journalEntryId: entry.id } });
       await writeAudit(tx, user, 'Payment', pay.id, AuditAction.CREATE, {
         number, direction: dto.direction, amount: amount.toString(), allocated: allocated.toString(), advance: remainder.toString(),
       });
@@ -227,7 +227,7 @@ export class PaymentsService {
       const date = dto.date ? new Date(dto.date) : new Date();
 
       await tx.paymentAllocation.createMany({ data: settles.map((s) => ({ paymentId: id, invoiceId: s.inv.id, amount: s.amount })) });
-      for (const s of settles) await applyToInvoice(tx, s.inv.id, s.amount);
+      for (const s of settles) await applyToInvoice(tx, companyId, s.inv.id, s.amount);
 
       const lines = await this.settlementLines(user, {
         received, partnerId: pay.partnerId, foreign: pay.currency !== company.baseCurrency, currency: pay.currency, rate: pay.exchangeRate,
@@ -263,7 +263,7 @@ export class PaymentsService {
 
       const byInvoice = new Map<string, Dec>();
       for (const a of pay.allocations) byInvoice.set(a.invoiceId, (byInvoice.get(a.invoiceId) ?? ZERO).plus(a.amount));
-      for (const [invoiceId, amount] of byInvoice) await releaseFromInvoice(tx, invoiceId, amount);
+      for (const [invoiceId, amount] of byInvoice) await releaseFromInvoice(tx, companyId, invoiceId, amount);
 
       await writeAudit(tx, user, 'Payment', id, AuditAction.VOID, { reason: dto.reason, entries: entries.length });
     });

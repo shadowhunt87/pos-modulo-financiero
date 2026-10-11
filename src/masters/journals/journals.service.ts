@@ -68,7 +68,7 @@ export class JournalsService {
     const j = await this.prisma.journal.findFirst({ where: { id, companyId: user.companyId } });
     if (!j) throw new NotFoundException('Diario no encontrado');
     return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.journal.update({ where: { id }, data: dto });
+      const updated = await tx.journal.update({ where: { id, companyId: user.companyId }, data: dto });
       await writeAudit(tx, user, 'Journal', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return updated;
     });

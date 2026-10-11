@@ -1,0 +1,183 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <p class="sub"><a routerLink="/bank-accounts">Bancos y cajas</a> / Cuenta bancaria</p>
+      @if (account(); as a) {
+        <h1>{{ a.bankName }} <span class="mono dim">{{ a.accountNumber }}</span></h1>
+        <p class="sub">{{ a.type | lbl: TYPES }} · {{ a.currency }} · Cuenta contable {{ glName() }} @if (!a.active) { · <span class="badge">Inactiva</span> }</p>
+      } @else {
+        <h1>Cuenta bancaria</h1>
+      }
+    </div>
+    <div class="btn-row">
+      <a class="btn" [routerLink]="['/reconciliations']" [queryParams]="{ bankAccountId: id() }">Conciliaciones</a>
+      @if (canWrite) {
+        <button type="button" class="btn" [disabled]="applying()" (click)="applyRules()">{{ applying() ? 'Aplicando…' : 'Aplicar reglas' }}</button>
+        <button type="button" class="btn" (click)="openAdd()">Agregar movimiento</button>
+        <button type="button" class="btn btn-primary" (click)="openImport()">Importar extracto</button>
+      }
+    </div>
+  </div>
+
+  @if (accountError()) { <div class="notice neg" role="alert">{{ accountError() }}</div> }
+  @if (account(); as a) {
+    <div class="figures" style="margin-bottom:16px">
+      <div class="figure"><div class="f-label">Saldo en libros</div><div class="f-value" [class]="a.glBalance | signClass">{{ a.glBalance | money }}</div><div class="f-note">Según el mayor de la cuenta contable</div></div>
+      <div class="figure"><div class="f-label">Movimientos pendientes</div><div class="f-value">{{ a.pendingTransactions }}</div><div class="f-note">Sin enlazar ni categorizar</div></div>
+      <div class="figure">
+        <div class="f-label">Última conciliación</div>
+        @if (a.lastReconciliation; as r) {
+          <div class="f-value">{{ r.statementDate | fdate }}</div>
+          <div class="f-note">Saldo del extracto {{ r.statementBalance | money }} · <a [routerLink]="['/reconciliations', r.id]">Ver</a></div>
+        } @else { <div class="f-value">—</div><div class="f-note">Aún no hay conciliaciones completadas</div> }
+      </div>
+    </div>
+  }
+
+  @if (notice()) {
+    <div class="notice pos" role="status" style="margin-bottom:14px"><span style="flex:1">{{ notice() }}</span>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="notice.set('')">Cerrar</button></div>
+  }
+
+  <div class="toolbar">
+    <div class="field wide"><label for="tx-q">Buscar</label><input id="tx-q" class="input" placeholder="Descripción o referencia" (input)="search$.next($any($event.target).value)" /></div>
+    <div class="field"><label for="tx-status">Estado</label>
+      <select id="tx-status" class="select" (change)="setFilter('status', $any($event.target).value)">
+        <option value="">Todos</option>@for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+      </select></div>
+    <div class="field"><label for="tx-from">Desde</label><input id="tx-from" class="input" type="date" (change)="setFilter('from', $any($event.target).value)" /></div>
+    <div class="field"><label for="tx-to">Hasta</label><input id="tx-to" class="input" type="date" (change)="setFilter('to', $any($event.target).value)" /></div>
+  </div>
+
+  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  <section class="panel">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Fecha</th><th>Descripción</th><th class="num">Monto</th><th class="num">Saldo después</th><th>Origen</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          @if (loading()) { <tr><td colspan="7"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
+          @for (t of rows(); track t.id) {
+            <tr>
+              <td>{{ t.date | fdate }}</td>
+              <td>{{ t.description }}@if (t.reference) { <div class="dim">Ref. {{ t.reference }}</div> }</td>
+              <td class="num" [class]="t.amount | signClass">{{ t.amount | money }}</td>
+              <td class="num">{{ t.balanceAfter | money }}</td>
+              <td>{{ t.source | lbl: TX_SOURCE }}</td>
+              <td><app-status [value]="t.status" [map]="TX_STATUS" />@if (t.status === 'MATCHED' && t.matches.length > 1) { <div class="faint">{{ t.matches.length }} líneas</div> }</td>
+              <td class="actions">
+                @if (t.status === 'PENDING' && canWrite) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === t.id" (click)="openCategorize(t)">Categorizar</button>
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === t.id" (click)="ignore(t)">Ignorar</button>
+                }
+                @if (t.status === 'IGNORED' && canWrite) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === t.id" (click)="restore(t)">Restaurar</button>
+                }
+                @if (t.status === 'MATCHED' && canMatch) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === t.id" (click)="unmatch(t)">Deshacer enlace</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay movimientos con esos filtros. @if (canWrite) { Importa un extracto para empezar. }</td></tr> }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination [page]="page()" [limit]="limit" [total]="total()" (pageChange)="goTo($event)" />
+  </section>
+</div>
+
+<app-modal [open]="importOpen()" title="Importar extracto" width="720px" (closed)="importOpen.set(false)">
+  <form id="import-form" [formGroup]="importForm" (ngSubmit)="runImport()" novalidate>
+    <div class="form-grid">
+      <div class="field span-all"><label for="imp-file">Archivo del extracto (CSV)</label>
+        <input id="imp-file" class="input" type="file" accept=".csv,.txt,text/csv,text/plain" (change)="pickFile($event)" />
+        @if (file(); as f) { <span class="hint">{{ f.name }} · {{ f.rows }} línea(s) con datos</span> }
+        <span class="hint">Debe traer fecha, descripción y monto (o débito y crédito). Si repites un extracto, los movimientos que ya existen se omiten.</span></div>
+      <div class="field"><label for="imp-delim">Separador</label>
+        <select id="imp-delim" class="select" formControlName="delimiter">
+          <option value="">Detectar</option><option value=",">Coma (,)</option><option value=";">Punto y coma (;)</option><option value="&#9;">Tabulador</option><option value="|">Barra vertical (|)</option>
+        </select></div>
+      <div class="field"><label for="imp-date">Formato de fecha</label>
+        <select id="imp-date" class="select" formControlName="dateFormat">
+          <option value="DMY">Día/mes/año (31/12/2027)</option><option value="MDY">Mes/día/año (12/31/2027)</option><option value="ISO">Año-mes-día (2027-12-31)</option>
+        </select></div>
+      <div class="field"><label for="imp-dec">Separador decimal</label>
+        <select id="imp-dec" class="select" formControlName="decimalSeparator"><option value=".">Punto (1,234.56)</option><option value=",">Coma (1.234,56)</option></select></div>
+      <div class="field" style="justify-content:flex-end">
+        <label class="check"><input type="checkbox" formControlName="hasHeader" /> La primera línea es el encabezado</label>
+        <label class="check"><input type="checkbox" formControlName="applyRules" /> Aplicar reglas bancarias al importar</label></div>
+    </div>
+    <details style="margin-top:14px">
+      <summary>Mi banco usa otros nombres de columna</summary>
+      <p class="hint" style="margin:8px 0">Escribe el encabezado exacto de cada columna. Deja vacío lo que el sistema ya reconoce (fecha, descripción, monto, débito, crédito, referencia, saldo).</p>
+      <div class="form-grid">
+        <div class="field"><label for="c-date">Fecha</label><input id="c-date" class="input" formControlName="colDate" /></div>
+        <div class="field"><label for="c-desc">Descripción</label><input id="c-desc" class="input" formControlName="colDescription" /></div>
+        <div class="field"><label for="c-amount">Monto</label><input id="c-amount" class="input" formControlName="colAmount" /></div>
+        <div class="field"><label for="c-debit">Débito</label><input id="c-debit" class="input" formControlName="colDebit" /></div>
+        <div class="field"><label for="c-credit">Crédito</label><input id="c-credit" class="input" formControlName="colCredit" /></div>
+        <div class="field"><label for="c-ref">Referencia</label><input id="c-ref" class="input" formControlName="colReference" /></div>
+        <div class="field"><label for="c-bal">Saldo</label><input id="c-bal" class="input" formControlName="colBalance" /></div>
+      </div>
+    </details>
+    @if (importError()) {
+      <div class="notice neg" style="margin-top:14px;flex-direction:column" role="alert">
+        <strong>{{ importError() }}</strong>
+        @if (importLines().length) { <ul style="margin:0;padding-left:18px">@for (l of importLines(); track $index) { <li>{{ l }}</li> }</ul> }
+      </div>
+    }
+  </form>
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="importOpen.set(false)">Cancelar</button>
+    <button type="submit" form="import-form" class="btn btn-primary" [disabled]="importing() || !file()">{{ importing() ? 'Importando…' : 'Importar' }}</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="addOpen()" title="Agregar movimiento" width="620px" (closed)="addOpen.set(false)">
+  <form id="add-form" [formGroup]="addForm" (ngSubmit)="saveAdd()" novalidate>
+    <div class="form-grid">
+      <div class="field"><label for="a-date">Fecha</label><input id="a-date" class="input" type="date" formControlName="date" /></div>
+      <div class="field"><label for="a-amount">Monto</label><input id="a-amount" class="input num" type="number" step="0.01" formControlName="amount" />
+        <span class="hint">Positivo si entra dinero, negativo si sale.</span>
+        @if (addForm.controls.amount.touched && addForm.controls.amount.invalid) { <span class="error-text">Escribe el monto.</span> }</div>
+      <div class="field span-2"><label for="a-desc">Descripción</label><input id="a-desc" class="input" formControlName="description" maxlength="300" />
+        @if (addForm.controls.description.touched && addForm.controls.description.invalid) { <span class="error-text">Escribe la descripción del movimiento.</span> }</div>
+      <div class="field"><label for="a-ref">Referencia</label><input id="a-ref" class="input" formControlName="reference" maxlength="100" /></div>
+      <div class="field"><label for="a-bal">Saldo después (opcional)</label><input id="a-bal" class="input num" type="number" step="0.01" formControlName="balanceAfter" /></div>
+      <div class="field span-2"><label for="a-ext">Identificador externo (opcional)</label><input id="a-ext" class="input mono" formControlName="externalId" maxlength="100" />
+        <span class="hint">Evita duplicados si registras el mismo movimiento dos veces.</span></div>
+    </div>
+    @if (addError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ addError() }}</div> }
+  </form>
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="addOpen.set(false)">Cancelar</button>
+    <button type="submit" form="add-form" class="btn btn-primary" [disabled]="adding()">{{ adding() ? 'Guardando…' : 'Guardar' }}</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="!!catTx()" title="Categorizar movimiento" width="620px" (closed)="catTx.set(null)">
+  @if (catTx(); as t) {
+    <form id="cat-form" [formGroup]="catForm" (ngSubmit)="saveCategorize()" novalidate>
+      <dl class="kv" style="margin-bottom:14px">
+        <dt>Fecha</dt><dd>{{ t.date | fdate }}</dd>
+        <dt>Descripción</dt><dd>{{ t.description }}</dd>
+        <dt>Monto</dt><dd class="num" [class]="t.amount | signClass">{{ t.amount | money }}</dd>
+      </dl>
+      <div class="form-grid">
+        <div class="field span-all"><label for="cat-acc">Cuenta contraparte</label>
+          <app-combobox id="cat-acc" formControlName="accountId" [options]="accountOptions()" placeholder="Gastos bancarios, intereses ganados…" [clearable]="false" />
+          @if (catForm.controls.accountId.touched && catForm.controls.accountId.invalid) { <span class="error-text">Elige la cuenta donde se registra este movimiento.</span> }</div>
+        <div class="field span-all"><label for="cat-desc">Descripción del asiento</label><input id="cat-desc" class="input" formControlName="description" maxlength="300" /></div>
+      </div>
+      <p class="hint" style="margin-top:10px">
+        Se crea un asiento: {{ glName() }} {{ t.amount.startsWith('-') ? 'al crédito' : 'al débito' }} y la cuenta elegida del lado contrario. El movimiento queda enlazado. Solo para cuentas en moneda base.
+      </p>
+      @if (catError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ catError() }}</div> }
+    </form>
+  }
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="catTx.set(null)">Cancelar</button>
+    <button type="submit" form="cat-form" class="btn btn-primary" [disabled]="categorizing()">{{ categorizing() ? 'Categorizando…' : 'Categorizar' }}</button>
+  </ng-container>
+</app-modal>

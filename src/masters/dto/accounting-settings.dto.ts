@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
 
 // undefined = no tocar; null = quitar la cuenta configurada
 export class UpdateAccountingSettingsDto {
@@ -14,4 +14,6 @@ export class UpdateAccountingSettingsDto {
   @IsOptional() @IsUUID() fxGainAccountId?: string | null;
   @IsOptional() @IsUUID() fxLossAccountId?: string | null;
   @IsOptional() @IsUUID() roundingAccountId?: string | null;
+  // true: los asientos manuales quedan en borrador hasta que otro usuario los apruebe
+  @IsOptional() @IsBoolean() requireEntryApproval?: boolean;
 }

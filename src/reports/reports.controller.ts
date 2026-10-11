@@ -23,6 +23,7 @@ import { BalanceSheetGenerator } from './generators/balance-sheet.generator.js';
 import { CashFlowGenerator } from './generators/cash-flow.generator.js';
 import { LedgerDetailGenerator } from './generators/ledger-detail.generator.js';
 import { SubledgerGenerator } from './generators/subledger.generator.js';
+import { FinancialRatiosGenerator } from './generators/financial-ratios.generator.js';
 import { CashFlowQuery, DocumentLedgerQuery, SubledgerQuery } from './dto/books-queries.dto.js';
 
 // Solo lectura: cualquier rol de la empresa puede consultar los reportes.
@@ -36,6 +37,7 @@ export class ReportsController {
     private readonly cashFlow: CashFlowGenerator,
     private readonly ledgerDetail: LedgerDetailGenerator,
     private readonly subledger: SubledgerGenerator,
+    private readonly financialRatios: FinancialRatiosGenerator,
   ) {}
 
   @Get('journal-book')
@@ -66,6 +68,12 @@ export class ReportsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.incomeStatement.generate(query, user);
+  }
+
+  // Razones financieras del período [from, to]: liquidez, endeudamiento, rentabilidad y actividad
+  @Get('financial-ratios')
+  financialRatiosReport(@Query() query: IncomeStatementQuery, @CurrentUser() user: AuthUser) {
+    return this.financialRatios.generate(query, user);
   }
 
   @Get('balance-sheet')

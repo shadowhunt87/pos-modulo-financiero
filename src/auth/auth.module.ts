@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
+import { AttemptLimiter, TooManyAttemptsFilter } from './attempt-limiter.js';
 
 @Module({
   imports: [
@@ -23,7 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, PassportModule],
+  providers: [AuthService, JwtStrategy, AttemptLimiter, { provide: APP_FILTER, useClass: TooManyAttemptsFilter }],
+  exports: [AuthService, PassportModule, AttemptLimiter],
 })
 export class AuthModule {}

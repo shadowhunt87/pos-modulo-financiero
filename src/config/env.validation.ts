@@ -36,6 +36,40 @@ class EnvironmentVariables {
   @Min(1)
   @Max(65535)
   PORT?: number;
+
+  // Cuántos proxies hay delante del backend (nginx = 1). 0 = ninguno: se ignora X-Forwarded-For.
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  TRUST_PROXY?: number;
+
+  // Orígenes permitidos por CORS, separados por coma (ej: https://app.midominio.com). Vacío = CORS apagado.
+  @IsOptional()
+  @IsString()
+  CORS_ORIGINS?: string;
+
+  // Carpeta donde se guardan los adjuntos (default ./uploads). En producción: un volumen persistente.
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  UPLOADS_DIR?: string;
+
+  // Tamaño máximo por adjunto en MB (default 10)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  MAX_UPLOAD_MB?: number;
+}
+
+/** Motivo por el que un JWT_SECRET es débil, o null si está bien. */
+export function weakSecretReason(secret: string): string | null {
+  if (new Set(secret).size < 10) return 'tiene muy pocos caracteres distintos (parece repetitivo)';
+  if (/cambiar|changeme|change-me|change_me|secret|password|example|ejemplo|replace|your[-_ ]?key/i.test(secret)) {
+    return 'parece un valor de ejemplo; genera uno real';
+  }
+  return null;
 }
 
 export function validate(config: Record<string, unknown>) {
@@ -49,6 +83,11 @@ export function validate(config: Record<string, unknown>) {
       .map((e) => `  - ${e.property}: ${Object.values(e.constraints ?? {}).join(', ')}`)
       .join('\n');
     throw new Error(`Variables de entorno inválidas:\n${detail}`);
+  }
+
+  const weak = weakSecretReason(validated.JWT_SECRET);
+  if (weak) {
+    throw new Error(`Variables de entorno inválidas:\n  - JWT_SECRET: ${weak}. Genera uno con: openssl rand -hex 64`);
   }
 
   return validated;

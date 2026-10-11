@@ -39,13 +39,17 @@ export class AccountingSettingsService {
       select: { id: true, code: true, name: true, type: true },
     });
     const byId = new Map(accounts.map((a) => [a.id, a]));
-    return Object.fromEntries(
-      KEYS.map((k) => [k, s?.[k] ? { accountId: s[k], ...byId.get(s[k]!) } : null]),
-    ) as Record<SettingsKey, unknown>;
+    return {
+      ...(Object.fromEntries(
+        KEYS.map((k) => [k, s?.[k] ? { accountId: s[k], ...byId.get(s[k]!) } : null]),
+      ) as Record<SettingsKey, unknown>),
+      requireEntryApproval: s?.requireEntryApproval ?? false,
+    };
   }
 
   async update(dto: UpdateAccountingSettingsDto, user: AuthUser) {
-    const data: Partial<Record<SettingsKey, string | null>> = {};
+    const data: Partial<Record<SettingsKey, string | null>> & { requireEntryApproval?: boolean } = {};
+    if (dto.requireEntryApproval !== undefined) data.requireEntryApproval = dto.requireEntryApproval;
     for (const key of KEYS) {
       const value = dto[key];
       if (value === undefined) continue;

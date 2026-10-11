@@ -58,6 +58,15 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Archivo original subido por Carlos
+# Adjuntos subidos (almacenamiento local)
+/uploads
+
+# Cliente de Prisma generado (se crea con `npx prisma generate`)
+/src/generated
+
+# Secretos locales (los .example si se versionan)
+.env.test
+.env.production
+
+# Archivos ZIP recibidos
 *.zip
-*.tsbuildinfo

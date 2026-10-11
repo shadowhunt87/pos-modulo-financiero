@@ -78,7 +78,7 @@ describe('Facturación + Pagos (e2e)', () => {
     }).expect(201)).body.id;
     bank = (await prisma.bankAccount.create({ data: { companyId: companyA, bankName: 'Banco X', accountNumber: '001', glAccountId: acc.banco } })).id;
     cash = (await prisma.cashRegister.create({ data: { companyId: companyA, name: 'Caja', glAccountId: acc.caja } })).id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
     const ids = [companyA, companyB].filter(Boolean);
@@ -94,6 +94,7 @@ describe('Facturación + Pagos (e2e)', () => {
     await prisma.bankAccount.deleteMany({ where });
     await prisma.cashRegister.deleteMany({ where });
     await prisma.auditLog.deleteMany({ where });
+    await prisma.auditLog.deleteMany({ where: { user: where } });
     await prisma.ncfSequence.deleteMany({ where });
     await prisma.documentSequence.deleteMany({ where });
     await prisma.journal.deleteMany({ where });
@@ -104,7 +105,7 @@ describe('Facturación + Pagos (e2e)', () => {
     await prisma.user.deleteMany({ where });
     await prisma.company.deleteMany({ where: { id: { in: ids } } });
     await app.close();
-  });
+  }, 60_000);
 
   describe('facturación', () => {
     it('emite una venta con número, NCF y asiento cuadrado', async () => {

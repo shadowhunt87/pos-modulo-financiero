@@ -66,3 +66,30 @@ export class CreateJournalEntryDto {
   @Type(() => JournalLineDto)
   lines: JournalLineDto[];
 }
+
+
+// Solo para borradores/rechazados. Si envías `lines`, reemplazan por completo a las anteriores.
+export class UpdateJournalEntryDto {
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  reference?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => JournalLineDto)
+  lines?: JournalLineDto[];
+}

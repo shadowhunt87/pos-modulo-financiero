@@ -54,7 +54,7 @@ export class TaxRatesService {
     await this.get(id, user);
     await this.assertAccounts(user.companyId, [dto.salesAccountId, dto.purchaseAccountId]);
     return this.prisma.$transaction(async (tx) => {
-      const tax = await tx.taxRate.update({ where: { id }, data: dto });
+      const tax = await tx.taxRate.update({ where: { id, companyId: user.companyId }, data: dto });
       await writeAudit(tx, user, 'TaxRate', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return tax;
     });

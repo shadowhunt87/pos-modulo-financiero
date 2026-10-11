@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -11,12 +12,16 @@ import {
   AuditAction,
   FiscalPeriodStatus,
   JournalEntryStatus,
+  JournalEntryType,
+  JournalType,
+  UserRole,
 } from '../../generated/prisma/enums.js';
 import type { AuthUser } from '../../auth/types/auth-user.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateAccountDto } from '../dto/create-account.dto.js';
 import { UpdateAccountDto } from '../dto/update-account.dto.js';
-import { CreateJournalEntryDto } from '../dto/create-journal-entry.dto.js';
+import { CreateJournalEntryDto, UpdateJournalEntryDto } from '../dto/create-journal-entry.dto.js';
+import { JournalsService } from '../../masters/journals/journals.service.js';
 import { CreateFiscalPeriodDto } from '../dto/create-fiscal-period.dto.js';
 import {
   DateRangeQuery,
@@ -42,7 +47,10 @@ const isUniqueViolation = (e: unknown) => (e as { code?: string })?.code === 'P2
 
 @Injectable()
 export class AccountingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly journals: JournalsService,
+  ) {}
 
   // ------------------------------------------------------------------
   // Auditoría (siempre dentro de la misma transacción que el cambio)
@@ -173,7 +181,7 @@ export class AccountingService {
         data.active = dto.active;
       }
 
-      const updated = await tx.account.update({ where: { id }, data });
+      const updated = await tx.account.update({ where: { id, companyId: user.companyId }, data });
       await this.audit(tx, user, 'Account', id, AuditAction.UPDATE, {
         before: { name: account.name, active: account.active, parentId: account.parentId },
         after: { name: updated.name, active: updated.active, parentId: updated.parentId },
@@ -229,6 +237,26 @@ export class AccountingService {
   private async setPeriodStatus(id: string, status: FiscalPeriodStatus, user: AuthUser) {
     return this.prisma.$transaction(async (tx) => {
       const closing = status === FiscalPeriodStatus.CLOSED;
+      if (!closing) {
+        const p = await tx.fiscalPeriod.findFirst({ where: { id, companyId: user.companyId } });
+        const yr = p && (await tx.fiscalYear.findFirst({
+          where: { companyId: user.companyId, status: FiscalPeriodStatus.CLOSED, startDate: { lte: p.startDate }, endDate: { gte: p.endDate } },
+        }));
+        if (yr) throw new ConflictException(`El período pertenece al año fiscal cerrado "${yr.name}"; reabre el año`);
+      }
+      if (closing) {
+        const p = await tx.fiscalPeriod.findFirst({ where: { id, companyId: user.companyId } });
+        const pending = p
+          ? await tx.journalEntry.count({
+              where: { companyId: user.companyId, status: JournalEntryStatus.DRAFT, date: { gte: p.startDate, lte: p.endDate } },
+            })
+          : 0;
+        if (pending) {
+          throw new UnprocessableEntityException(
+            `Hay ${pending} asiento(s) pendientes de aprobación en el período; apruébalos o recházalos antes de cerrar`,
+          );
+        }
+      }
       // updateMany con la condición de estado: si dos admins cierran a la vez, solo uno gana
       const res = await tx.fiscalPeriod.updateMany({
         where: {
@@ -277,16 +305,21 @@ export class AccountingService {
         `El período fiscal "${closed.name}" está cerrado`,
       );
     }
+    // Un año fiscal cerrado bloquea sus fechas aunque no existan períodos definidos
+    const year = await tx.fiscalYear.findFirst({
+      where: { companyId, status: FiscalPeriodStatus.CLOSED, startDate: { lte: date }, endDate: { gte: date } },
+    });
+    if (year) {
+      throw new UnprocessableEntityException(`El año fiscal "${year.name}" está cerrado`);
+    }
   }
 
   // ------------------------------------------------------------------
   // Asientos contables
   // ------------------------------------------------------------------
-  async createJournalEntry(dto: CreateJournalEntryDto, user: AuthUser) {
-    const date = new Date(dto.date);
-
-    // 1. Validación de partida doble (sin tocar la BD)
-    const lines = dto.lines.map((l, i) => {
+  /** Valida partida doble sin tocar la BD y normaliza las líneas. */
+  private prepareLines(input: CreateJournalEntryDto['lines']) {
+    const lines = input.map((l, i) => {
       const debit = dec(l.debit);
       const credit = dec(l.credit);
       if (debit.gt(0) === credit.gt(0)) {
@@ -302,7 +335,6 @@ export class AccountingService {
         credit,
       };
     });
-
     const totalDebit = lines.reduce((s, l) => s.plus(l.debit), dec(0));
     const totalCredit = lines.reduce((s, l) => s.plus(l.credit), dec(0));
     if (!totalDebit.equals(totalCredit)) {
@@ -310,50 +342,83 @@ export class AccountingService {
         `El asiento no cuadra: débitos ${totalDebit.toFixed(4)} ≠ créditos ${totalCredit.toFixed(4)}`,
       );
     }
+    return { lines, totalDebit };
+  }
 
-    // 2. Todo lo demás, atómico
+  /** Cuentas y centros de costo válidos para asentar (se repite al aprobar). */
+  private async assertAccountsPostable(
+    tx: Tx,
+    companyId: string,
+    lines: { accountId: string; costCenterId?: string | null }[],
+  ) {
+    const accountIds = [...new Set(lines.map((l) => l.accountId))];
+    const accounts = await tx.account.findMany({
+      where: { companyId, id: { in: accountIds } },
+    });
+    if (accounts.length !== accountIds.length) {
+      const found = new Set(accounts.map((a) => a.id));
+      const missing = accountIds.filter((id) => !found.has(id));
+      throw new BadRequestException(`Cuentas no encontradas en tu empresa: ${missing.join(', ')}`);
+    }
+    const inactive = accounts.filter((a) => !a.active);
+    if (inactive.length) {
+      throw new UnprocessableEntityException(
+        `Cuentas inactivas: ${inactive.map((a) => a.code).join(', ')}`,
+      );
+    }
+    // No se postea en cuentas "de agrupación" (las que tienen subcuentas)
+    const parents = await tx.account.findMany({
+      where: { companyId, parentId: { in: accountIds } },
+      select: { parentId: true },
+      distinct: ['parentId'],
+    });
+    if (parents.length) {
+      const parentIds = new Set(parents.map((p) => p.parentId));
+      const codes = accounts.filter((a) => parentIds.has(a.id)).map((a) => a.code);
+      throw new UnprocessableEntityException(
+        `No se puede postear en cuentas con subcuentas: ${codes.join(', ')}`,
+      );
+    }
+
+    const costCenterIds = [...new Set(lines.map((l) => l.costCenterId).filter((x): x is string => !!x))];
+    if (costCenterIds.length) {
+      const ccs = await tx.costCenter.findMany({
+        where: { companyId, id: { in: costCenterIds }, active: true },
+      });
+      if (ccs.length !== costCenterIds.length) {
+        throw new BadRequestException('Centro de costo no encontrado o inactivo');
+      }
+    }
+  }
+
+  /** Número del diario general y período fiscal. Si la empresa no tiene diarios/períodos, quedan vacíos. */
+  private async numberAndPeriod(tx: Tx, companyId: string, date: Date) {
+    const period = await tx.fiscalPeriod.findFirst({
+      where: { companyId, startDate: { lte: date }, endDate: { gte: date } },
+    });
+    const journal = await tx.journal.findFirst({
+      where: { companyId, type: JournalType.GENERAL, active: true },
+      orderBy: { code: 'asc' },
+    });
+    const number = journal ? await this.journals.nextEntryNumber(tx, companyId, journal.id) : null;
+    return { number, journalId: journal?.id ?? null, fiscalPeriodId: period?.id ?? null };
+  }
+
+  async createJournalEntry(dto: CreateJournalEntryDto, user: AuthUser) {
+    const date = new Date(dto.date);
+    const { lines, totalDebit } = this.prepareLines(dto.lines);
+
     return this.prisma.$transaction(async (tx) => {
       await this.assertPeriodOpen(tx, user.companyId, date);
+      await this.assertAccountsPostable(tx, user.companyId, lines);
 
-      const accountIds = [...new Set(lines.map((l) => l.accountId))];
-      const accounts = await tx.account.findMany({
-        where: { companyId: user.companyId, id: { in: accountIds } },
-      });
-      if (accounts.length !== accountIds.length) {
-        const found = new Set(accounts.map((a) => a.id));
-        const missing = accountIds.filter((id) => !found.has(id));
-        throw new BadRequestException(`Cuentas no encontradas en tu empresa: ${missing.join(', ')}`);
-      }
-      const inactive = accounts.filter((a) => !a.active);
-      if (inactive.length) {
-        throw new UnprocessableEntityException(
-          `Cuentas inactivas: ${inactive.map((a) => a.code).join(', ')}`,
-        );
-      }
-      // No se postea en cuentas "de agrupación" (las que tienen subcuentas)
-      const parents = await tx.account.findMany({
-        where: { companyId: user.companyId, parentId: { in: accountIds } },
-        select: { parentId: true },
-        distinct: ['parentId'],
-      });
-      if (parents.length) {
-        const parentIds = new Set(parents.map((p) => p.parentId));
-        const codes = accounts.filter((a) => parentIds.has(a.id)).map((a) => a.code);
-        throw new UnprocessableEntityException(
-          `No se puede postear en cuentas con subcuentas: ${codes.join(', ')}`,
-        );
-      }
+      const settings = await tx.accountingSettings.findUnique({ where: { companyId: user.companyId } });
+      const needsApproval = settings?.requireEntryApproval ?? false;
 
-      const costCenterIds = [...new Set(lines.map((l) => l.costCenterId).filter((x): x is string => !!x))];
-      if (costCenterIds.length) {
-        const ccs = await tx.costCenter.findMany({
-          where: { companyId: user.companyId, id: { in: costCenterIds }, active: true },
-        });
-        if (ccs.length !== costCenterIds.length) {
-          throw new BadRequestException('Centro de costo no encontrado o inactivo');
-        }
-      }
-
+      // Con aprobación activa queda en borrador: sin número y sin efecto en libros ni reportes
+      const extra = needsApproval
+        ? {}
+        : { ...(await this.numberAndPeriod(tx, user.companyId, date)), postedAt: new Date() };
       const entry = await tx.journalEntry.create({
         data: {
           companyId: user.companyId,
@@ -361,7 +426,8 @@ export class AccountingService {
           description: dto.description,
           reference: dto.reference,
           createdById: user.id,
-          status: JournalEntryStatus.POSTED,
+          status: needsApproval ? JournalEntryStatus.DRAFT : JournalEntryStatus.POSTED,
+          ...extra,
           lines: { create: lines },
         },
         include: { lines: true },
@@ -371,8 +437,106 @@ export class AccountingService {
         date: dto.date,
         total: totalDebit.toString(),
         lines: entry.lines.length,
+        status: entry.status,
       });
       return entry;
+    });
+  }
+
+  /** Corrige un borrador (o un asiento rechazado, que vuelve a quedar pendiente). */
+  async updateJournalEntry(id: string, dto: UpdateJournalEntryDto, user: AuthUser) {
+    const prepared = dto.lines ? this.prepareLines(dto.lines) : null;
+    return this.prisma.$transaction(async (tx) => {
+      const entry = await this.lockEntry(tx, id, user);
+      if (entry.status !== JournalEntryStatus.DRAFT && entry.status !== JournalEntryStatus.REJECTED) {
+        throw new UnprocessableEntityException('Solo se pueden editar asientos en borrador o rechazados');
+      }
+      if (user.role !== UserRole.ADMIN && entry.createdById !== user.id) {
+        throw new ForbiddenException('Solo quien creó el asiento (o un ADMIN) puede editarlo');
+      }
+      const date = dto.date ? new Date(dto.date) : entry.date;
+      await this.assertPeriodOpen(tx, user.companyId, date);
+      if (prepared) {
+        await this.assertAccountsPostable(tx, user.companyId, prepared.lines);
+        await tx.journalEntryLine.deleteMany({ where: { journalEntryId: id } });
+      }
+      await tx.journalEntry.update({
+        where: { id, companyId: user.companyId },
+        data: {
+          date,
+          description: dto.description ?? entry.description,
+          reference: dto.reference ?? entry.reference,
+          status: JournalEntryStatus.DRAFT,
+          rejectReason: null,
+          rejectedAt: null,
+          ...(prepared && { lines: { create: prepared.lines } }),
+        },
+      });
+      await this.audit(tx, user, 'JournalEntry', id, AuditAction.UPDATE, {
+        resubmitted: entry.status === JournalEntryStatus.REJECTED,
+        linesReplaced: !!prepared,
+      });
+      return tx.journalEntry.findUniqueOrThrow({ where: { id }, include: { lines: true } });
+    });
+  }
+
+  /** Bloquea la fila del asiento: dos acciones simultáneas (aprobar/rechazar/editar) se serializan. */
+  private async lockEntry(tx: Tx, id: string, user: AuthUser) {
+    const rows = await tx.$queryRaw<{ id: string }[]>(
+      Prisma.sql`SELECT "id" FROM "JournalEntry" WHERE "id" = ${id} AND "companyId" = ${user.companyId} FOR UPDATE`,
+    );
+    if (rows.length === 0) throw new NotFoundException('Asiento no encontrado');
+    return tx.journalEntry.findUniqueOrThrow({ where: { id } });
+  }
+
+  async approveJournalEntry(id: string, user: AuthUser) {
+    return this.prisma.$transaction(async (tx) => {
+      const entry = await this.lockEntry(tx, id, user);
+      if (entry.status !== JournalEntryStatus.DRAFT) {
+        throw new ConflictException(`El asiento no está pendiente de aprobación (estado ${entry.status})`);
+      }
+      // Separación de funciones: quien lo creó no lo aprueba
+      if (entry.createdById === user.id) {
+        throw new ForbiddenException('No puedes aprobar un asiento que creaste tú');
+      }
+      // Todo se revalida: desde que se creó pudo cerrarse el período o desactivarse una cuenta
+      await this.assertPeriodOpen(tx, user.companyId, entry.date);
+      const lines = await tx.journalEntryLine.findMany({ where: { journalEntryId: id } });
+      await this.assertAccountsPostable(tx, user.companyId, lines);
+
+      const claimed = await tx.journalEntry.updateMany({
+        where: { id, companyId: user.companyId, status: JournalEntryStatus.DRAFT },
+        data: {
+          status: JournalEntryStatus.POSTED,
+          postedAt: new Date(),
+          approvedById: user.id,
+          approvedAt: new Date(),
+          ...(await this.numberAndPeriod(tx, user.companyId, entry.date)),
+        },
+      });
+      if (claimed.count === 0) throw new ConflictException('El asiento cambió de estado; reintenta');
+      await this.audit(tx, user, 'JournalEntry', id, AuditAction.APPROVE, { createdById: entry.createdById });
+      return tx.journalEntry.findUniqueOrThrow({ where: { id }, include: { lines: true } });
+    });
+  }
+
+  async rejectJournalEntry(id: string, reason: string, user: AuthUser) {
+    return this.prisma.$transaction(async (tx) => {
+      const entry = await this.lockEntry(tx, id, user);
+      if (entry.status !== JournalEntryStatus.DRAFT) {
+        throw new ConflictException(`El asiento no está pendiente de aprobación (estado ${entry.status})`);
+      }
+      // Un contador solo retira lo suyo; ADMIN y APPROVER rechazan cualquiera
+      if (user.role === UserRole.ACCOUNTANT && entry.createdById !== user.id) {
+        throw new ForbiddenException('Solo puedes rechazar tus propios asientos');
+      }
+      const res = await tx.journalEntry.updateMany({
+        where: { id, companyId: user.companyId, status: JournalEntryStatus.DRAFT },
+        data: { status: JournalEntryStatus.REJECTED, rejectReason: reason, rejectedAt: new Date() },
+      });
+      if (res.count === 0) throw new ConflictException('El asiento cambió de estado; reintenta');
+      await this.audit(tx, user, 'JournalEntry', id, AuditAction.REJECT, { reason });
+      return tx.journalEntry.findUniqueOrThrow({ where: { id }, include: { lines: true } });
     });
   }
 
@@ -382,8 +546,17 @@ export class AccountingService {
         where: { id, companyId: user.companyId },
       });
       if (!entry) throw new NotFoundException('Asiento no encontrado');
+      if (entry.status === JournalEntryStatus.VOIDED) throw new ConflictException('El asiento ya está anulado');
+      if (entry.status !== JournalEntryStatus.POSTED) {
+        throw new UnprocessableEntityException('Solo se anulan asientos contabilizados; un borrador se rechaza');
+      }
       if (entry.reconciled) {
         throw new UnprocessableEntityException('No se puede anular un asiento conciliado');
+      }
+      if (entry.type === JournalEntryType.CLOSING) {
+        throw new UnprocessableEntityException(
+          'El asiento de cierre solo se anula reabriendo el año fiscal (POST /fiscal-years/:id/reopen)',
+        );
       }
       await this.assertPeriodOpen(tx, user.companyId, entry.date);
 

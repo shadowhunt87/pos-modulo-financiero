@@ -1,0 +1,229 @@
+<div class="page">
+  @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+
+  @if (rec(); as r) {
+    @if (summary(); as s) {
+      <div class="page-head">
+        <div>
+          <p class="sub"><a routerLink="/reconciliations">Conciliación bancaria</a> / Corte al {{ r.statementDate | fdate }}</p>
+          <h1>{{ r.bankAccount.bankName }} <span class="mono dim">{{ r.bankAccount.accountNumber }}</span></h1>
+          <p class="sub"><app-status [value]="r.status" [map]="STATUS" /> @if (r.completedAt) { · Completada el {{ r.completedAt | fdate }} } @if (r.notes) { · {{ r.notes }} }</p>
+        </div>
+        <div class="btn-row">
+          <a class="btn" [routerLink]="['/bank-accounts', r.bankAccountId]">Movimientos de la cuenta</a>
+          @if (isDraft()) {
+            @if (canMatch) { <button type="button" class="btn" [disabled]="busy()" (click)="autoMatch()">Enlazar automáticamente</button> }
+            @if (canDelete) { <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="remove()">Eliminar</button> }
+            @if (canComplete) { <button type="button" class="btn btn-primary" [disabled]="busy() || !s.canComplete" (click)="complete()">Completar conciliación</button> }
+          } @else if (canReopen) {
+            <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="reopen()">Reabrir</button>
+          }
+        </div>
+      </div>
+
+      <div class="figures" style="margin-bottom:16px">
+        <div class="figure"><div class="f-label">Saldo del extracto</div><div class="f-value">{{ s.statementBalance | money }}</div><div class="f-note">Al {{ s.statementDate | fdate }}</div></div>
+        <div class="figure"><div class="f-label">Saldo esperado</div><div class="f-value">{{ s.expectedStatementBalance | money }}</div><div class="f-note">Lo que el extracto debería mostrar según libros</div></div>
+        <div class="figure"><div class="f-label">Saldo en libros</div><div class="f-value">{{ s.bookBalance | money }}</div><div class="f-note">Cuenta contable del banco</div></div>
+        <div class="figure">
+          <div class="f-label">Diferencia</div>
+          <div class="f-value" [class.pos]="balanced()" [class.neg]="!balanced()">{{ liveDifference().toString() | money }}</div>
+          <div class="f-note">{{ balanced() ? 'Cuadrado' : 'Extracto menos saldo esperado' }}</div>
+        </div>
+      </div>
+
+      @if (isDraft()) {
+        @if (blockerLines().length || s.blockers.length) {
+          <div class="notice warn" role="status" style="margin-bottom:14px;flex-direction:column">
+            <strong>Para completar la conciliación falta:</strong>
+            <ul style="margin:0;padding-left:18px">@for (b of (blockerLines().length ? blockerLines() : s.blockers); track $index) { <li>{{ b }}</li> }</ul>
+          </div>
+        } @else {
+          <div class="notice pos" role="status" style="margin-bottom:14px">La conciliación está cuadrada y sin pendientes. Ya puedes completarla.</div>
+        }
+      }
+
+      <section class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><h2>Cómo se calcula el saldo esperado</h2></div>
+        <div class="panel-pad">
+          <dl class="kv">
+            <dt>Saldo en libros</dt><dd class="num">{{ s.bookBalance | money }}</dd>
+            <dt>Menos partidas en libros que el banco aún no refleja</dt><dd class="num">{{ s.outstandingNet | money }}</dd>
+            <dt>Más movimientos del banco sin registrar en libros</dt><dd class="num">{{ s.unmatchedSum | money }}</dd>
+            <dt><strong>Saldo esperado del extracto</strong></dt><dd class="num"><strong>{{ s.expectedStatementBalance | money }}</strong></dd>
+          </dl>
+        </div>
+      </section>
+
+      <div class="tabs" role="tablist" aria-label="Partidas de la conciliación">
+        <button type="button" role="tab" class="tab" id="rt-unmatched" [class.active]="tab() === 'unmatched'" [attr.aria-selected]="tab() === 'unmatched'" (click)="setTab('unmatched')">Movimientos del banco sin enlazar ({{ s.unmatchedTransactions.length }})</button>
+        <button type="button" role="tab" class="tab" id="rt-book" [class.active]="tab() === 'book'" [attr.aria-selected]="tab() === 'book'" (click)="setTab('book')">Partidas en libros pendientes ({{ s.depositsInTransit.length + s.outstandingPayments.length }})</button>
+        @if (isDraft()) {
+          <button type="button" role="tab" class="tab" id="rt-matched" [class.active]="tab() === 'matched'" [attr.aria-selected]="tab() === 'matched'" (click)="setTab('matched')">Enlazados ({{ matchedTotal() }})</button>
+        }
+      </div>
+
+      @switch (tab()) {
+        @case ('unmatched') {
+          @if (isDraft()) {
+            <div class="toolbar">
+              <div class="field"><label for="sg-days">Tolerancia de fechas (días)</label>
+                <input id="sg-days" class="input num" type="number" min="0" max="30" [value]="days()" (change)="setDays($any($event.target).value)" /></div>
+              @if (loadingSugg()) { <span class="dim"><span class="spinner"></span> Buscando sugerencias…</span> }
+            </div>
+          }
+          <section class="panel">
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Fecha</th><th>Descripción</th><th class="num">Monto</th>@if (isDraft()) { <th>Sugerencias de asientos</th><th></th> }</tr></thead>
+                <tbody>
+                  @for (t of s.unmatchedTransactions; track t.id) {
+                    <tr>
+                      <td>{{ t.date | fdate }}</td>
+                      <td>{{ t.description }}@if (t.reference) { <div class="dim">Ref. {{ t.reference }}</div> }</td>
+                      <td class="num" [class]="t.amount | signClass">{{ t.amount | money }}</td>
+                      @if (isDraft()) {
+                        <td>
+                          @for (c of suggestions().get(t.id) ?? []; track c.journalEntryLineId) {
+                            <div class="btn-row" style="margin-bottom:4px">
+                              <a [routerLink]="['/entries', c.entryId]">{{ itemLabel(c) }}</a>
+                              <span class="faint">{{ c.description }}</span>
+                              @if (canMatch) { <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="matchOne(t, c.journalEntryLineId)">Enlazar</button> }
+                            </div>
+                          } @empty { <span class="faint">{{ loadingSugg() ? '' : 'Sin coincidencias exactas' }}</span> }
+                        </td>
+                        <td class="actions">
+                          @if (canMatch) { <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="openManual(t)">Enlazar a mano</button> }
+                          @if (canCategorize) {
+                            <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="openCategorize(t)">Categorizar</button>
+                            <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="ignore(t)">Ignorar</button>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  } @empty {
+                    <tr><td [attr.colspan]="isDraft() ? 5 : 3" class="table-empty">No quedan movimientos del banco sin enlazar a esta fecha de corte.</td></tr>
+                  }
+                </tbody>
+                @if (s.unmatchedTransactions.length) {
+                  <tfoot><tr><td colspan="2">Total sin registrar en libros</td><td class="num">{{ s.unmatchedSum | money }}</td>@if (isDraft()) { <td colspan="2"></td> }</tr></tfoot>
+                }
+              </table>
+            </div>
+          </section>
+        }
+        @case ('book') {
+          <div class="cols-2">
+            <section class="panel">
+              <div class="panel-head"><h2>Depósitos en tránsito</h2></div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Asiento</th><th>Descripción</th><th class="num">Monto</th></tr></thead>
+                  <tbody>
+                    @for (i of s.depositsInTransit; track i.journalEntryLineId) {
+                      <tr><td><a [routerLink]="['/entries', i.entryId]">{{ itemLabel(i) }}</a></td><td>{{ i.description }}</td><td class="num">{{ i.amount | money }}</td></tr>
+                    } @empty { <tr><td colspan="3" class="table-empty">No hay depósitos en tránsito.</td></tr> }
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Cheques y pagos pendientes</h2></div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Asiento</th><th>Descripción</th><th class="num">Monto</th></tr></thead>
+                  <tbody>
+                    @for (i of s.outstandingPayments; track i.journalEntryLineId) {
+                      <tr><td><a [routerLink]="['/entries', i.entryId]">{{ itemLabel(i) }}</a></td><td>{{ i.description }}</td><td class="num" [class]="i.amount | signClass">{{ i.amount | money }}</td></tr>
+                    } @empty { <tr><td colspan="3" class="table-empty">No hay pagos pendientes.</td></tr> }
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        }
+        @case ('matched') {
+          <section class="panel">
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Fecha</th><th>Descripción</th><th class="num">Monto</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                  @for (t of matched(); track t.id) {
+                    <tr>
+                      <td>{{ t.date | fdate }}</td>
+                      <td>{{ t.description }}@if (t.reference) { <div class="dim">Ref. {{ t.reference }}</div> }</td>
+                      <td class="num" [class]="t.amount | signClass">{{ t.amount | money }}</td>
+                      <td><app-status [value]="t.status" [map]="TX_STATUS" />@if (t.matches.length > 1) { <div class="faint">{{ t.matches.length }} líneas</div> }</td>
+                      <td class="actions">@if (canMatch) { <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="unmatch(t)">Deshacer enlace</button> }</td>
+                    </tr>
+                  } @empty { <tr><td colspan="5" class="table-empty">Todavía no hay movimientos enlazados hasta esta fecha de corte.</td></tr> }
+                </tbody>
+              </table>
+            </div>
+            @if (matchedTotal() > matched().length) { <p class="hint" style="padding:10px 16px">Se muestran los primeros {{ matched().length }} de {{ matchedTotal() }}. Revisa el resto en el detalle de la cuenta.</p> }
+          </section>
+        }
+      }
+
+      <div>
+        <app-attachments parent="reconciliationId" [parentId]="r.id" [canEdit]="canMatch" />
+      </div>
+    }
+  }
+</div>
+
+<app-modal [open]="!!manualTx()" title="Enlazar con asientos" width="760px" (closed)="manualTx.set(null)">
+  @if (manualTx(); as t) {
+    <dl class="kv" style="margin-bottom:14px">
+      <dt>Movimiento</dt><dd>{{ t.date | fdate }} · {{ t.description }}</dd>
+      <dt>Monto</dt><dd class="num" [class]="t.amount | signClass">{{ t.amount | money }}</dd>
+    </dl>
+    <p class="hint" style="margin-bottom:8px">Marca las líneas del mayor que cubren este movimiento. Deben sumar exactamente su monto y no estar enlazadas a otro movimiento.</p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th></th><th>Asiento</th><th>Descripción</th><th class="num">Monto</th></tr></thead>
+        <tbody>
+          @for (i of manualItems(); track i.journalEntryLineId) {
+            <tr>
+              <td><input type="checkbox" [id]="'pick-' + i.journalEntryLineId" [checked]="picked().has(i.journalEntryLineId)" (change)="togglePick(i.journalEntryLineId)" [attr.aria-label]="'Elegir ' + itemLabel(i)" /></td>
+              <td><label [for]="'pick-' + i.journalEntryLineId">{{ itemLabel(i) }}</label></td>
+              <td>{{ i.description }}</td>
+              <td class="num">{{ i.amount | money }}</td>
+            </tr>
+          } @empty { <tr><td colspan="4" class="table-empty">No hay partidas en libros con el mismo sentido (entrada o salida) para enlazar.</td></tr> }
+        </tbody>
+        <tfoot><tr><td colspan="3">Suma elegida</td><td class="num" [class.pos]="manualMatches()">{{ pickedSum().toString() | money }}</td></tr></tfoot>
+      </table>
+    </div>
+    @if (manualError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ manualError() }}</div> }
+  }
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="manualTx.set(null)">Cancelar</button>
+    <button type="button" class="btn btn-primary" [disabled]="manualBusy() || !manualMatches()" (click)="saveManual()">{{ manualBusy() ? 'Enlazando…' : 'Enlazar' }}</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="!!catTx()" title="Categorizar movimiento" width="620px" (closed)="catTx.set(null)">
+  @if (catTx(); as t) {
+    <form id="rcat-form" [formGroup]="catForm" (ngSubmit)="saveCategorize()" novalidate>
+      <dl class="kv" style="margin-bottom:14px">
+        <dt>Fecha</dt><dd>{{ t.date | fdate }}</dd>
+        <dt>Descripción</dt><dd>{{ t.description }}</dd>
+        <dt>Monto</dt><dd class="num" [class]="t.amount | signClass">{{ t.amount | money }}</dd>
+      </dl>
+      <div class="form-grid">
+        <div class="field span-all"><label for="rcat-acc">Cuenta contraparte</label>
+          <app-combobox id="rcat-acc" formControlName="accountId" [options]="accountOptions()" placeholder="Gastos bancarios, intereses ganados…" [clearable]="false" />
+          @if (catForm.controls.accountId.touched && catForm.controls.accountId.invalid) { <span class="error-text">Elige la cuenta donde se registra este movimiento.</span> }</div>
+        <div class="field span-all"><label for="rcat-desc">Descripción del asiento</label><input id="rcat-desc" class="input" formControlName="description" maxlength="300" /></div>
+      </div>
+      <p class="hint" style="margin-top:10px">Se crea el asiento del movimiento y queda enlazado. Solo para cuentas en moneda base.</p>
+      @if (catError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ catError() }}</div> }
+    </form>
+  }
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="catTx.set(null)">Cancelar</button>
+    <button type="submit" form="rcat-form" class="btn btn-primary" [disabled]="catBusy()">{{ catBusy() ? 'Categorizando…' : 'Categorizar' }}</button>
+  </ng-container>
+</app-modal>

@@ -1,0 +1,77 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Panel</h1>
+      <p class="sub">Resultados de {{ year }} hasta hoy y lo que requiere tu atención.</p>
+    </div>
+    <div class="btn-row">
+      @if (auth.has('ADMIN', 'ACCOUNTANT')) {
+        <a class="btn btn-primary" routerLink="/invoices/new">Nueva factura</a>
+        <a class="btn" routerLink="/payments/new">Registrar cobro o pago</a>
+      }
+    </div>
+  </div>
+
+  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando cifras…</div> }
+  @else {
+    @if (overdueCount() || pendingEntries()) {
+      <div class="alerts">
+        @if (overdueCount()) { <a class="notice warn" routerLink="/invoices" [queryParams]="{ overdue: true }">{{ overdueCount() }} {{ overdueCount() === 1 ? 'factura vencida' : 'facturas vencidas' }} sin cobrar o pagar</a> }
+        @if (pendingEntries()) { <a class="notice info" routerLink="/entries" [queryParams]="{ status: 'DRAFT' }">{{ pendingEntries() }} {{ pendingEntries() === 1 ? 'asiento espera' : 'asientos esperan' }} tu aprobación</a> }
+      </div>
+    }
+
+    <div class="figures">
+      <div class="figure"><div class="f-label">Ingresos del año</div><div class="f-value">{{ ytd()?.totalIncome | money }}</div></div>
+      <div class="figure"><div class="f-label">Gastos del año</div><div class="f-value">{{ ytd()?.totalExpenses | money }}</div></div>
+      <div class="figure"><div class="f-label">Utilidad neta</div><div class="f-value" [class]="ytd()?.netIncome | signClass">{{ ytd()?.netIncome | money }}</div></div>
+      <div class="figure"><div class="f-label">Por cobrar</div><div class="f-value">{{ receivable()?.total | money }}</div></div>
+      <div class="figure"><div class="f-label">Por pagar</div><div class="f-value">{{ payable()?.total | money }}</div></div>
+      <div class="figure"><div class="f-label">En bancos</div><div class="f-value" [class]="banks() | signClass">{{ banks() | money }}</div><div class="f-note">según el mayor</div></div>
+    </div>
+
+    <div class="cols-2 section">
+      <section class="panel">
+        <div class="panel-head"><h2>Ingresos y gastos, últimos 6 meses</h2></div>
+        <div class="panel-pad"><app-chart [config]="chart()" height="250px" /></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Antigüedad de cuentas por cobrar</h2><a routerLink="/receivables">Ver detalle</a></div>
+        <div class="panel-pad">
+          @for (b of buckets(); track b.label) {
+            <div class="bucket">
+              <span>{{ b.label }}</span>
+              <div class="bar" [class.late]="b.late"><i [style.width.%]="b.width"></i></div>
+              <span class="num">{{ b.value | money }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <section class="panel section">
+      <div class="panel-head"><h2>Últimas facturas</h2><a routerLink="/invoices">Ver todas</a></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Número</th><th>Tipo</th><th>Tercero</th><th>Fecha</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead>
+          <tbody>
+            @for (i of recent(); track i.id) {
+              <tr>
+                <td><a [routerLink]="['/invoices', i.id]">{{ i.number ?? 'Borrador' }}</a></td>
+                <td>{{ i.type | lbl: INVOICE_TYPE }}</td>
+                <td>{{ i.partner?.name }}</td>
+                <td>{{ i.issueDate | fdate }}</td>
+                <td><app-status [value]="i.status" [map]="INVOICE_STATUS" /></td>
+                <td class="num">{{ i.total | money }}</td>
+                <td class="num">{{ i.balance | money }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="table-empty">Aún no hay facturas. Crea la primera desde “Nueva factura”.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

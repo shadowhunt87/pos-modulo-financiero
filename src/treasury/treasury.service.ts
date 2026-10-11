@@ -111,7 +111,7 @@ export class TreasuryService {
   async updateBankAccount(id: string, dto: UpdateBankAccountDto, user: AuthUser) {
     await this.getBankAccountOrFail(id, user);
     return this.prisma.$transaction(async (tx) => {
-      const acc = await tx.bankAccount.update({ where: { id }, data: dto });
+      const acc = await tx.bankAccount.update({ where: { id, companyId: user.companyId }, data: dto });
       await writeAudit(tx, user, 'BankAccount', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return acc;
     });
@@ -146,7 +146,7 @@ export class TreasuryService {
     if (!reg) throw new NotFoundException('Caja no encontrada');
     if (dto.custodianId) await this.assertUser(user.companyId, dto.custodianId);
     return this.prisma.$transaction(async (tx) => {
-      const upd = await tx.cashRegister.update({ where: { id }, data: dto });
+      const upd = await tx.cashRegister.update({ where: { id, companyId: user.companyId }, data: dto });
       await writeAudit(tx, user, 'CashRegister', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return upd;
     });
@@ -239,7 +239,7 @@ export class TreasuryService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const created = await tx.bankTransaction.createMany({ data, skipDuplicates: true });
-      await tx.bankAccount.update({ where: { id: bankAccountId }, data: { lastSyncedAt: new Date() } });
+      await tx.bankAccount.update({ where: { id: bankAccountId, companyId: user.companyId }, data: { lastSyncedAt: new Date() } });
       await writeAudit(tx, user, 'BankAccount', bankAccountId, AuditAction.CREATE, { import: batchId, imported: created.count, rows: data.length });
       return created.count;
     });
@@ -271,7 +271,7 @@ export class TreasuryService {
       if (!gl) throw new UnprocessableEntityException('La cuenta bancaria no tiene cuenta contable asociada');
       if (dto.accountId === gl) throw new UnprocessableEntityException('La contrapartida no puede ser la cuenta del banco');
 
-      const claimed = await tx.bankTransaction.updateMany({ where: { id: txId, status: BankTransactionStatus.PENDING }, data: { status: BankTransactionStatus.MATCHED } });
+      const claimed = await tx.bankTransaction.updateMany({ where: { id: txId, bankAccount: { companyId }, status: BankTransactionStatus.PENDING }, data: { status: BankTransactionStatus.MATCHED } });
       if (claimed.count === 0) throw new UnprocessableEntityException(`El movimiento está ${bt.status}; solo se categorizan los pendientes`);
 
       const amount = bt.amount.abs();
@@ -322,7 +322,7 @@ export class TreasuryService {
     if (!rule) throw new NotFoundException('Regla no encontrada');
     if (dto.accountId) await this.assertRuleAccount(user.companyId, dto.accountId);
     return this.prisma.$transaction(async (tx) => {
-      const upd = await tx.bankRule.update({ where: { id }, data: dto });
+      const upd = await tx.bankRule.update({ where: { id, companyId: user.companyId }, data: dto });
       await writeAudit(tx, user, 'BankRule', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)));
       return upd;
     });

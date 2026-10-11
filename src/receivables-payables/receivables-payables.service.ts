@@ -165,8 +165,8 @@ export class ReceivablesPayablesService {
       if (amount.gt(note.balance)) throw new UnprocessableEntityException(`La nota solo tiene ${note.balance} disponible`);
       if (amount.gt(inv.balance)) throw new UnprocessableEntityException(`La factura solo tiene saldo ${inv.balance}`);
 
-      await applyToInvoice(tx, note.id, amount);
-      await applyToInvoice(tx, inv.id, amount);
+      await applyToInvoice(tx, user.companyId, note.id, amount);
+      await applyToInvoice(tx, user.companyId, inv.id, amount);
       await writeAudit(tx, user, 'Invoice', inv.id, AuditAction.UPDATE, {
         creditApplied: amount.toString(), creditNote: note.number, creditNoteId: note.id,
       });

@@ -122,7 +122,7 @@ export class NcfService {
     }
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.ncfSequence.update({
-        where: { id },
+        where: { id, companyId: user.companyId },
         data: {
           rangeEnd: dto.rangeEnd,
           warningThreshold: dto.warningThreshold,
@@ -145,7 +145,7 @@ export class NcfService {
     if (dto.rangeEnd < dto.rangeStart) throw new UnprocessableEntityException('rangeEnd no puede ser menor que rangeStart');
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.ncfSequence.update({
-        where: { id },
+        where: { id, companyId: user.companyId },
         data: {
           rangeStart: dto.rangeStart, rangeEnd: dto.rangeEnd, currentNumber: dto.rangeStart - 1,
           expirationDate: dto.expirationDate ? new Date(dto.expirationDate) : null, active: true,

@@ -1,0 +1,130 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ editing() ? 'Editar borrador' : 'Nueva factura' }}</h1>
+      <p class="sub">{{ editing() ? 'Los cambios reemplazan el contenido del borrador; la factura se numera al emitirla.' : 'Guárdala como borrador o emítela de una vez para generar el número, el NCF y el asiento.' }}</p>
+    </div>
+    <a class="btn" [routerLink]="editing() ? ['/invoices', id()] : ['/invoices']">Cancelar</a>
+  </div>
+
+  @if (!canEdit) {
+    <div class="notice warn" role="alert">Tu rol es de solo lectura. Pide a un administrador o contador que cree o edite facturas.</div>
+  } @else if (loading()) {
+    <div class="loading"><span class="spinner"></span> Cargando…</div>
+  } @else if (loadError()) {
+    <div class="notice neg" role="alert">{{ loadError() }}</div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit(false)" novalidate>
+      <section class="panel panel-pad">
+        <div class="form-grid">
+          <div class="field"><label for="f-type">Tipo de documento</label>
+            <select id="f-type" class="select" formControlName="type">@for (o of typeOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
+          <div class="field span-2"><label for="f-partner">{{ side() === 'PURCHASES' ? 'Proveedor' : side() === 'SALES' ? 'Cliente' : 'Tercero' }}</label>
+            <app-combobox id="f-partner" formControlName="partnerId" [options]="partnerOptions()" placeholder="Buscar por nombre o RNC" [clearable]="false" />
+            @if (form.controls.partnerId.touched && form.controls.partnerId.invalid) { <span class="error-text">Elige el tercero.</span> }</div>
+          @if (isNote()) {
+            <div class="field span-2"><label for="f-rel">Factura que modifica</label>
+              <app-combobox id="f-rel" formControlName="relatedInvoiceId" [options]="relatedOptions()" placeholder="Elige una factura emitida del mismo tercero" [clearable]="false" />
+              <span class="hint">{{ form.controls.partnerId.value ? 'Solo aparecen facturas emitidas y no anuladas de este tercero.' : 'Primero elige el tercero.' }}</span></div>
+          }
+          <div class="field"><label for="f-issue">Fecha de emisión</label><input id="f-issue" class="input" type="date" formControlName="issueDate" />
+            @if (form.controls.issueDate.touched && form.controls.issueDate.invalid) { <span class="error-text">Indica la fecha.</span> }</div>
+          <div class="field"><label for="f-due">Vencimiento</label><input id="f-due" class="input" type="date" formControlName="dueDate" />
+            <span class="hint">Si lo dejas vacío se calcula con los días de crédito del tercero.</span></div>
+          <div class="field"><label for="f-cur">Moneda</label>
+            <select id="f-cur" class="select" formControlName="currency">@for (c of currencyOptions(); track c) { <option [value]="c">{{ c }}</option> }</select></div>
+          @if (foreign()) {
+            <div class="field"><label for="f-rate">Tasa de cambio a {{ baseCurrency() }}</label>
+              <input id="f-rate" class="input num" type="number" min="0.000001" step="0.000001" formControlName="exchangeRate" />
+              <span class="hint">Vacía usa la tasa registrada para la fecha.</span></div>
+          }
+          @if (side() === 'SALES') {
+            <div class="field"><label for="f-ncft">Tipo de comprobante (NCF)</label>
+              <select id="f-ncft" class="select" formControlName="ncfType">
+                <option value="">{{ isNote() ? 'Automático (nota)' : partnerDefaultNcf() ? 'Según el cliente (' + partnerDefaultNcf() + ')' : 'Elige un tipo' }}</option>
+                @for (n of salesNcf(); track n.code) { <option [value]="n.code">{{ n.code }} · {{ n.name }}</option> }
+              </select>
+              <span class="hint">El número de NCF se asigna al emitir.</span></div>
+            <div class="field"><label for="f-inc">Tipo de ingreso (607)</label>
+              <select id="f-inc" class="select" formControlName="dgiiIncomeType"><option value="">Sin clasificar</option>
+                @for (t of incomeTypes; track t[0]) { <option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</option> }</select></div>
+          }
+          @if (side() === 'PURCHASES') {
+            <div class="field"><label for="f-ncf">NCF del proveedor</label>
+              <input id="f-ncf" class="input mono" formControlName="ncf" maxlength="13" placeholder="B0100000001" />
+              <span class="hint">Obligatorio al emitir, salvo comprobante propio.</span></div>
+            <div class="field"><label for="f-own">Comprobante propio</label>
+              <select id="f-own" class="select" formControlName="ncfType">
+                <option value="">No, el proveedor entrega NCF</option>
+                <option value="B11">B11 · Proveedor informal</option>
+                <option value="B13">B13 · Gastos menores</option>
+              </select></div>
+            <div class="field"><label for="f-exp">Tipo de gasto (606)</label>
+              <select id="f-exp" class="select" formControlName="dgiiExpenseType"><option value="">Sin clasificar</option>
+                @for (t of expenseTypes; track t[0]) { <option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</option> }</select></div>
+          }
+          <div class="field span-all"><label for="f-notes">Notas</label><textarea id="f-notes" class="textarea" formControlName="notes" maxlength="1000" rows="2"></textarea></div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Líneas</h2><button type="button" class="btn btn-sm" (click)="addLine()">Agregar línea</button></div>
+        <div formArrayName="lines">
+          @for (l of lines.controls; track l; let i = $index) {
+            <div class="line" [formGroupName]="i">
+              <div class="field desc"><label [for]="'l-d' + i">Descripción</label><input [id]="'l-d' + i" class="input" formControlName="description" /></div>
+              <div class="field"><label [for]="'l-q' + i">Cantidad</label><input [id]="'l-q' + i" class="input num" type="number" min="0.0001" step="any" formControlName="quantity" /></div>
+              <div class="field"><label [for]="'l-p' + i">Precio unitario</label><input [id]="'l-p' + i" class="input num" type="number" min="0" step="any" formControlName="unitPrice" /></div>
+              <div class="field"><label [for]="'l-x' + i">Descuento</label><input [id]="'l-x' + i" class="input num" type="number" min="0" step="any" formControlName="discount" /></div>
+              <div class="field"><label [for]="'l-t' + i">Impuesto</label>
+                <select [id]="'l-t' + i" class="select" formControlName="taxRateId"><option value="">Sin impuesto</option>
+                  @for (t of lineTaxes(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></div>
+              <div class="field"><label [for]="'l-a' + i">Cuenta</label>
+                <app-combobox [id]="'l-a' + i" formControlName="accountId" [options]="accountOptions()" placeholder="Predeterminada" /></div>
+              <div class="field"><span class="label">Importe</span><div class="amount">{{ calc().nets[i]?.toFixed(2) | money }}</div></div>
+              <button type="button" class="btn btn-ghost btn-icon" [disabled]="lines.length === 1" (click)="removeLine(i)" [attr.aria-label]="'Quitar línea ' + (i + 1)">✕</button>
+            </div>
+          }
+        </div>
+        <p class="hint" style="padding:0 16px 12px">El descuento es un monto, no un porcentaje. Sin cuenta se usa la de Configuración contable.</p>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Retenciones</h2><button type="button" class="btn btn-sm" (click)="addWithholding()">Agregar retención</button></div>
+        <div formArrayName="withholdings">
+          @for (w of withholdings.controls; track w; let i = $index) {
+            <div class="wh" [formGroupName]="i">
+              <div class="field"><label [for]="'w-t' + i">Retención</label>
+                <select [id]="'w-t' + i" class="select" formControlName="taxRateId"><option value="">Elige…</option>
+                  @for (t of withholdingTaxes(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></div>
+              <div class="field"><label [for]="'w-b' + i">Base (opcional)</label>
+                <input [id]="'w-b' + i" class="input num" type="number" min="0" step="any" formControlName="base" placeholder="Automática" /></div>
+              <div class="field"><span class="label">Monto</span><div class="num" style="padding-bottom:8px">{{ calc().whAmounts[i]?.toFixed(2) | money }}</div></div>
+              <button type="button" class="btn btn-ghost btn-icon" (click)="removeWithholding(i)" [attr.aria-label]="'Quitar retención ' + (i + 1)">✕</button>
+            </div>
+          } @empty { <p class="dim" style="padding:14px 20px">Sin retenciones. Agrégalas si el cliente o proveedor es agente de retención.</p> }
+        </div>
+        @if (withholdings.length) { <p class="hint" style="padding:0 16px 12px">Sin base, el ITBIS retenido se calcula sobre el ITBIS y el resto sobre el subtotal.</p> }
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="totals" aria-live="polite">
+          <div><span class="dim">Subtotal</span><span>{{ calc().subtotal.toFixed(2) | money }}</span></div>
+          <div><span class="dim">Descuentos incluidos</span><span>{{ calc().discount.toFixed(2) | money }}</span></div>
+          <div><span class="dim">Impuestos</span><span>{{ calc().tax.toFixed(2) | money }}</span></div>
+          <div class="grand"><span>Total {{ form.controls.currency.value }}</span><span>{{ calc().total.toFixed(2) | money }}</span></div>
+          <div><span class="dim">Retenciones</span><span>−{{ calc().withheld.toFixed(2) | money }}</span></div>
+          <div><span class="dim">Saldo por {{ side() === 'PURCHASES' ? 'pagar' : 'cobrar' }}</span><span>{{ calc().balance.toFixed(2) | money }}</span></div>
+        </div>
+      </section>
+
+      @for (p of calc().problems; track p) { <div class="notice warn" style="margin-top:14px" role="alert">{{ p }}</div> }
+      @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }
+
+      <div class="btn-row" style="margin-top:18px">
+        <button type="submit" class="btn" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar borrador' }}</button>
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="submit(true)">Guardar y emitir</button>
+      </div>
+    </form>
+  }
+</div>

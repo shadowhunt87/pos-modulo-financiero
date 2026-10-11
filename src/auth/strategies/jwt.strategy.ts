@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: string }): Promise<AuthUser> {
+  async validate(payload: { sub: string; iat?: number }): Promise<AuthUser> {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: { company: { select: { active: true } } },
@@ -29,6 +29,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Si desactivan al usuario o a su empresa, el token deja de servir al instante
     if (!user || !user.active || !user.company.active) {
+      throw new UnauthorizedException();
+    }
+    // Cambió o reseteó la clave: los tokens anteriores ya no sirven
+    if (user.passwordChangedAt && (payload.iat ?? 0) < Math.floor(user.passwordChangedAt.getTime() / 1000)) {
       throw new UnauthorizedException();
     }
 

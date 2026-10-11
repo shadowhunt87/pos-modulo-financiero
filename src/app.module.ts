@@ -8,6 +8,13 @@ import { MastersModule } from './masters/masters.module.js';
 import { InvoicingModule } from './invoicing/invoicing.module.js';
 import { ReceivablesPayablesModule } from './receivables-payables/receivables-payables.module.js';
 import { TreasuryModule } from './treasury/treasury.module.js';
+import { BudgetsModule } from './budgets/budgets.module.js';
+import { FiscalYearModule } from './fiscal-year/fiscal-year.module.js';
+import { DgiiModule } from './dgii/dgii.module.js';
+import { UsersModule } from './users/users.module.js';
+import { CompanyModule } from './company/company.module.js';
+import { AttachmentsModule } from './attachments/attachments.module.js';
+import { ExportsModule } from './exports/exports.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -22,6 +29,13 @@ import { validate } from './config/env.validation.js';
     InvoicingModule,
     ReceivablesPayablesModule,
     TreasuryModule,
+    BudgetsModule,
+    FiscalYearModule,
+    DgiiModule,
+    UsersModule,
+    CompanyModule,
+    AttachmentsModule,
+    ExportsModule,
   ],
 })
 export class AppModule {}

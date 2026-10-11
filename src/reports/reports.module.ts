@@ -6,11 +6,12 @@ import { BalanceSheetGenerator } from './generators/balance-sheet.generator.js';
 import { CashFlowGenerator } from './generators/cash-flow.generator.js';
 import { LedgerDetailGenerator } from './generators/ledger-detail.generator.js';
 import { SubledgerGenerator } from './generators/subledger.generator.js';
+import { FinancialRatiosGenerator } from './generators/financial-ratios.generator.js';
 
 // PrismaModule es @Global, no hace falta importarlo aquí.
 @Module({
   controllers: [ReportsController],
-  providers: [ReportsService, IncomeStatementGenerator, BalanceSheetGenerator, CashFlowGenerator, LedgerDetailGenerator, SubledgerGenerator],
-  exports: [ReportsService, IncomeStatementGenerator, BalanceSheetGenerator, CashFlowGenerator, LedgerDetailGenerator, SubledgerGenerator],
+  providers: [ReportsService, IncomeStatementGenerator, BalanceSheetGenerator, CashFlowGenerator, LedgerDetailGenerator, SubledgerGenerator, FinancialRatiosGenerator],
+  exports: [ReportsService, IncomeStatementGenerator, BalanceSheetGenerator, CashFlowGenerator, LedgerDetailGenerator, SubledgerGenerator, FinancialRatiosGenerator],
 })
 export class ReportsModule {}
