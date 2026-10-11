@@ -2,6 +2,7 @@ import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { json } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 
@@ -34,9 +35,12 @@ export async function createApp(options: { silent?: boolean } = {}): Promise<INe
   // Cabeceras de seguridad (nosniff, HSTS, sin X-Powered-By, etc.)
   app.use(helmet());
 
-  // El body-parser de Express acepta 100 KB por defecto, pero el CSV de un extracto
-  // bancario (ImportStatementDto) puede llegar a 5 MB: sin esto daría 413.
-  (app as NestExpressApplication).useBodyParser('json', { limit: '6mb' });
+  // El CSV de un extracto bancario (ImportStatementDto) puede llegar a 5 MB, pero SOLO esa ruta
+  // acepta cuerpos grandes: con 6 MB en todas, un POST sin sesión a /auth/login con miles de claves
+  // congela el ValidationPipe durante minutos. Aquí el guard JWT corre antes que el pipe.
+  // El primer parser que lee el cuerpo gana; el global (100 KB) se salta los que ya leyó este.
+  app.use(/^\/bank-accounts\/[^/]+\/import$/, json({ limit: '6mb' }));
+  (app as NestExpressApplication).useBodyParser('json', { limit: '100kb' });
 
   // Detrás de nginx/Cloudflare/load balancer hay que decir cuántos proxies son; si no, todos los
   // clientes parecen tener la IP del proxy y el límite de intentos de login castigaría a todos juntos.

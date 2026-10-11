@@ -3,6 +3,12 @@
 # Agrega las pantallas (frontend/) delante del API. Solo escucha en 127.0.0.1;
 # el proxy HTTPS del servidor es quien da la cara a internet.
 services:
+  # Tope de memoria: un archivo malicioso no puede quitarle RAM al resto del servidor.
+  api:
+    mem_limit: 768m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=512
+
   web:
     build: ./frontend
     restart: unless-stopped
