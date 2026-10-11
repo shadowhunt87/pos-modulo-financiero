@@ -9,6 +9,10 @@
 > Versión 1 · **APROBADA por Carlos el 2026-10-10** · Investigación pedida por Carlos ("quiero que sea la guía para este proyecto").
 > Alcance mundial: los requisitos de República Dominicana (DGII, NCF, e-CF) son de **cumplimiento**,
 > no el modelo a imitar.
+>
+> **Complemento obligatorio:** [GUIA-CONTABLE-FISCAL.md](GUIA-CONTABLE-FISCAL.md) define *qué* debe hacer
+> bien el sistema en contabilidad, impuestos y leyes (reglas R1–R12). Esta guía define *cómo* se usa.
+> Las dos juntas son la base del sistema.
 
 ---
 
@@ -191,6 +195,7 @@ Es el factor de compra n.º 1.
   - Lo fiscal debe "simplemente funcionar" y estar siempre al día.
 - **Verificación:** cada cambio normativo tiene su prueba e2e. Una contadora valida los formatos contra
   el validador oficial de la DGII.
+- **Detalle normativo:** reglas R8 a R11 y sección 3 de [GUIA-CONTABLE-FISCAL.md](GUIA-CONTABLE-FISCAL.md).
 
 ### P12. Abierto e integrable
 - **Líderes:** las integraciones son el factor n.º 2 al elegir software contable. Con 5 integraciones
@@ -291,6 +296,8 @@ Lo usan dev-frontend y qa. Una pantalla nueva o tocada **no se aprueba** si fall
 - [ ] Teclado: Tab en orden lógico, Enter guarda, Esc cierra el modal.
 - [ ] Prueba de "usuario nuevo": alguien sin capacitación completa la tarea sin ayuda externa.
 - [ ] Respeta las convenciones del socio (ver docs/PLAN-v0.2.md).
+- [ ] Si toca dinero, impuestos o asientos: pasa además el checklist contable-fiscal
+      (sección 8 de [GUIA-CONTABLE-FISCAL.md](GUIA-CONTABLE-FISCAL.md)).
 
 ---
 
