@@ -1,0 +1,347 @@
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import * as bcrypt from 'bcrypt';
+import ExcelJS from 'exceljs';
+import { readFileSync } from 'node:fs';
+import { createApp } from '../src/app.setup.js';
+import { PrismaService } from '../src/prisma/prisma.service.js';
+import { UserRole } from '../src/generated/prisma/enums.js';
+
+/**
+ * Importar/exportar el plan de cuentas y cargar el catálogo estándar de RD.
+ * Catálogo RD (204 filas del Excel de Carlos): 6 cuentas de orden (grupo 8) se omiten => 198 cuentas.
+ * De ellas 55 agrupadoras (Control) y 143 que reciben movimientos; 15 contra-cuentas
+ * (13 por ser Reguladora o tener naturaleza contraria en una cuenta de detalle + 1202 y 4103, agrupadoras de naturaleza contraria).
+ */
+describe('Plan de cuentas: importar, exportar y catálogo RD (e2e)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  const sfx = Date.now().toString(36);
+  const password = 'E2e-Pass-12345';
+  const email = (r: string) => `coa-${r}-${sfx}@test.local`;
+  let companyA: string, companyB: string;
+  const token: Record<string, string> = {};
+  const accB: Record<string, string> = {};
+
+  const api = (m: 'get' | 'post', url: string, who: string) =>
+    request(app.getHttpServer())[m](url).set('Authorization', `Bearer ${token[who]}`);
+  const binary = (r: request.Test) => r.buffer(true).parse((res, cb) => {
+    const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c)));
+  });
+  const upload = (url: string, who: string, data: Buffer, filename: string) =>
+    api('post', url, who).attach('file', data, { filename });
+  const csv = (lines: string[][]) => Buffer.from(lines.map((l) => l.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n'), 'utf8');
+  const HEAD = ['Código de Cuenta', 'Nombre / Descripción de la Cuenta', 'Nivel', 'Tipo de Cuenta', 'Naturaleza', 'Estado Financiero / Formato DGII'];
+  const count = (companyId: string) => prisma.account.count({ where: { companyId } });
+  const byCode = async (companyId: string) => {
+    const all = await prisma.account.findMany({ where: { companyId } });
+    const ids = new Map(all.map((a) => [a.id, a.code]));
+    return new Map(all.map((a) => [a.code, { ...a, parentCode: a.parentId ? ids.get(a.parentId) : null }]));
+  };
+
+  beforeAll(async () => {
+    app = await createApp({ silent: true });
+    await app.init();
+    prisma = app.get(PrismaService);
+    const hash = await bcrypt.hash(password, 4);
+    companyA = (await prisma.company.create({ data: { name: `COA A ${sfx}`, taxId: `C-A-${sfx}` } })).id;
+    companyB = (await prisma.company.create({ data: { name: `COA B ${sfx}`, taxId: `C-B-${sfx}` } })).id;
+    for (const [r, role, companyId] of [
+      ['admin', UserRole.ADMIN, companyA], ['acct', UserRole.ACCOUNTANT, companyA], ['appr', UserRole.APPROVER, companyA],
+      ['view', UserRole.VIEWER, companyA], ['adminb', UserRole.ADMIN, companyB],
+    ] as const) {
+      await prisma.user.create({ data: { email: email(r), password: hash, name: r, role, companyId } });
+      token[r] = (await request(app.getHttpServer()).post('/auth/login').send({ email: email(r), password })).body.access_token;
+    }
+    // Empresa B: dos cuentas con un movimiento entre ellas
+    accB.caja = (await prisma.account.create({ data: { companyId: companyB, code: '1101', name: 'Caja B', type: 'ASSET' } })).id;
+    accB.ventas = (await prisma.account.create({ data: { companyId: companyB, code: '4101', name: 'Ventas B', type: 'INCOME' } })).id;
+    await api('post', '/accounting/journal-entries', 'adminb').send({
+      date: '2031-01-10', description: 'Venta de contado',
+      lines: [{ accountId: accB.caja, debit: 100 }, { accountId: accB.ventas, credit: 100 }],
+    }).expect(201);
+  }, 60000);
+
+  afterAll(async () => {
+    const ids = [companyA, companyB].filter(Boolean);
+    const where = { companyId: { in: ids } };
+    await prisma.auditLog.deleteMany({ where });
+    await prisma.journalEntryLine.deleteMany({ where: { journalEntry: where } });
+    await prisma.journalEntry.deleteMany({ where });
+    await prisma.journal.deleteMany({ where });
+    await prisma.account.updateMany({ where, data: { parentId: null } });
+    await prisma.account.deleteMany({ where });
+    await prisma.user.deleteMany({ where });
+    await prisma.company.deleteMany({ where: { id: { in: ids } } });
+    await app.close();
+  });
+
+  // ------------------------------------------------------------------
+  describe('Catálogo estándar de RD', () => {
+    it('la vista previa no guarda nada (y la puede ver cualquier rol)', async () => {
+      const r = await api('get', '/chart-of-accounts/standard/rd/preview', 'view').expect(200);
+      expect(r.body.resumen).toEqual({ crear: 198, actualizar: 0, sinCambios: 0, omitidas: 6, errores: 0 });
+      expect(r.body.avisos).toContain('Se omiten 6 cuentas de orden; no afectan los estados financieros');
+      expect(r.body.filas).toHaveLength(204);
+      expect(r.body.filas.find((f: { codigo: string }) => f.codigo === '1101-03-01')).toEqual({
+        fila: 7, codigo: '1101-03-01', nombre: 'Banco de Reservas Cta. Cte. DOP', tipo: 'ASSET', padre: '1101-03', accion: 'create', mensajes: [],
+      });
+      expect(r.body.filas.find((f: { codigo: string }) => f.codigo === '8101-01')).toMatchObject({ accion: 'skip', tipo: null });
+      expect(await count(companyA)).toBe(0);
+    });
+
+    it('VIEWER y APPROVER no pueden cargarlo', async () => {
+      await api('post', '/chart-of-accounts/standard/rd', 'view').expect(403);
+      await api('post', '/chart-of-accounts/standard/rd', 'appr').expect(403);
+      expect(await count(companyA)).toBe(0);
+    });
+
+    it('cargarlo en una empresa vacía: conteos, jerarquía, contra-cuentas y sin cuentas de orden', async () => {
+      const r = await api('post', '/chart-of-accounts/standard/rd', 'acct').expect(201);
+      expect(r.body.resumen).toEqual({ crear: 198, actualizar: 0, sinCambios: 0, omitidas: 6, errores: 0 });
+      // 52 cuentas traen categoría en el JSON (propuesta); las otras 91 de detalle las clasifica la auto-clasificación
+      expect(r.body.clasificadas).toBe(91);
+
+      const acc = await byCode(companyA);
+      const all = [...acc.values()];
+      expect(all).toHaveLength(198);
+      expect(all.filter((a) => a.code.startsWith('8'))).toEqual([]);
+      expect(all.filter((a) => !a.isPostable)).toHaveLength(55);
+      expect(all.filter((a) => a.isContra)).toHaveLength(15);
+      expect(all.filter((a) => !a.parentId).map((a) => a.code).sort()).toEqual(['1', '2', '3', '4', '5', '6', '7']);
+      // Tipos por el primer dígito
+      const types = Object.fromEntries(['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'].map((t) => [t, all.filter((a) => a.type === t).length]));
+      expect(types).toEqual({ ASSET: 61, LIABILITY: 37, EQUITY: 16, INCOME: 19, EXPENSE: 65 });
+      // Jerarquía: con guion se quita el último segmento; sin guion, el prefijo más largo
+      expect(acc.get('1101-03-01')!.parentCode).toBe('1101-03');
+      expect(acc.get('1101-03')!.parentCode).toBe('1101');
+      expect(acc.get('1101')!.parentCode).toBe('11');
+      expect(acc.get('11')!.parentCode).toBe('1');
+      expect(acc.get('7101')!.parentCode).toBe('71');
+      // Errata corregida, sangría recortada, descripción = columna DGII, Reguladora = contra y recibe movimientos
+      expect(acc.get('1102-07')).toMatchObject({
+        name: '(-) Provisión para Cuentas Incobrables', isContra: true, isPostable: true, type: 'ASSET',
+        description: 'Balance General (Ley 11-92 Art. 287)',
+      });
+      expect(acc.get('1101-01')!.name).toBe('Caja General');
+      // Naturaleza contraria a la del tipo => contra (agrupadora 1202 y detalle 3301-02)
+      expect(acc.get('1202')).toMatchObject({ isContra: true, isPostable: false });
+      expect(acc.get('3301-02')).toMatchObject({ isContra: true, isPostable: true, type: 'EQUITY' });
+      expect(acc.get('1101-01')).toMatchObject({ isContra: false, isPostable: true });
+      // Clasificación automática aplicada sin perder la contra-cuenta
+      expect(acc.get('1101-01')!.category).toBe('CASH_AND_EQUIVALENTS');
+      expect(acc.get('1202-01')).toMatchObject({ category: 'PROPERTY_PLANT_EQUIPMENT', isContra: true });
+      expect(acc.get('4103-01')).toMatchObject({ isContra: true });
+      expect(acc.get('1')!.category).toBeNull(); // las agrupadoras no se clasifican
+      expect(all.filter((a) => a.isPostable && !a.category).map((a) => a.code)).toEqual([]);
+      // Categoría del JSON: con su flujo de efectivo; auxiliar solo en CxC/CxP que no son contra
+      expect(acc.get('2102-04')).toMatchObject({ category: 'TAXES_PAYABLE', cashFlowCategory: 'OPERATING', subledger: null });
+      expect(acc.get('2201-02')).toMatchObject({ category: 'LONG_TERM_DEBT', cashFlowCategory: 'FINANCING' });
+      expect(acc.get('5101-03')).toMatchObject({ category: 'COST_OF_SALES', cashFlowCategory: null });
+      expect(acc.get('1102-04')).toMatchObject({ category: 'ACCOUNTS_RECEIVABLE', subledger: 'RECEIVABLE' });
+      expect(acc.get('1102-07')).toMatchObject({ category: 'ACCOUNTS_RECEIVABLE', subledger: null, isContra: true });
+      // Clasificadas por la auto-clasificación: con flujo y auxiliar
+      expect(acc.get('1102-01')).toMatchObject({ category: 'ACCOUNTS_RECEIVABLE', cashFlowCategory: 'OPERATING', subledger: 'RECEIVABLE' });
+      // Bitácora en la misma operación
+      const audit = await prisma.auditLog.findFirst({ where: { companyId: companyA, entityName: 'Account', entityId: 'import' } });
+      expect((audit!.changes as { creadas: string[] }).creadas).toHaveLength(198);
+      // La otra empresa no se toca
+      expect(await count(companyB)).toBe(2);
+    });
+
+    it('volver a cargarlo no duplica ni cambia nada', async () => {
+      const r = await api('post', '/chart-of-accounts/standard/rd', 'admin').expect(201);
+      expect(r.body.resumen).toEqual({ crear: 0, actualizar: 0, sinCambios: 198, omitidas: 6, errores: 0 });
+      expect(await count(companyA)).toBe(198);
+    });
+
+    it('el Excel original de Carlos se lee tal cual (filas de título, sangría): solo cambian las 3 erratas corregidas', async () => {
+      const file = readFileSync('docs/catalogos/Catalogo_de_Cuentas_Estandar_RD.xlsx');
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', file, 'Catalogo_de_Cuentas_Estandar_RD.xlsx').expect(201);
+      expect(r.body.resumen).toEqual({ crear: 0, actualizar: 3, sinCambios: 195, omitidas: 6, errores: 0 });
+      expect(r.body.filas.filter((f: { accion: string }) => f.accion === 'update').map((f: { codigo: string; fila: number }) => [f.codigo, f.fila]))
+        .toEqual([['1102-07', 24], ['4101-01', 122], ['6105-02', 183]]);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  describe('Exportar', () => {
+    it('inyección de fórmulas: los textos que empiezan con = + - @ salen con una comilla delante', async () => {
+      for (const [code, name] of [['9001', '=HYPERLINK("http://malo","clic")'], ['9002', '+cmd|calc'], ['9003', '-2+3'], ['9004', '@SUMA(A1)']]) {
+        await prisma.account.create({ data: { companyId: companyA, code, name, type: 'EXPENSE', description: '=1+1' } });
+      }
+      const text = (await api('get', '/chart-of-accounts/export?format=csv', 'view').expect(200)).text;
+      expect(text).toContain(`"'=HYPERLINK(""http://malo"",""clic"")"`);
+      expect(text).toContain(`"'+cmd|calc"`);
+      expect(text).toContain(`"'-2+3"`);
+      expect(text).toContain(`"'@SUMA(A1)"`);
+      expect(text).toContain(`"'=1+1"`);
+      expect(text).not.toMatch(/(^|,)"[=+\-@]/m);
+
+      const res = await binary(api('get', '/chart-of-accounts/export?format=xlsx', 'view')).expect(200);
+      expect(res.headers['content-type']).toMatch(/spreadsheetml/);
+      expect(res.headers['content-disposition']).toMatch(/attachment; filename="plan-de-cuentas_\d{4}-\d{2}-\d{2}\.xlsx"/);
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(res.body as never);
+      const cells: ExcelJS.Cell[] = [];
+      wb.worksheets[0].eachRow((r) => r.eachCell((c) => cells.push(c)));
+      expect(cells.filter((c) => c.type === ExcelJS.ValueType.Formula)).toEqual([]);
+      expect(cells.map((c) => c.text)).toContain(`'=HYPERLINK("http://malo","clic")`);
+      expect(cells.filter((c) => /^[=+\-@]/.test(c.text))).toEqual([]);
+    });
+
+    it('ida y vuelta: lo exportado (xlsx y csv) se vuelve a importar y da "sin cambios"', async () => {
+      const n = await count(companyA);
+      const xlsx = (await binary(api('get', '/chart-of-accounts/export?format=xlsx', 'acct')).expect(200)).body as Buffer;
+      const r1 = await upload('/chart-of-accounts/import/preview', 'acct', xlsx, 'plan.xlsx').expect(201);
+      expect(r1.body.resumen).toEqual({ crear: 0, actualizar: 0, sinCambios: n, omitidas: 0, errores: 0 });
+      expect(r1.body.filas.every((f: { mensajes: string[] }) => f.mensajes.length === 0)).toBe(true);
+      const csvFile = Buffer.from((await api('get', '/chart-of-accounts/export?format=csv', 'acct').expect(200)).text, 'utf8');
+      const r2 = await upload('/chart-of-accounts/import', 'acct', csvFile, 'plan.csv').expect(201);
+      expect(r2.body.resumen).toEqual({ crear: 0, actualizar: 0, sinCambios: n, omitidas: 0, errores: 0 });
+      expect(r2.body.clasificadas).toBe(0);
+    });
+
+    it('la exportación es de la propia empresa (aislamiento)', async () => {
+      const text = (await api('get', '/chart-of-accounts/export?format=csv', 'adminb').expect(200)).text;
+      const lines = text.trim().split(/\r?\n/);
+      expect(lines).toHaveLength(3); // encabezado + 1101 y 4101 de B
+      expect(text).toContain('Caja B');
+      expect(text).not.toContain('Caja General');
+    });
+
+    it('formato inválido: 400 en español; plantilla con hoja de instrucciones', async () => {
+      const bad = await api('get', '/chart-of-accounts/export?format=pdf', 'view').expect(400);
+      expect(JSON.stringify(bad.body.message)).toMatch(/xlsx o csv/);
+      const res = await binary(api('get', '/chart-of-accounts/template', 'view')).expect(200);
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(res.body as never);
+      expect(wb.worksheets.map((w) => w.name)).toEqual(['Plan de cuentas', 'Instrucciones']);
+      expect(wb.worksheets[0].getRow(1).getCell(1).text).toBe('Código de Cuenta');
+      // La plantilla vacía se reconoce, pero no tiene cuentas
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', res.body, 'plantilla.xlsx').expect(400);
+      expect(r.body.message).toMatch(/no tiene cuentas/);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  describe('Importar un archivo', () => {
+    it('todo o nada: con una fila errónea no se guarda ninguna', async () => {
+      const n = await count(companyA);
+      const file = csv([
+        ['Plan de prueba'], [], HEAD,
+        ['1101-06', 'Caja de eventos', '4', 'Detalle', 'Debito', 'Balance General'],
+        ['1101-01', 'Caja General Principal', '4', 'Detalle', 'Debito', ''],
+        ['6105-05', 'Gasto raro', '4', 'Detalle', 'Mitad y mitad', ''],
+        ['1101-06', 'Repetida', '4', 'Detalle', 'Debito', ''],
+      ]);
+      const p = await upload('/chart-of-accounts/import/preview', 'acct', file, 'plan.csv').expect(201);
+      expect(p.body.resumen).toEqual({ crear: 1, actualizar: 1, sinCambios: 0, omitidas: 0, errores: 2 });
+      expect(p.body.filas.map((f: { fila: number; accion: string }) => [f.fila, f.accion])).toEqual([[4, 'create'], [5, 'update'], [6, 'error'], [7, 'error']]);
+      expect(p.body.filas[2].mensajes[0]).toMatch(/Naturaleza/);
+      expect(p.body.filas[3].mensajes[0]).toMatch(/repetido.*fila 4/);
+
+      const r = await upload('/chart-of-accounts/import', 'acct', file, 'plan.csv').expect(422);
+      expect(r.body.message).toMatch(/2 filas con errores. No se guardó nada/);
+      expect(r.body.resumen.errores).toBe(2);
+      expect(r.body.filas).toHaveLength(4);
+      expect(await count(companyA)).toBe(n);
+      expect((await prisma.account.findFirst({ where: { companyId: companyA, code: '1101-01' } }))!.name).toBe('Caja General');
+    });
+
+    it('crea las nuevas y actualiza nombre/descripción de las existentes (punto y coma, padre deducido)', async () => {
+      const file = Buffer.from([HEAD.join(';'), '1101-06;Caja de eventos;4;Detalle;Debito;Balance General', '1101-01;Caja General Principal;4;Detalle;Debito;'].join('\r\n'));
+      const r = await upload('/chart-of-accounts/import', 'admin', file, 'plan.csv').expect(201);
+      expect(r.body.resumen).toEqual({ crear: 1, actualizar: 1, sinCambios: 0, omitidas: 0, errores: 0 });
+      const acc = await byCode(companyA);
+      expect(acc.get('1101-06')).toMatchObject({ parentCode: '1101', type: 'ASSET', isPostable: true, category: 'CASH_AND_EQUIVALENTS' });
+      // Descripción vacía en el archivo: no borra la que había
+      expect(acc.get('1101-01')).toMatchObject({ name: 'Caja General Principal', description: 'Balance General' });
+    });
+
+    it('no cambia el tipo ni el padre de una cuenta con movimientos: error claro y nada se guarda', async () => {
+      const file = csv([
+        [...HEAD, 'Tipo (sistema)'],
+        ['1101', 'Caja B', '1', 'Detalle', 'Credito', '', 'Pasivo'],
+        ['4', 'INGRESOS', '1', 'Control', 'Credito', ''],
+        ['41', 'INGRESOS OPERACIONALES', '2', 'Control', 'Credito', ''],
+      ]);
+      const p = await upload('/chart-of-accounts/import/preview', 'adminb', file, 'b.csv').expect(201);
+      const [caja, , g41] = p.body.filas;
+      expect(caja).toMatchObject({ accion: 'error', tipo: 'LIABILITY' });
+      expect(caja.mensajes[0]).toMatch(/ya existe como Activo y el archivo dice Pasivo. La cuenta ya tiene movimientos/);
+      expect(g41.accion).toBe('create');
+      // 4101 (con movimientos) no está en el archivo: no se toca aunque 41 sea nueva
+      await upload('/chart-of-accounts/import', 'adminb', file, 'b.csv').expect(422);
+      expect((await prisma.account.findUniqueOrThrow({ where: { id: accB.caja } })).type).toBe('ASSET');
+      expect(await count(companyB)).toBe(2);
+
+      // Cambio de padre de una cuenta con movimientos: 1101 quedaría bajo la nueva "11"
+      const parentFile = csv([HEAD, ['11', 'ACTIVO CORRIENTE', '2', 'Control', 'Debito', ''], ['1101', 'Caja B', '3', 'Detalle', 'Debito', '']]);
+      const p2 = await upload('/chart-of-accounts/import/preview', 'adminb', parentFile, 'b.csv').expect(201);
+      expect(p2.body.filas[1].mensajes[0]).toMatch(/ya existe sin cuenta padre y el archivo la pone bajo 11. La cuenta ya tiene movimientos/);
+    });
+
+    it('aislamiento: los códigos de otra empresa no cuentan y nada se cruza', async () => {
+      // En B, el catálogo RD se crearía casi completo (lo de A no existe para B); 1101 choca con la de B
+      const r = await api('get', '/chart-of-accounts/standard/rd/preview', 'adminb').expect(200);
+      expect(r.body.resumen.crear).toBeGreaterThan(190);
+      expect(r.body.filas.find((f: { codigo: string }) => f.codigo === '1101').accion).toBe('error');
+      const nA = await count(companyA);
+      const file = csv([HEAD, ['5', 'COSTOS', '1', 'Control', 'Debito', '']]);
+      await upload('/chart-of-accounts/import', 'adminb', file, 'b.csv').expect(201);
+      expect(await count(companyB)).toBe(3);
+      expect(await count(companyA)).toBe(nA);
+    });
+
+    it('permisos: VIEWER y APPROVER no pueden importar ni previsualizar archivos', async () => {
+      const file = csv([HEAD, ['1101-07', 'X', '4', 'Detalle', 'Debito', '']]);
+      for (const who of ['view', 'appr']) {
+        await upload('/chart-of-accounts/import/preview', who, file, 'p.csv').expect(403);
+        await upload('/chart-of-accounts/import', who, file, 'p.csv').expect(403);
+      }
+      await upload('/chart-of-accounts/import/preview', 'admin', file, 'p.csv').expect(201);
+    });
+  });
+
+  // ------------------------------------------------------------------
+  describe('Seguridad de la subida', () => {
+    it('más de 2 MB: 413 con mensaje en español', async () => {
+      const big = Buffer.concat([csv([HEAD]), Buffer.alloc(2 * 1024 * 1024, 0x41)]);
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', big, 'grande.csv').expect(413);
+      expect(r.body.message).toMatch(/más de 2 MB/);
+    });
+
+    it('más de 5.000 filas: 400 en español', async () => {
+      const rows = Array.from({ length: 5001 }, (_, i) => [`1101-${String(i + 100).padStart(4, '0')}`, `Cuenta ${i}`]);
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', csv([HEAD.slice(0, 2), ...rows]), 'muchas.csv').expect(400);
+      expect(r.body.message).toMatch(/más de 5\.000 filas/);
+    });
+
+    it('archivos que no son Excel ni CSV se rechazan por el contenido, no por el nombre', async () => {
+      const pdf = Buffer.from('%PDF-1.4\n%fake\n');
+      for (const [data, name] of [[pdf, 'plan.xlsx'], [pdf, 'plan.pdf'], [Buffer.from([0, 1, 2, 3, 0, 0]), 'plan.csv'], [Buffer.from('hola'), 'plan.txt'], [Buffer.from('PK\x03\x04basura'), 'plan.xlsx']] as const) {
+        const r = await upload('/chart-of-accounts/import/preview', 'acct', data, name).expect(400);
+        expect(r.body.message, name).toMatch(/Excel|dañado/);
+      }
+      const r = await api('post', '/chart-of-accounts/import/preview', 'acct').expect(400);
+      expect(r.body.message).toMatch(/Falta el archivo/);
+    });
+
+    it('CSV sin encabezado reconocible: 400 que explica qué falta', async () => {
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', Buffer.from('a,b\n1,2\n'), 'x.csv').expect(400);
+      expect(r.body.message).toMatch(/No se encontró el encabezado/);
+    });
+
+    it('"bomba zip": un xlsx pequeño que se infla a más de 30 MB se rechaza', async () => {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Plan');
+      ws.addRow(HEAD);
+      ws.addRow(['1', 'A'.repeat(31 * 1024 * 1024)]);
+      const buf = Buffer.from(await wb.xlsx.writeBuffer());
+      expect(buf.length).toBeLessThan(2 * 1024 * 1024);
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', buf, 'bomba.xlsx').expect(400);
+      expect(r.body.message).toMatch(/dañado o es demasiado grande/);
+    });
+  });
+});

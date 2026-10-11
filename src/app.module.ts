@@ -16,6 +16,7 @@ import { CompanyModule } from './company/company.module.js';
 import { AttachmentsModule } from './attachments/attachments.module.js';
 import { ExportsModule } from './exports/exports.module.js';
 import { FeedbackModule } from './feedback/feedback.module.js';
+import { ChartOfAccountsModule } from './chart-of-accounts/chart-of-accounts.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -38,6 +39,7 @@ import { validate } from './config/env.validation.js';
     AttachmentsModule,
     ExportsModule,
     FeedbackModule,
+    ChartOfAccountsModule,
   ],
 })
 export class AppModule {}

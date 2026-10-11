@@ -1,0 +1,1711 @@
+{
+  "origen": "docs/catalogos/Catalogo_de_Cuentas_Estandar_RD.xlsx (generado con scripts/generar-catalogo-rd.mjs; no editar a mano)",
+  "titulo": [
+    "CATÁLOGO DE CUENTAS ESTÁNDAR Y GENERAL (REPUBLICA DOMINICANA)",
+    "Conforme a NIIF / NIC, Código de Comercio y Normativas de la DGII (Ley 11-92)"
+  ],
+  "categoriasPropuestas": 52,
+  "correcciones": [
+    {
+      "codigo": "1102-07",
+      "antes": "(-) Provisión para Cuentas Cuentas Incobrables",
+      "despues": "(-) Provisión para Cuentas Incobrables"
+    },
+    {
+      "codigo": "4101-01",
+      "antes": "Ventas Locales Grabadas con ITBIS (18% / 16%)",
+      "despues": "Ventas Locales Gravadas con ITBIS (18% / 16%)"
+    },
+    {
+      "codigo": "6105-02",
+      "antes": "Gastos de Repareción y Mantenimiento Vehículos",
+      "despues": "Gastos de Reparación y Mantenimiento Vehículos"
+    }
+  ],
+  "cuentas": [
+    {
+      "codigo": "1",
+      "nombre": "ACTIVO",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "11",
+      "nombre": "ACTIVO CORRIENTE",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101",
+      "nombre": "Efectivo y Equivalentes de Efectivo",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-01",
+      "nombre": "Caja General",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-02",
+      "nombre": "Caja Chica",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-03",
+      "nombre": "Bancos Nacionales - M/N (DOP)",
+      "nivel": "4",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-03-01",
+      "nombre": "Banco de Reservas Cta. Cte. DOP",
+      "nivel": "5",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-03-02",
+      "nombre": "Banco Popular Dominicano Cta. Cte. DOP",
+      "nivel": "5",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-03-03",
+      "nombre": "Banco BHD Cta. Cte. DOP",
+      "nivel": "5",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-04",
+      "nombre": "Bancos Extranjeros / Moneda Extranjera (USD/EUR)",
+      "nivel": "4",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-04-01",
+      "nombre": "Banco Popular Cta. USD",
+      "nivel": "5",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1101-05",
+      "nombre": "Inversiones Temporales en Valores (Corto Plazo)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "CASH_AND_EQUIVALENTS"
+    },
+    {
+      "codigo": "1102",
+      "nombre": "Cuentas y Documentos por Cobrar",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1102-01",
+      "nombre": "Cuentas por Cobrar Clientes Locales",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General (607/IR-1)"
+    },
+    {
+      "codigo": "1102-02",
+      "nombre": "Cuentas por Cobrar Clientes del Exterior",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1102-03",
+      "nombre": "Cuentas por Cobrar Partes Relacionadas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1102-04",
+      "nombre": "Documentos por Cobrar Comercial",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "ACCOUNTS_RECEIVABLE"
+    },
+    {
+      "codigo": "1102-05",
+      "nombre": "Cuentas por Cobrar Empleados y Funcionarios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1102-06",
+      "nombre": "Otras Cuentas por Cobrar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1102-07",
+      "nombre": "(-) Provisión para Cuentas Incobrables",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General (Ley 11-92 Art. 287)",
+      "categoria": "ACCOUNTS_RECEIVABLE"
+    },
+    {
+      "codigo": "1103",
+      "nombre": "Inventarios",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2 Anexo D"
+    },
+    {
+      "codigo": "1103-01",
+      "nombre": "Inventario de Mercancías / Productos Terminados",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1103-02",
+      "nombre": "Inventario de Productos en Proceso",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1103-03",
+      "nombre": "Inventario de Materias Primas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1103-04",
+      "nombre": "Inventario de Materiales, Repuestos y Suministros",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1103-05",
+      "nombre": "Mercancías en Tránsito",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1103-06",
+      "nombre": "(-) Estimación por Obsolescencia o Deterioro de Inventario",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1104",
+      "nombre": "Gastos Pagados por Adelantado y Anticipos",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1104-01",
+      "nombre": "Seguros Pagados por Adelantado",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1104-02",
+      "nombre": "Alquileres Pagados por Adelantado",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1104-03",
+      "nombre": "Anticipos a Proveedores",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General (606)"
+    },
+    {
+      "codigo": "1104-04",
+      "nombre": "Anticipos del Impuesto sobre la Renta (ISR - DGII)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2"
+    },
+    {
+      "codigo": "1104-05",
+      "nombre": "Saldo a Favor ITBIS (DGII)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IT-1",
+      "categoria": "PREPAID_AND_OTHER_CURRENT_ASSETS"
+    },
+    {
+      "codigo": "1104-06",
+      "nombre": "Retenciones en la Fuente Sufridas (ITBIS / ISR)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IT-1 / IR-2",
+      "categoria": "PREPAID_AND_OTHER_CURRENT_ASSETS"
+    },
+    {
+      "codigo": "12",
+      "nombre": "ACTIVO NO CORRIENTE",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1201",
+      "nombre": "Propiedades, Planta y Equipo (Según Categorías DGII)",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2 Anexo D1"
+    },
+    {
+      "codigo": "1201-01",
+      "nombre": "Terrenos (No Depreciables)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1201-02",
+      "nombre": "Edificaciones y Estructuras (Categoría 1 DGII - 5%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2",
+      "categoria": "PROPERTY_PLANT_EQUIPMENT"
+    },
+    {
+      "codigo": "1201-03",
+      "nombre": "Automóviles y Equipos de Transporte (Categoría 2 DGII - 25%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2"
+    },
+    {
+      "codigo": "1201-04",
+      "nombre": "Equipos de Cómputo y Tecnológicos (Categoría 2 DGII - 25%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2"
+    },
+    {
+      "codigo": "1201-05",
+      "nombre": "Maquinarias y Equipos Industriales (Categoría 3 DGII - 15%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2"
+    },
+    {
+      "codigo": "1201-06",
+      "nombre": "Mobiliario y Equipos de Oficina (Categoría 3 DGII - 15%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General / IR-2"
+    },
+    {
+      "codigo": "1201-07",
+      "nombre": "Mejoras en Propiedades Arrendadas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1201-08",
+      "nombre": "Obras y Construcciones en Proceso",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "PROPERTY_PLANT_EQUIPMENT"
+    },
+    {
+      "codigo": "1202",
+      "nombre": "Depreciación Acumulada de Propiedad, Planta y Equipo",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IR-2 Anexo D1"
+    },
+    {
+      "codigo": "1202-01",
+      "nombre": "Depreciación Acumulada Edificaciones (Cat. 1)",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1202-02",
+      "nombre": "Depreciación Acumulada Equipos de Transporte (Cat. 2)",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1202-03",
+      "nombre": "Depreciación Acumulada Equipos de Cómputo (Cat. 2)",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1202-04",
+      "nombre": "Depreciación Acumulada Maquinarias y Equipos (Cat. 3)",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1202-05",
+      "nombre": "Depreciación Acumulada Mobiliario de Oficina (Cat. 3)",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1203",
+      "nombre": "Activos Intangibles",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1203-01",
+      "nombre": "Software, Licencias y Sistemas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1203-02",
+      "nombre": "Marcas, Patentes y Derechos de Autor",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1203-03",
+      "nombre": "Plusvalía / Derecho de Llave",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1203-04",
+      "nombre": "(-) Amortización Acumulada Activos Intangibles",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "INTANGIBLE_ASSETS"
+    },
+    {
+      "codigo": "1204",
+      "nombre": "Inversiones Permanentes a Largo Plazo",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1204-01",
+      "nombre": "Acciones en Otras Sociedades",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_NON_CURRENT_ASSETS"
+    },
+    {
+      "codigo": "1204-02",
+      "nombre": "Bonos y Títulos Valores a Largo Plazo",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_NON_CURRENT_ASSETS"
+    },
+    {
+      "codigo": "1205",
+      "nombre": "Otros Activos no Corrientes",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "1205-01",
+      "nombre": "Depósitos en Garantía (Alquiler, Servicios)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_NON_CURRENT_ASSETS"
+    },
+    {
+      "codigo": "1205-02",
+      "nombre": "Activos por Impuestos Diferidos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General (NIIF)",
+      "categoria": "OTHER_NON_CURRENT_ASSETS"
+    },
+    {
+      "codigo": "2",
+      "nombre": "PASIVO",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "21",
+      "nombre": "PASIVO CORRIENTE",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2101",
+      "nombre": "Cuentas y Documentos por Pagar a Corto Plazo",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2101-01",
+      "nombre": "Proveedores Locales (Con NCF)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General (606)"
+    },
+    {
+      "codigo": "2101-02",
+      "nombre": "Proveedores del Exterior / Importaciones",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2101-03",
+      "nombre": "Cuentas por Pagar Partes Relacionadas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2101-04",
+      "nombre": "Documentos y Pagarés por Pagar (CP)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "ACCOUNTS_PAYABLE"
+    },
+    {
+      "codigo": "2101-05",
+      "nombre": "Acreedores Varios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2102",
+      "nombre": "Retenciones y Impuestos por Pagar (DGII / Estado)",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / DGII"
+    },
+    {
+      "codigo": "2102-01",
+      "nombre": "ITBIS Cobrado por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IT-1",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2102-02",
+      "nombre": "Retención de ITBIS por Pagar (Servicios/Alquileres)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IT-1 / IR-17"
+    },
+    {
+      "codigo": "2102-03",
+      "nombre": "Retención de ISR Asalariados por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IR-13 / IR-3",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2102-04",
+      "nombre": "Retención de ISR Proveedores / Servicios por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IR-17",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2102-05",
+      "nombre": "Retención de ISR Alquileres / Dividendos / Intereses",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IR-17",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2102-06",
+      "nombre": "Impuesto sobre la Renta (ISR) Corporativo por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IR-2",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2102-07",
+      "nombre": "Impuesto sobre Activos por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / ACT-1",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2102-08",
+      "nombre": "Impuesto Selectivo al Consumo / Otros Arbitrios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2103",
+      "nombre": "Acumulaciones y Retenciones de Nómina (TSS / INFOTEP)",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / TSS"
+    },
+    {
+      "codigo": "2103-01",
+      "nombre": "Tesorería de la Seguridad Social (TSS) por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / TSS SIRLA"
+    },
+    {
+      "codigo": "2103-02",
+      "nombre": "INFOTEP (1%) por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / INFOTEP",
+      "categoria": "TAXES_PAYABLE"
+    },
+    {
+      "codigo": "2103-03",
+      "nombre": "Sueldos y Salarios por Pagar",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "2103-04",
+      "nombre": "Otras Retenciones a Empleados (Cooperativas, Prestamos)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "2104",
+      "nombre": "Provisiones Laborales y Acumuladas (Código de Trabajo RD)",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2104-01",
+      "nombre": "Provisión para Regalía Pascual (Sueldo 13)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "2104-02",
+      "nombre": "Provisión para Vacaciones",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "2104-03",
+      "nombre": "Provisión para Cesantía y Preaviso",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "2104-04",
+      "nombre": "Provisión para Bonificación / Participación de Beneficios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "2105",
+      "nombre": "Préstamos y Financiamientos Corto Plazo",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2105-01",
+      "nombre": "Porción Corriente de Deuda a Largo Plazo",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "SHORT_TERM_DEBT"
+    },
+    {
+      "codigo": "2105-02",
+      "nombre": "Líneas de Crédito Bancarias / Sobregiros",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2105-03",
+      "nombre": "Anticipos Recibidos de Clientes",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General (607)",
+      "categoria": "OTHER_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "22",
+      "nombre": "PASIVO NO CORRIENTE",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2201",
+      "nombre": "Deudas a Largo Plazo",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2201-01",
+      "nombre": "Préstamos Hipotecarios BANCARIOS (LP)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "2201-02",
+      "nombre": "Préstamos Comerciales / Prendarios (LP)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "LONG_TERM_DEBT"
+    },
+    {
+      "codigo": "2201-03",
+      "nombre": "Préstamos de Accionistas / Partes Relacionadas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "LONG_TERM_DEBT"
+    },
+    {
+      "codigo": "2201-04",
+      "nombre": "Pasivos por Impuestos Diferidos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General (NIIF)",
+      "categoria": "OTHER_NON_CURRENT_LIABILITIES"
+    },
+    {
+      "codigo": "3",
+      "nombre": "CAPITAL Y PATRIMONIO",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / Estado de Cambios"
+    },
+    {
+      "codigo": "31",
+      "nombre": "CAPITAL CONTABLE",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3101",
+      "nombre": "Capital Social Suscrito y Pagado",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General / IR-2"
+    },
+    {
+      "codigo": "3101-01",
+      "nombre": "Capital Social Autorizado",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3101-02",
+      "nombre": "(-) Acciones No Suscritas y No Pagadas",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3101-03",
+      "nombre": "Aportes para Futuros Aumentos de Capital",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "32",
+      "nombre": "RESERVAS Y SUPERÁVIT",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3201",
+      "nombre": "Reservas",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3201-01",
+      "nombre": "Reserva Legal (Código de Comercio RD - Min 5% hasta 10%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_EQUITY"
+    },
+    {
+      "codigo": "3201-02",
+      "nombre": "Reservas Estatutarias y Voluntarias",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "OTHER_EQUITY"
+    },
+    {
+      "codigo": "33",
+      "nombre": "RESULTADOS ACUMULADOS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3301",
+      "nombre": "Resultados Acumulados de Ejercicios Anteriores",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3301-01",
+      "nombre": "Utilidades Retenidas / Acumuladas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3301-02",
+      "nombre": "(-) Pérdidas Acumuladas de Ejercicios Anteriores",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Balance General",
+      "categoria": "RETAINED_EARNINGS"
+    },
+    {
+      "codigo": "3302",
+      "nombre": "Resultado del Presente Ejercicio",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General"
+    },
+    {
+      "codigo": "3302-01",
+      "nombre": "Utilidad o Pérdida del Ejercicio en Curso",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Balance General",
+      "categoria": "CURRENT_YEAR_RESULT"
+    },
+    {
+      "codigo": "4",
+      "nombre": "INGRESOS",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "41",
+      "nombre": "INGRESOS OPERACIONALES",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo E"
+    },
+    {
+      "codigo": "4101",
+      "nombre": "Ventas de Mercancías / Productos (Con NCF)",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados / 607"
+    },
+    {
+      "codigo": "4101-01",
+      "nombre": "Ventas Locales Gravadas con ITBIS (18% / 16%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados / IT-1"
+    },
+    {
+      "codigo": "4101-02",
+      "nombre": "Ventas Locales Exentas de ITBIS",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados / IT-1"
+    },
+    {
+      "codigo": "4101-03",
+      "nombre": "Ventas de Exportación",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "4102",
+      "nombre": "Ingresos por Prestación de Servicios",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados / 607"
+    },
+    {
+      "codigo": "4102-01",
+      "nombre": "Servicios Locales Gravados",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "4102-02",
+      "nombre": "Servicios Locales Exentos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "4103",
+      "nombre": "(-) Devoluciones, Descuentos y Rebajas en Ventas",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / 607 (NCF B04)"
+    },
+    {
+      "codigo": "4103-01",
+      "nombre": "Devoluciones en Ventas",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "4103-02",
+      "nombre": "Descuentos y Rebajas Concedidas en Ventas",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "42",
+      "nombre": "INGRESOS NO OPERACIONALES / OTROS INGRESOS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo E"
+    },
+    {
+      "codigo": "4201",
+      "nombre": "Otros Ingresos Financieros y Diversos",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "4201-01",
+      "nombre": "Ingresos por Intereses Bancarios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "OTHER_REVENUE"
+    },
+    {
+      "codigo": "4201-02",
+      "nombre": "Ganancia en Diferencia de Cambio (Moneda Extranjera)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "OTHER_REVENUE"
+    },
+    {
+      "codigo": "4201-03",
+      "nombre": "Ganancia en Venta de Activos Fijos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "OTHER_REVENUE"
+    },
+    {
+      "codigo": "4201-04",
+      "nombre": "Dividendos Recibidos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "OTHER_REVENUE"
+    },
+    {
+      "codigo": "4201-05",
+      "nombre": "Ingresos por Arrendamientos / Varios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "OTHER_REVENUE"
+    },
+    {
+      "codigo": "5",
+      "nombre": "COSTOS",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "51",
+      "nombre": "COSTO DE VENTAS Y SERVICIOS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo D / E"
+    },
+    {
+      "codigo": "5101",
+      "nombre": "Costo de Ventas de Mercancías / Productos",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "5101-01",
+      "nombre": "Costo de Ventas - Productos Locales",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "5101-02",
+      "nombre": "Costo de Ventas - Importaciones",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "5101-03",
+      "nombre": "Compras de Mercancías Locales",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)",
+      "categoria": "COST_OF_SALES"
+    },
+    {
+      "codigo": "5101-04",
+      "nombre": "Gastos de Importación y Aranceles (DGA)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "COST_OF_SALES"
+    },
+    {
+      "codigo": "5101-05",
+      "nombre": "(-) Descuentos y Rebajas en Compras",
+      "nivel": "4",
+      "tipoCuenta": "Reguladora",
+      "naturaleza": "Crédito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "COST_OF_SALES"
+    },
+    {
+      "codigo": "5102",
+      "nombre": "Costo de Prestación de Servicios",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "5102-01",
+      "nombre": "Mano de Obra Directa (Servicios)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "COST_OF_SALES"
+    },
+    {
+      "codigo": "5102-02",
+      "nombre": "Costos Directos de Subcontratación",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)",
+      "categoria": "COST_OF_SALES"
+    },
+    {
+      "codigo": "5102-03",
+      "nombre": "Materiales y Suministros Utilizados",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "COST_OF_SALES"
+    },
+    {
+      "codigo": "6",
+      "nombre": "GASTOS",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "61",
+      "nombre": "GASTOS GENERALES Y ADMINISTRATIVOS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G"
+    },
+    {
+      "codigo": "6101",
+      "nombre": "Gastos de Personal / Nómina",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G1"
+    },
+    {
+      "codigo": "6101-01",
+      "nombre": "Sueldos y Salarios (Empleados)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / TSS / IR-3"
+    },
+    {
+      "codigo": "6101-02",
+      "nombre": "Horas Extraordinarias y Comisiones",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6101-03",
+      "nombre": "Regalía Pascual (Sueldo 13 - Exento)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6101-04",
+      "nombre": "Vacaciones y Preaviso / Cesantía",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6101-05",
+      "nombre": "Aporte Patronal TSS (Seguro Salud, Pensiones, ARL)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6101-06",
+      "nombre": "Aporte Patronal INFOTEP (1%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6101-07",
+      "nombre": "Bonificaciones al Personal",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6101-08",
+      "nombre": "Atención a Empleados, Capacitación y Dietas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6102",
+      "nombre": "Gastos por Servicios Profesionales y Contratados",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G"
+    },
+    {
+      "codigo": "6102-01",
+      "nombre": "Honorarios Abogados y Legalización",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606/IR-17)"
+    },
+    {
+      "codigo": "6102-02",
+      "nombre": "Honorarios Contadores, Peritos y Auditoría",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606/IR-17)"
+    },
+    {
+      "codigo": "6102-03",
+      "nombre": "Servicios de Asesoría y Consultoría",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6102-04",
+      "nombre": "Servicios de Seguridad y Vigilancia",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6102-05",
+      "nombre": "Servicios de Limpieza y Mantenimiento General",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6103",
+      "nombre": "Gastos de Gestión y Arrendamientos",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G"
+    },
+    {
+      "codigo": "6103-01",
+      "nombre": "Alquiler de Locales Comerciales / Oficinas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606/IR-17)"
+    },
+    {
+      "codigo": "6103-02",
+      "nombre": "Alquiler de Equipos y Vehículos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6103-03",
+      "nombre": "Energía Eléctrica (CDEEE / EDES)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6103-04",
+      "nombre": "Agua y Consumo Sanitario",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6103-05",
+      "nombre": "Teléfono, Internet y Telecomunicaciones",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6103-06",
+      "nombre": "Seguros Generales (Propiedad, Vehículos, Fianza)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6103-07",
+      "nombre": "Materiales y Útiles de Oficina / Papelería",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6104",
+      "nombre": "Gastos de Depreciación y Amortización (Regla DGII)",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo D1"
+    },
+    {
+      "codigo": "6104-01",
+      "nombre": "Gasto Depreciación Edificaciones (Cat. 1 - 5%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6104-02",
+      "nombre": "Gasto Depreciación Equipos Transporte (Cat. 2 - 25%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6104-03",
+      "nombre": "Gasto Depreciación Equipos de Cómputo (Cat. 2 - 25%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6104-04",
+      "nombre": "Gasto Depreciación Maquinarias y Equipos (Cat. 3 - 15%)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6104-05",
+      "nombre": "Gasto Amortización Activos Intangibles",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6105",
+      "nombre": "Tributos, Mantenimiento y Otros Gastos Operativos",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G"
+    },
+    {
+      "codigo": "6105-01",
+      "nombre": "Impuesto sobre Operaciones, Arbitrios Municipales",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6105-02",
+      "nombre": "Gastos de Reparación y Mantenimiento Vehículos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6105-03",
+      "nombre": "Combustibles y Lubricantes",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6105-04",
+      "nombre": "Gasto por Cuentas Incobrables (Admisibles DGII)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (Art. 287 Ley 11-92)"
+    },
+    {
+      "codigo": "62",
+      "nombre": "GASTOS DE VENTAS Y COMERCIALIZACIÓN",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G"
+    },
+    {
+      "codigo": "6201",
+      "nombre": "Gastos de Comercialización y Publicidad",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6201-01",
+      "nombre": "Publicidad, Propaganda y Mercadeo Digital",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6201-02",
+      "nombre": "Comisiones sobre Ventas a Agentes Independientes",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606/IR-17)"
+    },
+    {
+      "codigo": "6201-03",
+      "nombre": "Gastos de Transporte, Fletes y Envíos sobre Ventas",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "6201-04",
+      "nombre": "Atención a Clientes y Promociones",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (606)"
+    },
+    {
+      "codigo": "63",
+      "nombre": "GASTOS FINANCIEROS Y OTROS GASTOS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2 Anexo G"
+    },
+    {
+      "codigo": "6301",
+      "nombre": "Gastos Financieros",
+      "nivel": "3",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6301-01",
+      "nombre": "Intereses sobre Préstamos Bancarios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (IR-17 si aplica)",
+      "categoria": "FINANCE_COST"
+    },
+    {
+      "codigo": "6301-02",
+      "nombre": "Comisiones Bancarias y Cargos por Servicios",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "6301-03",
+      "nombre": "Impuesto 0.0015 (0.15%) sobre Cheques y Transferencias",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (Ley 288-04)",
+      "categoria": "FINANCE_COST"
+    },
+    {
+      "codigo": "6301-04",
+      "nombre": "Pérdida en Diferencia de Cambio (Moneda Extranjera)",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "FINANCE_COST"
+    },
+    {
+      "codigo": "6301-05",
+      "nombre": "Pérdida en Venta de Activos Fijos",
+      "nivel": "4",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados",
+      "categoria": "OTHER_EXPENSE"
+    },
+    {
+      "codigo": "7",
+      "nombre": "IMPUESTO SOBRE LA RENTA Y CIERRE",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados"
+    },
+    {
+      "codigo": "71",
+      "nombre": "IMPUESTO SOBRE LA RENTA (ISR)",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2"
+    },
+    {
+      "codigo": "7101",
+      "nombre": "Impuesto sobre la Renta Corporativo (27%)",
+      "nivel": "3",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados / IR-2"
+    },
+    {
+      "codigo": "7102",
+      "nombre": "Impuesto Diferido (Gasto / Ingreso)",
+      "nivel": "3",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Estado de Resultados (NIIF)",
+      "categoria": "INCOME_TAX"
+    },
+    {
+      "codigo": "8",
+      "nombre": "CUENTAS DE ORDEN",
+      "nivel": "1",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Notas a los Estados Financieros"
+    },
+    {
+      "codigo": "81",
+      "nombre": "CUENTAS DE ORDEN DEUDORAS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Debito",
+      "descripcion": "Memoria / Notas"
+    },
+    {
+      "codigo": "8101-01",
+      "nombre": "Garantías y Cartas de Crédito Recibidas",
+      "nivel": "3",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Notas a los EEFF"
+    },
+    {
+      "codigo": "8101-02",
+      "nombre": "Mercancías / Bienes en Consignación Recibidos",
+      "nivel": "3",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Debito",
+      "descripcion": "Notas a los EEFF"
+    },
+    {
+      "codigo": "82",
+      "nombre": "CUENTAS DE ORDEN ACREEDORAS",
+      "nivel": "2",
+      "tipoCuenta": "Control",
+      "naturaleza": "Crédito",
+      "descripcion": "Memoria / Notas"
+    },
+    {
+      "codigo": "8201-01",
+      "nombre": "Responsabilidades por Garantías Emitidas",
+      "nivel": "3",
+      "tipoCuenta": "Detalle",
+      "naturaleza": "Crédito",
+      "descripcion": "Notas a los EEFF"
+    }
+  ]
+}

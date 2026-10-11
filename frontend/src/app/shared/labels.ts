@@ -90,3 +90,12 @@ export const FEEDBACK_STATUS_LOOK: Record<string, { icon: string; tone: Tone }> 
   WONT_DO: { icon: '⊘', tone: '' }, DUPLICATE: { icon: '≡', tone: '' },
 };
 export const optsFeedback = { kind: mk(FEEDBACK_KIND), status: mk(FEEDBACK_STATUS) };
+
+/** Importación del plan de cuentas: cada acción con icono, color y texto (el estado no depende solo del color). */
+export const IMPORT_ACTION_LOOK: Record<string, { icon: string; tone: Tone; text: string; plural: string }> = {
+  error: { icon: '!', tone: 'neg', text: 'Error', plural: 'Errores' },
+  create: { icon: '+', tone: 'pos', text: 'Se creará', plural: 'Se crearán' },
+  update: { icon: '↻', tone: 'info', text: 'Se actualizará', plural: 'Se actualizarán' },
+  unchanged: { icon: '=', tone: '', text: 'Sin cambios', plural: 'Sin cambios' },
+  skip: { icon: '⊘', tone: 'warn', text: 'Omitida', plural: 'Omitidas' },
+};

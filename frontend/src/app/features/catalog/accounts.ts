@@ -10,6 +10,7 @@ import { Account } from '../../core/models';
 import { Notify } from '../../core/notify';
 import { ACCOUNT_CATEGORY, ACCOUNT_TYPE, CASH_FLOW_CATEGORY, opts, Option, SUBLEDGER_TYPE } from '../../shared/labels';
 import { ComboOption, UI } from '../../shared/ui';
+import { ImportAccountsDialog } from './import-accounts-dialog';
 import { CATEGORIES_BY_TYPE, cashFlowAllowed, subledgerAllowed } from './account-rules';
 
 interface Row { acc: Account; depth: number; hasChildren: boolean }
@@ -17,15 +18,38 @@ interface Row { acc: Account; depth: number; hasChildren: boolean }
 @Component({
   selector: 'app-accounts',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ...UI],
+  imports: [ReactiveFormsModule, ImportAccountsDialog, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
         <div><h1>Plan de cuentas</h1><p class="sub">Catálogo de cuentas contables, ordenado por jerarquía.</p></div>
-        @if (canEdit) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva cuenta</button> }
+        <div class="btn-row">
+          @if (all().length) {
+            <button type="button" class="btn" [disabled]="!!exporting()" (click)="exportFile('xlsx')">{{ exporting() === 'xlsx' ? 'Generando…' : 'Exportar Excel' }}</button>
+            <button type="button" class="btn" [disabled]="!!exporting()" (click)="exportFile('csv')">{{ exporting() === 'csv' ? 'Generando…' : 'Exportar CSV' }}</button>
+          }
+          @if (canEdit) {
+            <button type="button" class="btn" (click)="openImport('file')">Importar desde Excel</button>
+            <button type="button" class="btn" (click)="openImport('rd')">Cargar catálogo estándar RD</button>
+            <button type="button" class="btn btn-primary" (click)="openNew()">Nueva cuenta</button>
+          }
+        </div>
       </div>
 
-      <div class="toolbar">
+      @if (isEmpty()) {
+        <section class="panel panel-pad empty-hero">
+          <h2>Tu empresa aún no tiene plan de cuentas</h2>
+          <p>Carga el catálogo estándar de República Dominicana con un clic, o importa el tuyo desde Excel.</p>
+          @if (canEdit) {
+            <div class="btn-row">
+              <button type="button" class="btn btn-primary" (click)="openImport('rd')">Cargar catálogo estándar RD</button>
+              <button type="button" class="btn" (click)="openImport('file')">Importar desde Excel</button>
+            </div>
+          } @else { <p class="sub">Pídele a un administrador o a la contadora que lo cargue.</p> }
+        </section>
+      }
+
+      <div class="toolbar" [hidden]="isEmpty()">
         <div class="field wide"><label for="q">Buscar</label><input id="q" class="input" placeholder="Código o nombre" (input)="q.set($any($event.target).value)" /></div>
         <div class="field"><label for="type">Tipo</label>
           <select id="type" class="select" (change)="type.set($any($event.target).value)">
@@ -38,7 +62,7 @@ interface Row { acc: Account; depth: number; hasChildren: boolean }
       </div>
 
       @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
-      <section class="panel">
+      <section class="panel" [hidden]="isEmpty()">
         <div class="table-wrap">
           <table class="table">
             <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Categoría</th><th>Auxiliar</th><th>Estado</th><th></th></tr></thead>
@@ -72,6 +96,9 @@ interface Row { acc: Account; depth: number; hasChildren: boolean }
       </section>
     </div>
 
+    <app-import-accounts-dialog [open]="importOpen()" [source]="importSource()" [hasAccounts]="all().length > 0"
+      (closed)="importOpen.set(false)" (imported)="afterImport()" />
+
     <app-modal [open]="modalOpen()" [title]="editing() ? 'Editar cuenta' : 'Nueva cuenta'" width="720px" (closed)="modalOpen.set(false)">
       <form id="account-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
         <div class="form-grid">
@@ -102,6 +129,12 @@ interface Row { acc: Account; depth: number; hasChildren: boolean }
         <button type="submit" form="account-form" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</button>
       </ng-container>
     </app-modal>
+  `,
+  styles: `
+    .empty-hero { text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .empty-hero h2 { font-size: 20px; }
+    .empty-hero p { max-width: 520px; color: var(--text-dim); }
+    .empty-hero .btn-row { justify-content: center; }
   `,
 })
 export class Accounts {
@@ -152,6 +185,11 @@ export class Accounts {
       .map((r) => (filtering ? { ...r, depth: 0 } : r));
   });
 
+  protected readonly isEmpty = computed(() => !this.loading() && !this.error() && this.all().length === 0);
+  protected readonly importOpen = signal(false);
+  protected readonly importSource = signal<'rd' | 'file'>('rd');
+  protected readonly exporting = signal<'' | 'xlsx' | 'csv'>('');
+
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<Account | null>(null);
   protected readonly saving = signal(false);
@@ -179,6 +217,15 @@ export class Accounts {
     this.loading.set(true); this.error.set('');
     try { this.all.set(await this.api.getP<Account[]>('/accounting/accounts')); } catch (e) { this.error.set(errorMessage(e)); }
     this.loading.set(false);
+  }
+
+  protected openImport(src: 'rd' | 'file'): void { this.importSource.set(src); this.importOpen.set(true); }
+  protected afterImport(): void { void this.lookups.ensureAccounts(true); void this.load(); }
+  protected async exportFile(format: 'xlsx' | 'csv'): Promise<void> {
+    this.exporting.set(format);
+    try { await this.api.download('/chart-of-accounts/export', { format }, `plan-de-cuentas.${format}`); }
+    catch (e) { this.notify.error(errorMessage(e)); }
+    this.exporting.set('');
   }
 
   protected onTypeChange(): void {
