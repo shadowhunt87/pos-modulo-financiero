@@ -1,73 +1,75 @@
-# Plan técnico v0.2 — Experiencia guiada, ayuda integrada, herramientas del auditor y análisis financiero
+# Plan técnico v0.2 — Experiencia guiada, ayuda integrada, auditoría y análisis financiero
 
-Fecha: 2026-10-10 · Autor: Arquitecto · Estado: **PROPUESTA** (pendiente de revisor-critico y de Carlos)
-Plan anterior: `docs/PLAN.md` (v3.1). **No se reemplaza**; este documento solo cubre la v0.2.
+Fecha: 2026-10-10 · Autor: Arquitecto · **Versión 1.1** (v1.0 + cambios del revisor-critico + decisiones de Carlos)
+Estado: **revisor-critico: APROBAR CON CAMBIOS (aplicados aquí)** · Decisiones de Carlos incorporadas (sección 18).
+Documentos que mandan sobre este plan: `docs/GUIA-PRODUCTO.md` (**obligatoria**, aprobada por Carlos el
+2026-10-10) y `CLAUDE.md`. Plan anterior `docs/PLAN.md` (v3.1): **no se reemplaza**.
 El veredicto de calidad de cada fase es de `qa`; la aprobación de negocio, de Carlos.
 
 ---
 
 ## 0. Resumen para Carlos (una página)
 
-**Principio rector de toda la v0.2: que cualquier persona pueda usar el sistema sin
-capacitación.** Cada pantalla nueva o tocada debe decir dónde estás, para qué sirve y qué hacer
-después; las tablas vacías explican y ofrecen crear el primero; los errores dicen cómo
-arreglarlos; y una empresa nueva se configura con un asistente paso a paso (sección 6E).
+**Principio rector: que cualquier persona pueda usar el sistema sin capacitación** (Guía, P7). Cada
+pantalla nueva o tocada dice dónde estás, para qué sirve y qué hacer después; las tablas vacías
+explican y ofrecen crear el primero; los errores dicen cómo arreglarlos; todo lo guiado **se puede
+saltar u ocultar** para quien ya sabe.
 
-**Qué se construye**
-1. **Herramientas para la auditora externa**: un usuario nuevo "Auditor" que puede **ver toda** la
-   contabilidad de la empresa y **escribir solo** en su módulo de auditoría. Ahí abre un
-   **encargo** (empresa + período), trabaja por **áreas** (caja y bancos, cuentas por cobrar,
-   impuestos...), con su objetivo, lista de pasos a revisar, conclusión y archivos; **marca con
-   una tilde** los asientos, facturas, pagos y conciliaciones que revisó; registra **hallazgos**
-   con su gravedad y recomendación; la gerencia responde; y al final saca un **informe en PDF y
-   Excel**.
-2. **Razones financieras más útiles**: **semáforo** verde/amarillo/rojo con una frase sencilla que
-   explica qué significa cada número (los límites se ajustan por empresa); **comparación** mes a
-   mes y contra el año anterior con gráficas; **6 indicadores clave** en el panel principal;
-   y nuevos análisis: **EBITDA, DuPont, punto de equilibrio, análisis vertical y horizontal**.
-3. **Arreglos que pidieron las pruebas**: en la factura y en los cobros/pagos, al lado del
-   selector de cliente o proveedor, botones para **crearlo o editarlo sin salir** de la factura
-   (y sin perder lo escrito), y un enlace a la lista completa. "Tercero" pasa a decir "cliente /
-   proveedor" en pantalla, y "Clientes y proveedores" se mueve al grupo "Ventas y compras".
-4. **Manual de usuario dentro del sistema**: una sección "Ayuda" en el menú, organizada por
-   tareas y escrita para contadoras, y un botón **"?"** arriba en cada pantalla que abre la parte
-   del manual que corresponde, en un panel lateral, sin salir de lo que se está haciendo. El
-   documentador lo mantiene editando archivos de texto, sin tocar programación.
-5. **Experiencia guiada**: migas de pan y "siguiente paso" en todas las pantallas; un
-   **asistente de configuración inicial** (con un plan de cuentas base de RD para cargar con un
-   clic) y una lista de "pendientes de configurar" en el Panel; indicador de pasos en
-   factura → cobro → conciliación y un **cierre de mes guiado**; errores en español sencillo con
-   enlace a la solución; ayudas en los campos contables difíciles. Incluye una **auditoría de
-   usabilidad** de las pantallas actuales con su costo (6E.1).
+**Qué trae la v0.2**
+1. **Crear sin salir**: crear o editar el cliente/proveedor desde la factura y desde los cobros/pagos,
+   sin perder lo escrito. "Tercero" pasa a "cliente / proveedor" en lo que se toca.
+2. **Ayuda dentro del sistema**: manual por tareas, escrito para **el dueño y para la contadora**, y un
+   botón "?" en cada pantalla.
+3. **Arranque guiado**: asistente de configuración en **5 grupos** con plan de cuentas e impuestos de RD
+   precargados, **guía especial para los NCF**, **datos de ejemplo que se borran con un clic**, y la meta
+   medida de **primera factura válida en menos de 15 minutos**.
+4. **Semáforo financiero**: verde/amarillo/rojo con explicación sencilla, comparación de períodos,
+   tendencia e indicadores en el Panel.
+5. **Pantallas existentes guiadas**: las adaptamos nosotros (estados vacíos, ayudas, errores con enlace).
+6. **Herramientas de auditoría** para las 2 contadoras: encargos, papeles de trabajo, marcas de revisión,
+   hallazgos e informe PDF/Excel, con un usuario "Auditor" que no puede tocar la contabilidad.
+7. **Respaldos automáticos** con copia fuera del servidor y restauración ensayada (base hecha el 2026-10-10; faltan el cifrado, la copia externa y el aviso, ver 11.2).
+8. **"Enviar comentario"** dentro del sistema para que todos los que prueban reporten lo que no entienden.
 
-**Cómo, sin estorbar al socio**: casi todo va en **módulos y archivos nuevos**. Las 20 razones
-que ya existen **no se tocan**: los análisis nuevos las reutilizan. Se tocan **unos 28 archivos
-existentes** en las Fases 1A–4 (casi todos con 1 a 5 líneas; el único cambio grande es sacar el
-formulario de clientes/proveedores a una pieza reutilizable) y ≈18 más si la Fase G2 la hacemos
-nosotros (lista completa en la sección 11).
+**Regla de oro (Guía, P10): sin datos reales hasta tener respaldos probados, 2FA y exportación
+completa.** La v0.2 deja listos los respaldos; 2FA y exportación completa van en la v0.3. Por lo tanto,
+**la v0.2 sigue siendo solo para datos ficticios**.
 
-**Orden recomendado y qué podrán probar las contadoras**:
-- **Fase 1A (≈1,5 semanas)**: crear y editar clientes/proveedores desde la factura y los pagos,
-  textos y menú nuevos, migas y "siguiente paso" en todas las pantallas, errores en español, y la
-  Ayuda con las primeras secciones del manual.
-- **Fase G1 (≈2 semanas)**: asistente de configuración inicial, pendientes en el Panel, pasos de
-  la factura y cierre de mes guiado.
-- **Fase 1B (≈1,5 semanas)**: semáforo, comparación, indicadores del Panel y resto del manual.
-- **Fase G2 (≈1,5 semanas)**: llevar la experiencia guiada a las pantallas existentes de tu
-  socio (acordado con él).
-- **Fases 2 y 3 (≈4 semanas)**: herramientas del auditor. **Fase 4 (≈2)**: razones adicionales.
-  **Fase 5**: entrega al socio.
+**Pasa a la v0.3**: DuPont, punto de equilibrio y análisis vertical/horizontal (después de 2FA y la
+exportación), y la paleta de búsqueda Ctrl+K.
 
-**Esfuerzo total**: **≈13 a 15 semanas** de calendario (detalle en la sección 13). Si se deja
-la Fase G2 para que la haga tu socio con los componentes que le entregamos, ≈11,5 a 13,5.
+**Con tu socio**: dejamos de mandarle un paquete al final. **Plan A (el tuyo)**: una **organización de
+GitHub** donde ustedes dos son dueños por igual, con sus repos transferidos, la rama principal protegida (cada
+cambio necesita la aprobación del otro socio) y un **tablero** con cada tarea del plan asignada a ti, al socio o a
+Claude. **Plan B** si él no acepta: copias (forks) de sus repos y un PR por fase. En ambos: **una entrega pequeña
+por fase con historial compartido**. Los pasos en GitHub, separados por quién los hace, están en 12.1 y 12.2.
 
-**Lo que necesito que decidas** (detalle en la sección 12): rol nuevo "Auditor" (recomendado);
-qué ve el administrador de la empresa auditada; si una auditora con varias empresas usa un
-correo por empresa; que las contadoras validen los límites del semáforo; el orden de las fases;
-hasta dónde cambiar la palabra "tercero"; aceptar una pieza pequeña de software libre para
-mostrar el manual; que las contadoras validen el plan de cuentas base de RD; quién adapta las
-pantallas del socio a la experiencia guiada; y hablar con tu socio **antes de
-empezar** (la Fase 1A ya toca la pantalla de clientes/proveedores y el menú, que son suyos).
+**Tiempo**: **≈12 semanas de trabajo efectivo**, que en calendario son **≈15 a 17 semanas** contando las
+esperas por tu socio (revisión de cada PR) y por las contadoras (validaciones que bloquean).
+
+---
+
+## 0.1 Qué cambió en esta versión (1.1) y equivalencia de nombres de fases
+
+| Antes (v1.0) | Ahora (v1.1) | Contenido |
+|---|---|---|
+| Fase 0 | **Fase 0** | + repos con el socio (organización o forks) y **respaldos** (P10) |
+| Fase 1A | **Fase 1** | Crear sin salir, Ayuda, base guiada (más liviana), Enviar comentario |
+| Fase G1 | **Fase 2** | Arranque guiado + **datos de ejemplo** + NCF guiado + flujos |
+| Fase 1B | **Fase 3** | Semáforo, comparación, Panel |
+| Fase G2 | **Fase 4** | Pantallas existentes guiadas (las hacemos nosotros) |
+| Fase 2 | **Fase 5** | Auditoría I (ya **no** condicionada) |
+| Fase 3 | **Fase 6** | Auditoría II |
+| Fase 4 | **v0.3** | DuPont, equilibrio, vertical/horizontal (anexo B) |
+| Fase 5 (paquete final) | **Fase 7** | Cierre de versión; ya no hay paquete: un PR por fase |
+
+Cambios del revisor-critico aplicados: P10 respaldos y regla de datos reales (11); P2 datos de ejemplo,
+prueba cronometrada, checklist de 5 grupos, NCF guiado (9.3); P3 dos audiencias y prueba con perfil dueño
+(9.6, 8.2); P7 "Ocultar ayudas" y "Saltar" (9.5); rol Auditor sin reapertura por el ADMIN, riesgo de
+restablecer la clave, sin hablar de "independencia", enum en migración propia (5); historial compartido con
+Plan A (organización compartida) y Plan B (forks), y conteo real de archivos (12, 17); menú unificado en un solo lugar (9.4); componentes construidos en la fase
+que los usa y un solo archivo de contenido con verificación automática (8.3, 9.2); Fase 4 a v0.3; semanas
+efectivas vs. calendario y P1 por fase (3, 19); orden de tablas.
 
 ---
 
@@ -75,1361 +77,1246 @@ empezar** (la Fase 1A ya toca la pantalla de clientes/proveedores y el menú, qu
 
 | Tema | Estado real |
 |---|---|
-| Arquitectura en uso | Backend NestJS 11 + Prisma 7 + Postgres con **login propio y 4 roles fijos**, y pantallas Angular 22 en `frontend/`. Es **distinto** de lo que proponía `PLAN.md` v3.1 (pantallas en Next.js dentro de plataforma, pase firmado, permisos `fin.*`). La v0.2 se construye **sobre lo que existe hoy**. Ver aviso de deuda en 14.1. |
-| Razones | `src/reports/generators/financial-ratios.generator.ts`: 20 razones para un rango `[from, to]`, más un "estado" con `ebitda`, `ebit`, ingresos, costos, y saldos de balance al inicio y al cierre. **El EBITDA ya se calcula** (no se muestra como indicador). Las de rentabilidad **no se anualizan** (lo avisa en `warnings`). |
-| Fotos de razones | La tabla `FinancialRatioSnapshot` existe en el esquema pero **ningún código la usa**. La v0.2 tampoco la usa (ver 7.3). |
-| Exportación | `src/exports`: todo reporte se convierte a un `TableDoc` (`table-doc.ts`) y de ahí salen el PDF (`pdf.renderer.ts`, pdfkit) y el Excel (`xlsx.renderer.ts`, exceljs). `renderPdf` y `renderXlsx` son **funciones sueltas que se pueden importar** sin tocar el módulo. En el PDF las celdas de tabla **se recortan con "..."** pero las `notes` de cada sección **sí se ajustan en varias líneas**: sirven para textos largos (hallazgos). Fuente Helvetica: solo caracteres latinos (letras con tilde y ñ sí; símbolos como "≥" salen como "?"). |
-| Adjuntos | `src/attachments`: el "dueño" del archivo está fijo en 4 campos (factura, pago, asiento, conciliación) y subir está prohibido a VIEWER. El almacenamiento (`file-storage.ts`, `LocalFileStorage`) y la validación de tipo (`file-type.ts`: `detectFile`, `sanitizeFileName`, `contentDisposition`) son **reutilizables sin modificarlos**. |
-| Bitácora | `AuditLog` + `writeAudit(tx, user, entidad, id, acción, cambios)` en `src/common/audit.ts`, dentro de la misma transacción. Se usa en 19 archivos. No tiene pantalla. |
-| Roles | `UserRole` = ADMIN, ACCOUNTANT, APPROVER, VIEWER. `RolesGuard`: **sin `@Roles` no restringe**. Todas las escrituras actuales declaran roles explícitos (lo vigila `test/security.e2e-spec.ts`, "Política de rutas"). **Ninguna lista de `@Roles` incluiría un rol nuevo**: un rol nuevo nace con lectura total y cero escritura. |
-| Prueba de rutas | `security.e2e-spec.ts` exige: toda ruta con `JwtAuthGuard`; toda escritura con `@Roles`; y que las **únicas lecturas restringidas** sean `/users/` y `/users/:id`. Si la v0.2 restringe lecturas de auditoría, **esa expectativa se actualiza** (archivo existente modificado). |
-| Usuarios | Un usuario pertenece a **una sola** empresa y el correo es único en todo el sistema. Los usuarios no se borran, se desactivan. |
-| Pantallas | Kit propio en `frontend/src/app/shared/ui` (`Modal`, `Pagination`, `StatusBadge`, `Combobox`, `ChartView` sobre chart.js, `ExportButtons`, `AttachmentsPanel`), estilos globales en `styles.css` (`.page`, `.panel`, `.figures/.figure`, `.tabs/.tab`, `.table`, `.badge` con tonos `pos/warn/neg`, `.notice`). **No hay Tailwind** en este proyecto: no se introduce. |
-| Despliegue | El contenedor `migrate` corre `prisma migrate deploy` antes de la API: las migraciones nuevas se aplican solas al desplegar en pruebas. |
-| Suelto | `test/budgets.e2e-spec (1).ts` es una copia vieja que **no se ejecuta** (el nombre no coincide con el patrón). No es nuestro: se avisa al socio. |
+| Repositorios | El socio tiene **dos** repos: `shadowhunt87/finanzas_run` (backend NestJS) y `shadowhunt87/finanzas_run_frontend` (Angular). Nuestro `carlosjfriast-sketch/modulo-financiero` los juntó (backend en la raíz, frontend en `frontend/`) **sin su historial** (commit `b552cfe`), más 4 cambios propios: `c5efa7c` (lock regenerado + compose de pruebas), `f9a4715` (seguridad nginx/CSP + body 6 MB en `src/app.setup.ts`), `a1d21cf` (guía y plan) y documentación. Hoy el socio **no da permiso de escritura** en sus repos; Carlos le propondrá una organización compartida (12.1). |
+| Arquitectura en uso | NestJS 11 + Prisma 7 + Postgres 18, **login propio y 4 roles fijos**, pantallas Angular 22. Distinto de `PLAN.md` v3.1 (Next.js en plataforma, pase firmado). La v0.2 se construye **sobre lo que existe**. Ver deuda 20.1. |
+| Respaldos | Base hecha el 2026-10-10 con scripts/backup.sh y cron (ver 11.2). Faltan el cifrado, la copia fuera del servidor y el aviso. |
+| Razones | `src/reports/generators/financial-ratios.generator.ts`: 20 razones para `[from, to]`, más un estado con `ebitda`, `ebit`, ingresos, costos y saldos de balance al inicio y al cierre. Rentabilidad **no anualizada** (lo avisa en `warnings`). `FinancialRatioSnapshot` existe en el esquema y **nadie la usa**. |
+| Exportación | `src/exports`: `TableDoc` → `renderPdf` (pdfkit) / `renderXlsx` (exceljs), **funciones importables sin tocar el módulo**. En el PDF las celdas se recortan con "..." pero las `notes` de cada sección **se ajustan en varias líneas**. Helvetica: letras con tilde y ñ sí; símbolos como "≥" salen como "?". |
+| Adjuntos | `src/attachments`: dueño fijo en 4 campos y subida cerrada a VIEWER. `LocalFileStorage`, `detectFile`, `sanitizeFileName`, `contentDisposition` son **reutilizables sin modificarlos**. |
+| Bitácora | `AuditLog` + `writeAudit(...)` dentro de la misma transacción, en 19 archivos. Sin pantalla. El restablecimiento de clave por un ADMIN **ya queda registrado** (`users.service.ts`: `writeAudit(..., 'User', id, UPDATE, { passwordReset: true })`) y **ya invalida las sesiones** (`passwordChangedAt`). |
+| Roles | `UserRole` = ADMIN, ACCOUNTANT, APPROVER, VIEWER. `RolesGuard`: sin `@Roles` no restringe. Todas las escrituras declaran roles (lo vigila `test/security.e2e-spec.ts`, "Política de rutas", que además fija que las **únicas** lecturas restringidas son `/users/` y `/users/:id`). Un rol nuevo nace con **lectura total y cero escritura**. |
+| Validación | 856 reglas de class-validator en los DTOs, **solo 13 con mensaje en español**: si algo se escapa de la pantalla, llega "partnerId must be a UUID". |
+| Configuración inicial | **No existe** plan de cuentas base de RD ni asistente. Sí existen acciones sueltas: `POST /journals/defaults`, `POST /fiscal-years`, `POST /account-classification/auto`. Todos los servicios necesarios están exportados por sus módulos (facturación, pagos, tesorería, maestros, año fiscal, DGII). |
+| Usuarios | Un usuario pertenece a **una sola** empresa; el correo es único en todo el sistema; no se borran, se desactivan. |
+| Pantallas | ≈33 pantallas (92 archivos en `src/app`). Kit propio en `shared/ui` (`Modal`, `Pagination`, `StatusBadge`, `Combobox`, `ChartView`, `ExportButtons`, `AttachmentsPanel`), estilos en `styles.css`. **No hay Tailwind**: no se introduce. Todas las pantallas tienen `page-head` con título y línea `sub`. |
+| Servidor web | `frontend/deploy/nginx.conf`: `.png` en caché **un año**; una ruta inexistente devuelve `index.html` (200). CSP: `default-src 'self'; script-src 'self' + hash; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:`. |
+| Despliegue | El contenedor `migrate` corre `prisma migrate deploy` antes de la API. |
+| Suelto | `test/budgets.e2e-spec (1).ts` no se ejecuta (nombre fuera del patrón). Se avisa al socio. |
 
 ---
 
 ## 2. Convenciones del socio que se respetan
 
-La v0.2 se le entrega al socio para que la una a su repositorio: **tiene que parecer escrita por
-él**. Cada desarrollador **imita** estos ejemplos concretos; el revisor-critico y qa rechazan lo
-que se aparte sin justificación escrita.
+La v0.2 llega al socio en PRs por fase: **tiene que parecer escrita por él**. Cada desarrollador **imita**
+estos ejemplos; revisor-critico y qa rechazan lo que se aparte sin justificación escrita.
+(Rutas: **[back]** = repo `finanzas_run`, **[front]** = repo `finanzas_run_frontend`.)
 
 ### 2.1 Backend
 
 | Convención | Ejemplo existente a imitar | Regla para la v0.2 |
 |---|---|---|
-| Módulo por carpeta | `src/budgets/` = `budgets.controller.ts`, `budgets.service.ts`, `budgets.module.ts`, `dto/budget.dto.ts` | `src/auditing/` y `src/financial-analysis/` con la misma forma. Subcarpetas solo si ya hay precedente (`src/reports/generators/`). |
-| Imports ESM con `.js` | `import { BudgetsService } from './budgets.service.js';` | Siempre con extensión `.js`. |
-| Guards en la clase | `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Controller('budgets')` | Igual en cada controlador nuevo. |
-| Roles por ruta | `@Post() @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT)` | **Toda** escritura con `@Roles` explícito. Lecturas restringidas también con `@Roles`. Nunca `Object.values(UserRole)`. |
-| Usuario actual | `@CurrentUser() user: AuthUser` y `companyId` sacado **solo** de `user.companyId` | Ningún DTO acepta `companyId`. |
-| Validación | class-validator en DTOs (`CreateBudgetDto`: `@IsString() @MinLength(2) @MaxLength(120)`), `ValidationPipe` global con `whitelist` + `forbidNonWhitelisted` | Igual; textos largos con `@MaxLength` (p. ej. 5.000 caracteres). Ids con `ParseUUIDPipe`. Fechas con `@IsDateString()` como en `reports-queries.dto.ts`. |
-| Auditoría en la misma transacción | `attachments.service.ts`: `this.prisma.$transaction(async (tx) => { ...create...; await writeAudit(tx, user, 'Attachment', row.id, AuditAction.CREATE, {...}); })` | Toda escritura del módulo de auditoría y de configuración de razones deja su `writeAudit`. Se usan las acciones existentes (CREATE, UPDATE, DELETE, CLOSE, APPROVE): **sin tocar el enum `AuditAction`**. |
-| Filtro por empresa en escrituras | `tx.account.update({ where: { id: accountId, companyId: user.companyId }, ... })` (lo vigila el test "escrituras por id siempre con companyId") | Todo `update/delete` por id lleva `companyId`. |
-| 404 si es de otra empresa | `findFirst({ where: { id, companyId } })` → `NotFoundException('... no encontrado')` | Igual: nunca 403 por documentos ajenos (no revelar que existen). |
-| Bloqueo de lo cerrado | `assertNotLocked` en adjuntos: `UnprocessableEntityException('El período fiscal "X" está cerrado')` | Encargo cerrado ⇒ 422 con mensaje en español. |
-| Duplicados | `isUniqueViolation(e)` de `src/common/audit.ts` → `ConflictException` | Igual. |
-| Numeración correlativa | `Journal.nextNumber` incrementado dentro de la transacción | Numeración de hallazgos (H-001...) con un `nextFindingNumber` en el encargo, mismo patrón. |
-| Dinero y decimales | `Prisma.Decimal`, `ZERO`, `dec()` de `reports/accounting-nature.utils.ts`; redondeo `toDecimalPlaces(4)`; `null` + `note` cuando el denominador es cero (`mk(...)` en el generador de razones) | Los análisis nuevos devuelven igual: valores decimales como texto, `null` con nota explicativa. |
-| "Quién" sin relación | `FiscalYear.closedById String?` (sin relación a `User`) | Los campos "quién marcó / quién respondió" se guardan así, para **no tocar el modelo `User`**. |
-| Generadores de reportes | `FinancialRatiosGenerator` inyecta `BalanceSheetGenerator` e `IncomeStatementGenerator` (exportados por `ReportsModule`) | Los análisis nuevos **inyectan** esos generadores; no copian su lógica. |
-| Exportaciones | Builder que devuelve `Section[]` (`exports.builders.ts`, p. ej. `ratiosSections`) + `renderPdf/renderXlsx`; cabeceras de `ExportsController.send` (`Content-Disposition` saneado, `nosniff`, `no-store`) | Builders propios en cada módulo nuevo; se importan `renderPdf/renderXlsx` y se repiten las mismas cabeceras. |
-| Comentarios | En español, explican el **porqué** (`// Sin historia previa (balance inicial en cero) un promedio con cero subestimaría los saldos`) | Igual. |
-| Pruebas e2e | `test/financial-ratios.e2e-spec.ts`: `createApp({ silent: true })`, dos empresas con sufijo `Date.now().toString(36)`, usuarios creados con `bcrypt.hash(password, 4)`, `token[rol]`, helper `api(método, url, quién)`, montos **calculados a mano** en el comentario inicial, limpieza en `afterAll` en orden de llaves foráneas | Mismo esqueleto en cada archivo nuevo. |
+| Módulo por carpeta | [back] `src/budgets/` = controller, service, module y `dto/budget.dto.ts` | `src/auditing/`, `src/financial-analysis/`, `src/guidance/`, `src/feedback/` con la misma forma |
+| Imports ESM con `.js` | `import { BudgetsService } from './budgets.service.js';` | Siempre |
+| Guards en la clase | `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Controller('budgets')` | Igual |
+| Roles por ruta | `@Post() @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT)` | Toda escritura con `@Roles` explícito; nunca `Object.values(UserRole)` |
+| Usuario actual | `@CurrentUser() user: AuthUser`; `companyId` solo de `user.companyId` | Ningún DTO acepta `companyId` |
+| Validación | class-validator (`@IsString() @MinLength(2) @MaxLength(120)`), `ValidationPipe` con `whitelist` + `forbidNonWhitelisted` | Igual; textos largos con `@MaxLength`; ids con `ParseUUIDPipe`; fechas `@IsDateString()` |
+| Bitácora en la misma transacción | [back] `attachments.service.ts`: `$transaction(async (tx) => { ...; await writeAudit(tx, user, 'Attachment', row.id, AuditAction.CREATE, {...}); })` | Toda escritura nueva; acciones existentes, **sin tocar `AuditAction`** |
+| Empresa en escrituras | `tx.account.update({ where: { id, companyId: user.companyId } })` (vigilado por el test de regresión) | Igual |
+| 404 si es de otra empresa | `findFirst({ where: { id, companyId } })` → `NotFoundException('... no encontrado')` | Igual |
+| Bloqueo de lo cerrado | `UnprocessableEntityException('El período fiscal "X" está cerrado')` | Encargo cerrado ⇒ 422 en español |
+| Duplicados | `isUniqueViolation(e)` → `ConflictException` | Igual |
+| Correlativos | `Journal.nextNumber` dentro de la transacción | Hallazgos H-001... con `nextFindingNumber` |
+| Decimales | `Prisma.Decimal`, `ZERO`, `dec()`; `toDecimalPlaces(4)`; `null` + `note` si el denominador es cero | Igual |
+| "Quién" sin relación | `FiscalYear.closedById String?` | Para no tocar el modelo `User` |
+| Generadores | `FinancialRatiosGenerator` inyecta `BalanceSheetGenerator` e `IncomeStatementGenerator` | Se inyectan; no se copia lógica |
+| Exportaciones | builders `Section[]` + `renderPdf/renderXlsx`; cabeceras de `ExportsController.send` | Builders propios; mismas cabeceras |
+| Comentarios | En español, explican el porqué | Igual |
+| e2e | [back] `test/financial-ratios.e2e-spec.ts`: `createApp({ silent: true })`, dos empresas con sufijo, `bcrypt.hash(password, 4)`, `token[rol]`, helper `api(...)`, montos a mano en el comentario, limpieza en `afterAll` | Mismo esqueleto |
+| Migraciones | Carpetas `prisma/migrations/<fecha>_<nombre>/migration.sql`, solo aditivas | Igual; **`ALTER TYPE ... ADD VALUE` en su propia migración** |
 
 ### 2.2 Frontend
 
 | Convención | Ejemplo existente a imitar | Regla para la v0.2 |
 |---|---|---|
-| Componentes | `dashboard.ts`: `standalone`, `changeDetection: ChangeDetectionStrategy.OnPush`, `imports: [RouterLink, ...UI]`, estado con `signal()` y `computed()`, `inject()` | Igual. Sin `NgModule`, sin zone, sin RxJS salvo `firstValueFrom` (como `users.ts`). |
-| Rutas por área | `features/reporting/reporting.routes.ts` con `loadComponent`; el área se carga en `app.routes.ts` con `loadChildren` | Área nueva `features/audit/audit.routes.ts`. El análisis financiero va en el área existente `reporting`. |
-| Menú | `layout/nav.ts`, `NavItem.roles` | Entradas nuevas con `roles` donde aplique. |
-| Guardas | `roleGuard(...roles)` de `core/guards.ts` | Rutas de auditoría con `roleGuard('ADMIN', 'AUDITOR')`. |
-| Etiquetas | `shared/labels.ts`: `ROLE`, `INVOICE_STATUS`... + `tone()` para el color + `opts` para selectores | Todas las etiquetas nuevas ahí (agregadas **al final** para reducir choques). |
-| API | `Api.getP<T>(ruta, query)`, `api.download(...)`; errores con `errorMessage(e)` y `Notify` | Igual. |
-| Gráficas | `<app-chart [config]="chart()" height="250px" />` con `ChartConfiguration` en un `computed` (`dashboard.ts`) | Igual. Colores: los ya usados (`#0c6b5e`, `#e0a526`) y variables CSS. |
-| Exportar | `<app-export-buttons [path]="..." [query]="..." name="..." />` | Se reutiliza tal cual apuntando a las rutas nuevas. |
-| Dinero | `decimal.js` vía `shared/format.ts` (`dec`, `sumDec`) y pipes `money`, `fdate`, `lbl`, `signClass` | Igual. Nunca `Number()` para sumar dinero. |
-| Estilos | Clases globales de `styles.css`; estilos locales cortos en `styles:` del componente | **Ningún estilo nuevo suelto** fuera de lo imprescindible del componente; nada de librerías de UI. |
-| Botones según rol | `@if (auth.has('ADMIN', 'ACCOUNTANT')) { ... }` | Igual; la API valida de todas formas. |
+| Componentes | [front] `dashboard.ts`: `ChangeDetectionStrategy.OnPush`, `imports: [RouterLink, ...UI]`, `signal()`/`computed()`, `inject()` | Igual; sin `NgModule`, sin zone; RxJS solo `firstValueFrom` |
+| Rutas por área | `features/reporting/reporting.routes.ts` con `loadComponent`; áreas en `app.routes.ts` con `loadChildren` | Áreas nuevas `audit`, `help`, `setup` |
+| Menú | `layout/nav.ts`, `NavItem.roles` | Un solo cambio de menú, definido en 9.4 |
+| Guardas | `roleGuard(...roles)` | Igual |
+| Etiquetas | `shared/labels.ts` (+ `tone()`, `opts`) | Todo lo nuevo ahí, **al final** del archivo |
+| API y errores | `Api.getP<T>`, `api.download`, `errorMessage(e)`, `Notify` | Igual |
+| Gráficas | `<app-chart [config]="chart()" />` | Igual |
+| Exportar | `<app-export-buttons [path] [query] name />` | Igual, apuntando a rutas nuevas |
+| Dinero | `decimal.js` vía `shared/format.ts`; pipes `money`, `fdate`, `lbl`, `signClass` | Nunca `Number()` para sumar dinero |
+| Estilos | Clases de `styles.css`; estilos locales cortos | Ningún estilo global nuevo; sin librerías de UI |
+| Botones según rol | `@if (auth.has('ADMIN', 'ACCOUNTANT'))` | Igual |
+| Pantalla de referencia | `features/catalog/partners.ts` ("PANTALLA DE REFERENCIA") | Las nuevas siguen su esquema |
 
 ### 2.3 Librerías nuevas
-
-**Backend: ninguna.** Todo se resuelve con lo instalado (NestJS, Prisma, class-validator, pdfkit,
-exceljs).
-
-**Frontend: una sola, propuesta para la Ayuda integrada: `marked`** (convierte Markdown en HTML).
-Justificación, según los criterios del equipo:
-- **Mantenimiento**: activo desde 2011, versiones frecuentes, una de las más usadas del
-  ecosistema JavaScript. **Licencia MIT** (compatible). **Cero dependencias** propias.
-- **Sin navegador externo ni CDN**: se instala con npm, se empaqueta con la app y se carga **solo
-  al abrir la Ayuda** (pieza separada, no pesa en el resto de pantallas).
-- **Por qué no escribir un convertidor propio**: un subconjunto de Markdown (títulos, listas,
-  negritas, enlaces, imágenes, tablas, avisos) son ≈150–200 líneas que habría que probar y
-  mantener, con casos raros (listas anidadas, tablas) que `marked` ya resuelve.
-- **Seguridad**: el HTML resultante se inserta con `[innerHTML]`, que en Angular pasa
-  **siempre** por su limpiador (quita scripts y atributos de eventos); además la CSP actual
-  prohíbe scripts en línea. El contenido es nuestro y se sirve desde el mismo servidor.
-- **Alternativa si Carlos no la aprueba (D11)**: convertidor propio limitado al subconjunto
-  documentado en la guía de estilo del manual (+1,5 días de dev-frontend).
-
-Si algún desarrollador cree necesitar otra librería, se detiene y lo consulta al arquitecto con
-justificación escrita.
+- **Backend: ninguna.**
+- **Frontend: solo `marked`** (Markdown → HTML) para la Ayuda: MIT, cero dependencias, mantenida desde
+  2011, sin CDN, cargada **solo** al abrir la Ayuda; el HTML pasa por el limpiador de Angular
+  (`[innerHTML]`) y la CSP prohíbe scripts en línea. Aprobada por Carlos (D11).
+- **Servidor (no es dependencia de la app)**: para los respaldos, `gnupg` (cifrado) y `rclone` (copia fuera
+  del servidor, MIT), en una imagen propia basada en `postgres:18-alpine`. Las valida seguridad.
+Cualquier otra: el desarrollador se detiene y lo consulta con justificación escrita.
 
 ---
 
-## 3. Recomendación (en lenguaje de negocio)
+## 3. Validación contra la Guía de producto
 
-**A) Auditoría** — un módulo nuevo, separado de la contabilidad. La auditora entra con un usuario
-de tipo **Auditor**: ve todo como un usuario de solo lectura, pero además puede trabajar en su
-módulo. Lo que escribe la auditora **nunca** modifica asientos, facturas ni pagos: sus marcas,
-notas y archivos se guardan aparte. Así la empresa auditada no corre ningún riesgo y la auditora
-tiene evidencia de su trabajo.
+### 3.1 Qué parte de la promesa (P1) mejora cada fase
+Promesa: *"La contabilidad de tu empresa **en orden** y **al día con la DGII**, **sin tener que ser
+contador**, y **con tu contador trabajando en el mismo lugar**."*
 
-**B) Análisis financiero** — una pantalla nueva "Análisis financiero" con pestañas (Semáforo,
-Tendencia, Comparar períodos, EBITDA y DuPont, Punto de equilibrio, Vertical y horizontal,
-Configuración), más una franja de 6 indicadores en el Panel. Todo se calcula con los mismos
-números que ya muestran el balance y el estado de resultados: **no puede haber dos versiones de
-la verdad**.
+| Fase | Parte de la promesa | Principios de la Guía |
+|---|---|---|
+| 0 Preparación, repos, respaldos | Base de **confianza** para todo lo demás (los datos no se pierden) | P10 |
+| 1 Crear sin salir, Ayuda, base guiada, comentarios | **Sin tener que ser contador** | P7, P3, P6 |
+| 2 Arranque guiado, ejemplos, NCF guiado, flujos | **En orden** desde el día 1 y **al día con la DGII** (NCF bien configurados), **sin ser contador** | P2, P7, P11 |
+| 3 Semáforo, comparación, Panel | **En orden**: el dueño entiende la salud de su empresa **sin ser contador** | P3, P6 |
+| 4 Pantallas existentes guiadas | **Sin tener que ser contador**, en todo el sistema | P7, P6 |
+| 5–6 Auditoría | **Con tu contador trabajando en el mismo lugar** | P9 |
+| 7 Cierre | — (calidad, revisión final) | P10 |
 
-**C) Usabilidad** — arreglos pequeños que pidieron las pruebas, sin tocar el backend (6C).
+### 3.2 Checklist de la Guía (sección 6) en cada pantalla nueva o tocada
+Se aplica completo. Notas de cómo se cumple aquí: migas y propósito (9.2); acción principal en el mismo
+lugar (9.4); estados vacíos (9.2); errores (9.6); botón "?" (8); términos difíciles con explicación (9.2);
+montos y estados con **icono + color + texto** (`StatusBadge` del kit gana un ícono en la Fase 4); crear sin
+salir (7); celular a 375 px; teclado (Tab, Enter guarda, Esc cierra); prueba de usuario nuevo (9.7);
+convenciones del socio (2).
 
-**D) Ayuda integrada** — manual en archivos de texto (Markdown) que el documentador mantiene, una
-pantalla "Ayuda" y un botón "?" en la barra superior que abre la sección de la pantalla actual
-(6D).
+### 3.3 Divergencias con la Guía, dichas explícitamente
+- **Ctrl+K (P8)** y **2FA/exportación completa (P10)** quedan en la v0.3, como dice la propia Guía (sección 7).
+- **"Bitácora visible para el administrador" (P10)**: la v0.2 solo muestra el historial **de un documento**
+  al auditor (O1) y los restablecimientos de clave del usuario auditor (5.6). El visor general queda para
+  la v0.3 (Carlos no lo eligió para la v0.2).
+- **Usuario en varias empresas / portal del contador (P9)**: no en v0.2; una auditora con varias empresas
+  usa un correo por empresa (deuda, D2).
 
-**E) Experiencia guiada** — criterio de aceptación de toda pantalla; primero mecanismos globales
-(barra superior, traductor de errores), luego pantallas nuevas (asistente, flujos), y al final la
-adopción en pantallas existentes con componentes del kit, sin rediseñar nada (6E).
+---
 
-### 3.1 ¿VIEWER o rol nuevo AUDITOR? → **Rol nuevo AUDITOR** (recomendado)
+## 4. Recomendación y alternativas descartadas
+
+### 4.1 Recomendación (en lenguaje de negocio)
+Todo lo nuevo va en **módulos y archivos nuevos**; lo existente se toca lo mínimo y se entrega al socio en
+PRs pequeños por fase. La experiencia guiada se logra con **mecanismos globales** (barra superior, un
+traductor de errores) y **piezas pequeñas del kit**, no rediseñando pantallas. Las 20 razones existentes no
+se tocan. La auditoría es un módulo aparte: lo que escribe la auditora **nunca** modifica la contabilidad.
+
+### 4.2 ¿VIEWER o rol nuevo AUDITOR? → **AUDITOR** (aprobado, D1)
 
 | | Usar VIEWER | Rol nuevo AUDITOR |
 |---|---|---|
-| Leer toda la contabilidad | Sí | Sí (automático: las lecturas no tienen roles) |
-| Escribir en auditoría | Habría que dar permiso de escritura en auditoría a **todo** VIEWER: cualquier empleado de solo lectura podría crear hallazgos o borrar papeles de trabajo | Solo el auditor |
-| Escribir en la contabilidad | No | No: ninguna lista de `@Roles` lo incluye, y una prueba automática lo garantiza (también para rutas que el socio agregue después) |
-| Separación de funciones (lo que mira un auditor de verdad) | Mezcla al personal de la empresa con el auditor externo | Clara |
-| Costo | 0 | Una línea en el esquema, una migración que agrega un valor, 2 archivos de pantalla con 1 línea cada uno |
-| Choque con el socio | Ninguno | Bajo, **si se le avisa antes**: si él también agrega un rol, hay que coordinar el orden |
+| Leer la contabilidad | Sí | Sí (automático) |
+| Escribir en auditoría | Habría que dárselo a **todo** VIEWER | Solo el auditor |
+| Escribir en la contabilidad | No | No (prueba automática sobre todas las rutas, también las futuras del socio) |
+| Separación de funciones y trazabilidad | Mezcla personal de la empresa con la auditora | Clara; cada acción queda a su nombre |
+| Costo | 0 | 1 línea de esquema + migración propia + 2 archivos de pantalla con 1 línea |
 
----
+**Lo que el sistema NO garantiza** (se dice tal cual, sin hablar de "independencia"): el ADMIN de la empresa
+administra los usuarios, así que puede desactivar a la auditora o restablecer su clave. El sistema da
+**trazabilidad**: esas acciones quedan registradas y la auditora las ve (5.6).
 
-## 4. Alternativas descartadas
-
+### 4.3 Alternativas descartadas
 | Alternativa | Por qué no |
 |---|---|
-| Ampliar `Attachment` con campos `auditWorkpaperId`/`auditFindingId` | Toca el modelo, el servicio y los DTOs de adjuntos del socio, y subir archivos hoy está cerrado a VIEWER/AUDITOR. En su lugar: tabla propia `AuditFile` que **reutiliza** `LocalFileStorage`, `detectFile` y `sanitizeFileName` sin modificarlos. Costo: ≈80 líneas de servicio parecidas a las de adjuntos (se anota como deuda menor para unificar con el socio más adelante). |
-| Agregar columna `costBehavior` a `Account` para costos fijos/variables | Toca el modelo más usado del sistema. En su lugar: tabla `AccountCostBehavior` con solo el porcentaje variable de las cuentas que el usuario quiera ajustar; el resto toma un valor por defecto según su categoría. |
-| Modificar `FinancialRatiosGenerator` para agregarle semáforo, DuPont, etc. | Es el archivo con más riesgo de choque y ya tiene pruebas con montos a mano. Se **envuelve** desde el módulo nuevo; cero cambios. |
-| Relaciones Prisma desde las tablas nuevas a `User` (creado por, revisado por...) | Cada relación obliga a agregar una línea en `User`; serían 6–8 líneas en el modelo más sensible. Se sigue el precedente del socio (`FiscalYear.closedById` sin relación). |
-| Marcas de revisión con una columna por tipo de documento (`journalEntryId`, `invoiceId`...) | Obliga a agregar relaciones inversas en 4 modelos existentes. Se usa `entityType + entityId` (mismo patrón que `AuditLog`), validando en el servicio que el documento exista y sea de la empresa. |
-| Guardar "fotos" de razones (`FinancialRatioSnapshot`) para la tendencia | Si alguien reabre un período, la foto queda vieja y el semáforo mentiría. Se calcula en vivo; se mide el tiempo y solo si hace falta se piensa en fotos (7.3). |
-| Diseñador de informes de auditoría / plantillas Word | Fuera de alcance; el informe usa el mismo formato PDF/Excel de los demás reportes. |
-| Dictamen de auditoría formal (opinión según NIA 700) | Es un documento profesional y legal del auditor, no del sistema. La v0.2 genera un **informe de revisión con hallazgos** (tipo "carta a la gerencia"). Ver decisión D8. |
-| Visor general de la bitácora, revisión automática de errores, historial de accesos | Carlos no los eligió. Solo se propone lo mínimo opcional (O1 y O2 en 5.6). |
-| Librería de gráficas o de UI nueva | chart.js y el kit propio alcanzan. |
-| Copiar el formulario de cliente/proveedor dentro de la factura y del pago | Tres copias del mismo formulario que se desincronizan. Se extrae a un componente y `partners.ts` lo usa (6C). |
-| "Ir a clientes y proveedores" en la misma pestaña con aviso de "perderás lo escrito" | Obliga a agregar un guardián de salida a pantallas del socio y aun así se pierde el trabajo si la contadora acepta. Otra pestaña no pierde nada. |
-| Manual como páginas Angular, o en un sitio aparte (p. ej. un generador de documentación) | Páginas Angular: cada cambio de texto pasa por un programador. Sitio aparte: otra pieza que desplegar, sin ayuda contextual. |
-| Manual en HTML estático en `public/` | Funciona y no necesita librería, pero escribir y revisar HTML a mano es más difícil para el documentador y las contadoras. Queda como plan B si no se aprueba `marked` (D11). |
-| Un botón "?" dentro de cada pantalla | Tocaría ≈40 archivos del socio. Un solo botón en la barra superior, con un mapa pantalla → sección, logra lo mismo. |
-| Rediseñar todas las pantallas para la experiencia guiada | Semanas de trabajo y choque seguro con el socio. Se logra con mecanismos globales + componentes pequeños que se insertan (6E.2). |
-| Traducir los mensajes de validación en los 856 decoradores del backend, o con un `exceptionFactory` global | Lo primero toca casi todos los DTOs del socio; lo segundo cambia respuestas que sus pruebas verifican. Se traduce en un solo archivo del frontend (6E.4). |
-| Librería de "tours" guiados o de tooltips | Dependencia nueva para algo que resuelven `app-field-help` y `app-stepper` con el kit. |
-| Asistente que duplica dentro de sí los formularios de empresa, NCF, banco... | Copias de formularios que se desincronizan. El asistente hace las acciones simples con botones y, para el resto, lleva a la pantalla existente y vuelve. |
+| Entregar al socio un paquete al final | Choques acumulados y sin historial común. Se cambia por una entrega pequeña por fase con historial compartido (12). |
+| Pedir al socio permiso de escritura en **sus** repos personales | Él no lo da, y dejaría a Carlos como invitado en código que es de los dos. Plan A: organización con ambos como dueños; Plan B: forks. |
+| Deploy keys como acceso de Claude en el Plan A | No permiten abrir PRs ni mantener el tablero. Usuario máquina con rol Write (12.1). |
+| Ampliar `Attachment` para los archivos de auditoría | Toca modelo, servicio y DTOs de adjuntos del socio. Tabla propia que **reutiliza** almacenamiento y validación. |
+| Modificar `FinancialRatiosGenerator` | Archivo con pruebas a mano y alto riesgo de choque. Se envuelve. |
+| Relaciones Prisma a `User` en tablas nuevas | 6–8 líneas en el modelo más sensible. Precedente `FiscalYear.closedById`. |
+| Marcas de revisión con una columna por tipo de documento | Relaciones inversas en 4 modelos. `entityType + entityId` como `AuditLog`. |
+| Guardar fotos de razones para la tendencia | Se vuelven falsas al reabrir períodos. Cálculo en vivo, medido. |
+| Dictamen formal (NIA 700) | Es responsabilidad profesional de la auditora. Se genera un **informe de revisión** (D8). |
+| Copiar el formulario de cliente en factura y pago | Se extrae a un componente reutilizable. |
+| "Ir a clientes" en la misma pestaña con aviso | Se perdería la factura si se acepta. Otra pestaña (D12). |
+| Manual como páginas Angular / sitio aparte / HTML a mano | Cada cambio pasaría por un programador / otra pieza que desplegar / más difícil de escribir. Markdown + `marked`. |
+| Botón "?" dentro de cada pantalla | ≈40 archivos del socio. Uno en la barra superior + mapa. |
+| Rediseñar pantallas para la experiencia guiada | Semanas y choque seguro. Componentes pequeños insertados. |
+| Traducir mensajes en los 856 decoradores o con `exceptionFactory` global | Toca casi todos los DTOs del socio o cambia respuestas que sus pruebas verifican. Traductor en el frontend. |
+| Librería de "tours" guiados | Dependencia nueva; `app-stepper` y `app-field-help` alcanzan. |
+| Datos de ejemplo en una "empresa de demostración" aparte | Un usuario pertenece a una sola empresa: habría que crear otro usuario. Se cargan en la misma empresa, registrados para borrarlos con un clic. |
+| Preferencia "Ocultar ayudas" guardada en el servidor | Tabla y escritura nuevas (y una excepción más en las pruebas de roles) para algo de comodidad. Se guarda en el navegador, por usuario. |
+| Comentarios de prueba por un formulario externo (p. ej. Google Forms) | Los datos saldrían del servidor de Carlos (su regla de privacidad) y se perdería el contexto de la pantalla. Se hace dentro de la app. |
+| Respaldos con un servicio de pago de terceros | Datos contables fuera de control de Carlos. Copia cifrada antes de salir del servidor. |
 
 ---
 
-## 5. Diseño — A) Herramientas del auditor (`src/auditing/`)
+## 5. A) Herramientas del auditor (`[back] src/auditing/`) — Fases 5 y 6
 
-### 5.1 Modelo de datos (tablas nuevas, migración aditiva)
+Quién la usa y la prueba: **las 2 contadoras de prueba** (decisión de Carlos). Ellas validan además las
+plantillas de papeles de trabajo (**requisito que bloquea** la Fase 5).
 
-Nombres en inglés como el resto del esquema; prefijo `Audit` para distinguirlas de `AuditLog`
-(la bitácora). Todas llevan `companyId` (preparadas para la RLS que planea `PLAN.md`).
+### 5.1 Modelo de datos (tablas nuevas)
+Prefijo `Audit` para distinguirlas de `AuditLog`. Todas con `companyId`. `AuditEngagement` declara
+`@@unique([id, companyId])` y cada hija se relaciona por **la pareja** `(engagementId, companyId)` (y los
+procedimientos por `(workpaperId, companyId)`): la base de datos impide mezclar empresas. Solo
+`AuditEngagement` se relaciona con `Company` (1 línea en `Company`).
 
-**Integridad entre empresas:** `AuditEngagement` declara `@@unique([id, companyId])` y cada tabla
-hija se relaciona con el encargo por **la pareja** `(engagementId, companyId)`. Así la base de
-datos **impide** que un papel de trabajo de la empresa A cuelgue de un encargo de la empresa B,
-y solo `AuditEngagement` necesita relación con `Company` (1 línea en `Company`).
+**`AuditEngagement`** — encargo: `id, companyId, name (≤120), periodStart, periodEnd, objective?, scope?
+(≤5.000), auditorFirm? (≤200), overallConclusion? (≤10.000), status (EngagementStatus: PLANNED,
+IN_PROGRESS, IN_REVIEW, CLOSED), nextFindingNumber (1), createdById, closedById?, closedAt?,
+reopenReason?, createdAt, updatedAt`. Únicos: `(companyId, periodStart, periodEnd)`, `(id, companyId)`.
+Índice `(companyId, status)`.
 
-**`AuditEngagement`** — el encargo
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId | uuid | relación a `Company` |
-| name | texto ≤120 | "Auditoría 2027" |
-| periodStart, periodEnd | fecha | período auditado; `periodStart ≤ periodEnd` |
-| objective, scope | texto ≤5.000, opcionales | objetivo y alcance (salen en el informe) |
-| auditorFirm | texto ≤200, opcional | firma o nombre profesional que firma el informe |
-| overallConclusion | texto ≤10.000, opcional | conclusión general |
-| status | enum `EngagementStatus`: PLANNED, IN_PROGRESS, IN_REVIEW, CLOSED | |
-| nextFindingNumber | entero, por defecto 1 | numeración H-001, H-002... |
-| createdById, closedById, closedAt | uuid/fecha sin relación | precedente `FiscalYear.closedById` |
-| reopenReason | texto, opcional | obligatorio al reabrir |
-| createdAt, updatedAt | | |
-Restricciones: `@@unique([companyId, periodStart, periodEnd])` (un encargo por empresa y período),
-`@@unique([id, companyId])`, `@@index([companyId, status])`.
+**`AuditWorkpaper`** — papel de trabajo (área): `id, companyId, engagementId, area (AuditArea:
+CASH_AND_BANKS, RECEIVABLES, PAYABLES, REVENUE, EXPENSES, TAXES, EQUITY, FIXED_ASSETS, INVENTORY, OTHER),
+reference (≤20, "A", "B"...), title (≤120), objective, conclusion (≤5.000), status (WorkpaperStatus:
+PENDING, IN_PROGRESS, DONE), preparedById/At, reviewedById/At, sortOrder`. Único `(engagementId, reference)`.
 
-**`AuditWorkpaper`** — papel de trabajo (un área)
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId, engagementId | | relación compuesta al encargo |
-| area | enum `AuditArea`: CASH_AND_BANKS, RECEIVABLES, PAYABLES, REVENUE, EXPENSES, TAXES, EQUITY, FIXED_ASSETS, INVENTORY, OTHER | |
-| reference | texto ≤20 | "A", "B"... (referencia cruzada clásica) |
-| title | texto ≤120 | por defecto la etiqueta del área |
-| objective, conclusion | texto ≤5.000 | se precarga el objetivo desde la plantilla |
-| status | enum `WorkpaperStatus`: PENDING, IN_PROGRESS, DONE | |
-| preparedById/At, reviewedById/At | sin relación | "preparado por / revisado por" |
-| sortOrder | entero | |
-`@@unique([engagementId, reference])`.
+**`AuditProcedure`** — pasos: `id, companyId, workpaperId, description (≤1.000), done, result? (≤2.000),
+doneById, doneAt, sortOrder`.
 
-**`AuditProcedure`** — pasos de revisión de cada área
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId, workpaperId | | relación compuesta `(workpaperId, companyId)` (el papel declara `@@unique([id, companyId])`) |
-| description | texto ≤1.000 | precargado desde la plantilla, editable |
-| done | sí/no | |
-| result | texto ≤2.000, opcional | lo que se encontró |
-| doneById, doneAt | | |
-| sortOrder | entero | |
+**`AuditCheckmark`** — marca de revisión: `id, companyId, engagementId, workpaperId?, entityType
+(AuditEntityType: JOURNAL_ENTRY, INVOICE, PAYMENT, BANK_RECONCILIATION), entityId (sin llave foránea; el
+servicio verifica existencia y empresa), mark (AuditMark: VERIFIED, VOUCHED, RECALCULATED, CONFIRMED,
+EXCEPTION), note? (≤2.000), createdById, createdAt, updatedAt`. Único `(engagementId, entityType, entityId)`.
 
-**`AuditCheckmark`** — tilde sobre una partida revisada
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId, engagementId | | |
-| workpaperId | opcional | a qué área corresponde |
-| entityType | enum `AuditEntityType`: JOURNAL_ENTRY, INVOICE, PAYMENT, BANK_RECONCILIATION | |
-| entityId | uuid | sin llave foránea (patrón `AuditLog`); el servicio verifica existencia y empresa |
-| mark | enum `AuditMark`: VERIFIED (verificado), VOUCHED (cotejado con soporte), RECALCULATED (recalculado), CONFIRMED (confirmado con terceros), EXCEPTION (con observación) | |
-| note | texto ≤2.000, opcional | |
-| createdById, createdAt, updatedAt | | |
-`@@unique([engagementId, entityType, entityId])` (una tilde por partida y encargo; se puede cambiar).
+**`AuditFinding`** — notas y hallazgos: `id, companyId, engagementId, workpaperId?, number, kind
+(FindingKind: FINDING, NOTE), title (≤200), condition (obligatoria), criteria?, cause?, effect?,
+recommendation (≤5.000 c/u), severity? (FindingSeverity: LOW, MEDIUM, HIGH, CRITICAL), managementResponse?,
+actionPlan?, responsible? (≤120), dueDate?, respondedById?, respondedAt?, status (FindingStatus: DRAFT,
+COMMUNICATED, RESPONDED, RESOLVED, RISK_ACCEPTED), includeInReport (sí), amount? decimal(19,4),
+createdById, createdAt, updatedAt`. Único `(engagementId, number)`.
 
-**`AuditFinding`** — notas y hallazgos
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId, engagementId, workpaperId? | | |
-| number | entero | se muestra como H-001 |
-| kind | enum `FindingKind`: FINDING, NOTE | las notas no llevan gravedad ni respuesta |
-| title | texto ≤200 | |
-| condition, criteria, cause, effect | texto ≤5.000 | "condición, criterio, causa y efecto": la estructura que usa cualquier auditor; solo `condition` es obligatoria |
-| severity | enum `FindingSeverity`: LOW, MEDIUM, HIGH, CRITICAL (opcional si es NOTE) | |
-| recommendation | texto ≤5.000 | |
-| managementResponse, actionPlan | texto ≤5.000 | los escribe la gerencia |
-| responsible | texto ≤120 | persona encargada de corregir |
-| dueDate | fecha, opcional | |
-| respondedById, respondedAt | | |
-| status | enum `FindingStatus`: DRAFT, COMMUNICATED, RESPONDED, RESOLVED, RISK_ACCEPTED | |
-| includeInReport | sí/no, por defecto sí | |
-| amount | decimal(19,4), opcional | monto involucrado |
-| createdById, createdAt, updatedAt | | |
-`@@unique([engagementId, number])`.
+**`AuditFile`** — soportes: `id, companyId, engagementId, workpaperId? / findingId? (exactamente uno),
+fileName, fileUrl, mimeType, sizeBytes, uploadedById, uploadedAt`. Clave `${companyId}/auditing/${uuid}`
+en `UPLOADS_DIR`. Máximo 50 por papel o hallazgo.
 
-**`AuditFile`** — archivos de soporte del auditor
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId, engagementId | | |
-| workpaperId? / findingId? | | exactamente uno |
-| fileName, fileUrl, mimeType, sizeBytes | | mismo significado que `Attachment` |
-| uploadedById, uploadedAt | | |
-Clave de almacenamiento: `${companyId}/auditing/${uuid}` (misma carpeta `UPLOADS_DIR`, sin
-configuración nueva). Máximo 50 archivos por papel o hallazgo (mismo tope que adjuntos).
-
-**Cambios a modelos existentes en `schema.prisma`:** solo `AUDITOR` en el enum `UserRole` y
-una línea `auditEngagements AuditEngagement[]` en `Company`. Todo lo demás va en un bloque nuevo
-al **final** del archivo, con su encabezado de comentario como los demás bloques.
-
-**Migración** `prisma/migrations/2026XXXXXXXXXX_auditing/`: `ALTER TYPE "UserRole" ADD VALUE
-'AUDITOR'`, `CREATE TYPE` de los enums nuevos, `CREATE TABLE` e índices. Nada se borra ni se
-altera. Se genera con `prisma migrate dev --create-only`, se revisa a mano que solo contenga
-operaciones aditivas, y qa lo verifica (ver 9).
+**Migraciones** (todas aditivas, generadas con `prisma migrate dev --create-only` y revisadas a mano):
+1. `<fecha>_user_role_auditor/` — **solo** `ALTER TYPE "UserRole" ADD VALUE 'AUDITOR';` (en Postgres un valor
+   nuevo de enum no puede usarse en la misma transacción en que se crea; aislarlo además facilita la unión
+   con el socio).
+2. `<fecha>_auditing/` — enums nuevos, tablas e índices de encargos, papeles, procedimientos y hallazgos (Fase 5).
+3. `<fecha>_auditing_marks_files/` — marcas y archivos (Fase 6).
 
 ### 5.2 Plantilla de áreas y procedimientos
+`src/auditing/audit-templates.ts`: por área, título, objetivo y 3–6 procedimientos en español (p. ej. Caja y
+bancos: "Comparar el saldo de cada banco en libros con la conciliación al cierre"; "Revisar partidas en
+tránsito de más de 30 días"; "Confirmar saldos con los bancos"). Al crear el encargo se eligen las áreas y se
+precargan; todo editable. **Las contadoras validan los textos antes de la Fase 5 (bloquea).**
 
-Archivo `src/auditing/audit-templates.ts`: por cada área, título, objetivo y 3–6 procedimientos
-de partida en español (p. ej. Caja y bancos: "Comparar el saldo de cada banco en libros con la
-conciliación al cierre", "Revisar partidas en tránsito de más de 30 días", "Confirmar saldos con
-los bancos"). Al crear el encargo, el auditor elige las áreas (por defecto todas) y se precargan;
-todo es editable. **Los textos los revisan las dos contadoras** antes de la Fase 2 (tarea 0.4).
-
-### 5.3 Endpoints
-
-Controlador `@Controller('auditing')` con `@UseGuards(JwtAuthGuard, RolesGuard)`.
-"AUD" = AUDITOR, "ADM" = ADMIN.
+### 5.3 Endpoints (`@Controller('auditing')`, `JwtAuthGuard + RolesGuard`; AUD = AUDITOR, ADM = ADMIN)
 
 | Método y ruta | Roles | Qué hace |
 |---|---|---|
-| GET `/auditing/engagements` | ADM, AUD | Lista (filtro por estado) con conteos por gravedad |
-| POST `/auditing/engagements` | ADM, AUD | Crea el encargo y sus papeles desde la plantilla (`areas[]` opcional) |
-| GET `/auditing/engagements/:id` | ADM, AUD | Encabezado + resumen (avance por área, partidas marcadas, hallazgos por gravedad) |
-| PATCH `/auditing/engagements/:id` | AUD | Nombre, objetivo, alcance, firma, conclusión general |
-| POST `/auditing/engagements/:id/status` | AUD (cerrar); ADM, AUD (reabrir con motivo) | Cambios de estado (5.4) |
-| DELETE `/auditing/engagements/:id` | ADM, AUD | Solo en PLANNED y sin marcas, hallazgos ni archivos |
-| GET `/auditing/engagements/:id/workpapers` | AUD (ADM según D3) | Papeles con sus procedimientos |
-| POST `/auditing/engagements/:id/workpapers` | AUD | Agrega un área (p. ej. OTHER con título propio) |
+| GET `/auditing/engagements` | ADM, AUD | Lista con conteos por gravedad |
+| POST `/auditing/engagements` | ADM, AUD | Crea el encargo y sus papeles desde la plantilla |
+| GET `/auditing/engagements/:id` | ADM, AUD | Encabezado + resumen (avance, partidas marcadas, hallazgos) + **avisos de la cuenta auditora** (5.6) |
+| PATCH `/auditing/engagements/:id` | AUD | Nombre, objetivo, alcance, firma, conclusión |
+| POST `/auditing/engagements/:id/status` | **AUD** | Cambios de estado, incluido **reabrir con motivo**. El ADMIN **no** puede reabrir |
+| DELETE `/auditing/engagements/:id` | ADM, AUD | Solo en PLANNED y vacío |
+| GET `/auditing/engagements/:id/workpapers` | AUD | Papeles con procedimientos |
+| POST `/auditing/engagements/:id/workpapers` | AUD | Área adicional |
 | PATCH `/auditing/workpapers/:id` | AUD | Título, objetivo, conclusión, estado |
-| POST `/auditing/workpapers/:id/sign-off` | AUD | `{ step: 'PREPARED' \| 'REVIEWED' }`; avisa (no bloquea) si quien revisa es quien preparó |
+| POST `/auditing/workpapers/:id/sign-off` | AUD | `{ step: 'PREPARED' \| 'REVIEWED' }`; avisa si revisa quien preparó |
 | POST `/auditing/workpapers/:id/procedures` | AUD | Agrega un paso |
-| PATCH `/auditing/procedures/:id` | AUD | Texto, hecho/no hecho, resultado |
-| DELETE `/auditing/procedures/:id` | AUD | |
-| GET `/auditing/engagements/:id/items` | AUD | **Partidas para revisar**: documentos del período del encargo de un tipo (`entityType`), con búsqueda, filtro "revisadas / pendientes", paginación (límite 100) y la tilde de cada una si existe |
-| PUT `/auditing/engagements/:id/marks` | AUD | Pone o cambia la tilde `{ entityType, entityId, mark, note?, workpaperId? }`. 404 si el documento no es de la empresa; 422 si está fuera del período del encargo |
-| DELETE `/auditing/marks/:id` | AUD | Quita la tilde |
-| GET `/auditing/engagements/:id/findings` | ADM, AUD | ADM solo ve los que **no** están en DRAFT (D3) |
-| POST `/auditing/engagements/:id/findings` | AUD | Crea (número correlativo en la misma transacción) |
-| PATCH `/auditing/findings/:id` | AUD | Edita (no en RESOLVED/RISK_ACCEPTED) |
+| PATCH / DELETE `/auditing/procedures/:id` | AUD | Edita / borra |
+| GET `/auditing/engagements/:id/items` | AUD | Partidas del período por tipo, búsqueda, revisadas/pendientes, paginación (≤100), marca y aviso O2 |
+| PUT `/auditing/engagements/:id/marks` | AUD | Pone o cambia la marca; 404 si es de otra empresa; 422 si está fuera del período |
+| DELETE `/auditing/marks/:id` | AUD | Quita la marca |
+| GET `/auditing/history?entityType=&entityId=` | AUD | **O1**: historial de un solo documento desde `AuditLog` |
+| GET `/auditing/engagements/:id/findings` | ADM, AUD | ADM no ve DRAFT |
+| POST `/auditing/engagements/:id/findings` | AUD | Número correlativo en la misma transacción |
+| PATCH `/auditing/findings/:id` | AUD | No en RESOLVED/RISK_ACCEPTED |
 | POST `/auditing/findings/:id/communicate` | AUD | DRAFT → COMMUNICATED |
-| POST `/auditing/findings/:id/response` | ADM | Respuesta de la gerencia, plan de acción, responsable, fecha → RESPONDED |
+| POST `/auditing/findings/:id/response` | ADM | Respuesta de la gerencia, plan, responsable, fecha → RESPONDED (D4) |
 | POST `/auditing/findings/:id/close` | AUD | → RESOLVED o RISK_ACCEPTED con nota |
-| DELETE `/auditing/findings/:id` | AUD | Solo en DRAFT |
+| DELETE `/auditing/findings/:id` | AUD | Solo DRAFT |
 | POST `/auditing/files` | AUD | multipart `file` + `workpaperId` o `findingId` |
-| GET `/auditing/files` | AUD (ADM para archivos de hallazgos comunicados) | Lista |
-| GET `/auditing/files/:id/download` | igual que arriba | Descarga con las cabeceras de adjuntos |
+| GET `/auditing/files`, GET `/auditing/files/:id/download` | AUD (ADM: solo archivos de hallazgos comunicados) | Lista / descarga con cabeceras de adjuntos |
 | DELETE `/auditing/files/:id` | AUD | |
 | GET `/auditing/engagements/:id/report?format=pdf\|xlsx` | ADM, AUD | Informe (5.5) |
 
-Reglas transversales:
-- **Encargo CLOSED ⇒ todo es de solo lectura** (422 "El encargo está cerrado"), incluidas tildes,
-  archivos y respuestas.
-- Cada escritura: `writeAudit` en la misma transacción (`'AuditEngagement'`, `'AuditFinding'`...).
-- Las lecturas de auditoría llevan `@Roles` ⇒ ACCOUNTANT, APPROVER y VIEWER reciben 403.
-- El dato "quién" se devuelve con nombre: el servicio resuelve los ids en **una** consulta a
-  `User` filtrada por `companyId`.
+Reglas: encargo **CLOSED ⇒ todo de solo lectura** (422); cada escritura con `writeAudit`; lecturas con
+`@Roles` (ACCOUNTANT, APPROVER y VIEWER reciben 403); nombres de usuarios resueltos en **una** consulta
+filtrada por `companyId`.
 
 ### 5.4 Estados
-
 ```
-Encargo:   PLANNED → IN_PROGRESS → IN_REVIEW → CLOSED
-                         ↑______________|          |
-                         (reabrir con motivo) ←────┘   (ADMIN o AUDITOR, queda en la bitácora)
-Cerrar exige: todas las áreas DONE y ningún hallazgo en DRAFT (si hay borradores, se comunican o se borran).
-
-Hallazgo:  DRAFT → COMMUNICATED → RESPONDED → RESOLVED | RISK_ACCEPTED
-           (la gerencia solo ve y responde desde COMMUNICATED)
+Encargo:  PLANNED → IN_PROGRESS → IN_REVIEW → CLOSED
+                        ↑______________|          |
+                        (reabrir con motivo, solo AUDITOR; queda en la bitácora)
+Cerrar exige: áreas DONE y ningún hallazgo en DRAFT.
+Hallazgo: DRAFT → COMMUNICATED → RESPONDED → RESOLVED | RISK_ACCEPTED
+          (la gerencia lo ve y responde desde COMMUNICATED)
 ```
 
-### 5.5 Informe final (PDF y Excel)
+### 5.5 Informe (PDF y Excel)
+`src/auditing/auditing-report.builder.ts` arma un `TableDoc` y llama a `renderPdf/renderXlsx` importados.
+Secciones: **Resumen** (empresa, RNC, período, firma, fechas, estado, hallazgos por gravedad; objetivo,
+alcance y conclusión como `notes`); **Alcance por área** (avance, partidas revisadas, preparado/revisado;
+conclusiones como `notes`); **Hallazgos** (tabla corta + detalle de cada uno en `notes`); **Partidas
+revisadas** (conteos; detalle `xlsxOnly`); **Control de la cuenta auditora** (5.6). Sin cerrar: subtítulo
+**"BORRADOR — no es el informe final"**. Título "Informe de revisión" (no dictamen, D8). Sin símbolos fuera
+del alfabeto latino.
 
-Se construye un `TableDoc` en `src/auditing/auditing-report.builder.ts` y se llama a
-`renderPdf`/`renderXlsx` **importándolos** de `src/exports/` (sin tocar ese módulo). Secciones:
-1. **Resumen**: empresa, RNC, período, firma auditora, fechas, estado; tabla de hallazgos por
-   gravedad y estado; objetivo, alcance y conclusión general como `notes` (se ajustan en líneas).
-2. **Alcance por área**: referencia, área, estado, procedimientos hechos/total, partidas
-   revisadas, preparado/revisado por; conclusiones de cada área como `notes`.
-3. **Hallazgos**: tabla corta (H-001, título, gravedad, estado, responsable, fecha compromiso) y,
-   por cada hallazgo, una sección con su detalle (condición, criterio, causa, efecto,
-   recomendación, respuesta de la gerencia) en `notes`.
-4. **Partidas revisadas**: conteo por tipo y por marca; en Excel, el detalle completo
-   (columnas `xlsxOnly`).
-Si el encargo no está cerrado, el subtítulo dice **"BORRADOR — no es el informe final"**.
-Textos sin símbolos fuera del alfabeto latino (Helvetica los cambiaría por "?").
+### 5.6 Riesgo: el ADMIN restablece la clave de la auditora (mitigación barata)
+Riesgo: el ADMIN de la empresa auditada puede restablecer la clave del usuario AUDITOR (o cambiarle el correo
+o el rol) y actuar en su nombre. **Mitigación elegida (sin tocar código del socio):**
+1. El restablecimiento **ya** queda en `AuditLog` y **ya** cierra todas las sesiones de la auditora.
+2. Al entrar al módulo y en cada encargo, la auditora ve un aviso destacado: "La clave de tu usuario fue
+   restablecida por {nombre} el {fecha}. Si no lo pediste, no confíes en lo registrado desde entonces y
+   avísalo." Igual para cambios de correo o de rol de su usuario (todo eso ya se registra en `users.service.ts`).
+3. Esos eventos salen **siempre** en la sección "Control de la cuenta auditora" del informe: no se pueden
+   ocultar (la bitácora no se puede editar desde la aplicación).
+Alternativa más fuerte (no elegida porque toca `users.service.ts` del socio): impedir que un ADMIN restablezca
+la clave o cambie el correo de un usuario AUDITOR. Se le propone al socio como mejora en su repo.
 
-### 5.6 Opcionales mínimos de bitácora (propuestos, Carlos decide — D6)
-
-- **O1 — Historial de un documento** (≈0,5 día backend + 0,5 frontend): desde la lista de
-  partidas, "ver historial" muestra las filas de `AuditLog` **de ese único documento** (quién lo
-  creó, aprobó, anuló y cuándo). `GET /auditing/history?entityType=&entityId=` (AUD). No es un
-  visor general. **Por qué**: una auditora siempre pregunta "¿quién aprobó esto?"; hoy no tiene
-  cómo verlo.
-- **O2 — Aviso "cambió después de revisado"** (≈0,5 día): si un documento con tilde tiene en
-  `AuditLog` un cambio posterior a la tilde (anulación, aprobación, edición), la lista lo marca
-  en amarillo. **Por qué**: sin esto, una tilde puede dar por bueno algo que se anuló después; es
-  el error más grave que puede tener esta función. **Recomendado.**
+### 5.7 Opcionales aprobados (D6)
+- **O1** — historial de un documento (quién lo creó, aprobó, anuló) desde la lista de partidas.
+- **O2** — aviso "cambió después de revisado": si un documento con marca tiene en `AuditLog` un cambio
+  posterior a la marca, la lista lo destaca.
 
 ---
 
-## 6. Diseño — B) Análisis financiero (`src/financial-analysis/`)
+## 6. B) Análisis financiero (`[back] src/financial-analysis/`) — Fase 3
 
-El módulo importa `ReportsModule` (que ya exporta los generadores) y no modifica nada de él.
+El módulo importa `ReportsModule` (que exporta los generadores) sin modificarlo.
 
-### 6.1 Modelo de datos (migración aditiva aparte, Fase 1B y Fase 4)
+### 6.1 Modelo de datos
+**`RatioThreshold`**: `id, companyId (1 línea en Company), ratioKey, greenAt, redAt (decimal 19,4),
+enabled, updatedById, updatedAt`; único `(companyId, ratioKey)`. Sin fila ⇒ valor por defecto del código.
+Dirección ("más es mejor" / "menos es mejor") fija en el código.
 
-**`RatioThreshold`** (Fase 1B) — límites del semáforo que la empresa cambió (si no hay fila, se usa
-el valor por defecto del código)
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId | | relación a `Company` (1 línea en `Company`) |
-| ratioKey | texto | una de las claves existentes (`currentRatio`...) o de las nuevas (`ebitdaMargin`) |
-| greenAt, redAt | decimal(19,4) | dirección fija en el código ("más es mejor" o "menos es mejor"); se valida coherencia |
-| enabled | sí/no | apagar el semáforo de una razón (p. ej. inventario en una empresa de servicios) |
-| updatedById, updatedAt | | |
-`@@unique([companyId, ratioKey])`.
+### 6.2 Semáforo
+"Más es mejor": verde si valor ≥ verde; rojo si < rojo; amarillo entre ambos (al revés si "menos es mejor").
+Sin valor ⇒ **gris "sin dato"** con la nota del generador. ROA y ROE se evalúan **anualizados** si el período
+es menor de 360 días (× 365/días), rotulado. Siempre **icono + color + texto** ("Bien", "Atención", "Riesgo").
 
-**`AccountCostBehavior`** (Fase 4) — para el punto de equilibrio
-| Campo | Tipo | Nota |
-|---|---|---|
-| id, companyId, accountId | | relación a `Account` (1 línea en `Account`) y a `Company` (1 línea) |
-| variablePct | decimal(5,2) 0–100 | 0 = fijo, 100 = variable, intermedio = mixto (p. ej. electricidad 30 %) |
-| updatedById, updatedAt | | |
-`@@unique([accountId])`, `@@index([companyId])`.
+Valores por defecto (reglas generales para pymes; **las contadoras los validan antes de la Fase 3: bloquea, D5**):
 
-### 6.2 Semáforo: reglas y valores por defecto
-
-Regla: si "más es mejor": **verde** si valor ≥ verde; **rojo** si valor < rojo; amarillo entre
-ambos. Si "menos es mejor", al revés. Sin valor (denominador cero) ⇒ **gris "sin dato"** con la
-nota que ya da el generador. Las razones de rentabilidad sobre activos/patrimonio se evalúan
-**anualizadas** cuando el período es menor de 360 días (valor × 365 / días) y se rotula
-"anualizado"; márgenes, liquidez, endeudamiento y días no cambian con la duración del período.
-Siempre se muestra **texto además del color** ("Bien", "Atención", "Riesgo") para quien no
-distingue colores.
-
-Valores por defecto (reglas generales de análisis financiero para pymes, de manuales clásicos de
-finanzas corporativas; son **punto de partida** y las contadoras deben validarlos — D5):
-
-| Razón | Dirección | Verde | Amarillo | Rojo | Justificación breve |
+| Razón | Dirección | Verde | Amarillo | Rojo | Por qué |
 |---|---|---|---|---|---|
-| Razón corriente | más | ≥ 1,5 | 1,0–1,5 | < 1,0 | Por debajo de 1 no alcanza el activo corriente para la deuda de corto plazo |
-| Prueba ácida | más | ≥ 1,0 | 0,7–1,0 | < 0,7 | Sin contar inventario, ≥1 cubre deudas inmediatas |
-| Razón de efectivo | más | ≥ 0,3 | 0,1–0,3 | < 0,1 | Menos de 10 centavos en caja por peso adeudado es tenso |
-| Capital de trabajo | más | > 0 | — | ≤ 0 | Negativo = deudas de corto plazo mayores que lo disponible |
-| Endeudamiento (pasivo/activo) | menos | ≤ 50 % | 50–70 % | > 70 % | Más de 70 % financiado por terceros es alto riesgo |
-| Deuda sobre patrimonio | menos | ≤ 1,0 | 1,0–2,0 | > 2,0 | Coherente con la fila anterior |
-| Apalancamiento (activo/patrimonio) | menos | ≤ 2,0 | 2,0–3,0 | > 3,0 | Ídem |
-| Cobertura de intereses | más | ≥ 3,0 | 1,5–3,0 | < 1,5 | Menos de 1,5 veces deja poco margen para pagar intereses |
-| Margen bruto | más | ≥ 30 % | 15–30 % | < 15 % | **Muy dependiente del sector**: se avisa en pantalla |
+| Razón corriente | más | ≥ 1,5 | 1,0–1,5 | < 1,0 | Bajo 1 el activo corriente no cubre la deuda de corto plazo |
+| Prueba ácida | más | ≥ 1,0 | 0,7–1,0 | < 0,7 | Sin inventario, ≥1 cubre lo inmediato |
+| Razón de efectivo | más | ≥ 0,3 | 0,1–0,3 | < 0,1 | Menos de 10 centavos por peso adeudado es tenso |
+| Capital de trabajo | más | > 0 | — | ≤ 0 | Negativo = deudas cortas mayores que lo disponible |
+| Endeudamiento | menos | ≤ 50 % | 50–70 % | > 70 % | Más de 70 % financiado por terceros |
+| Deuda / patrimonio | menos | ≤ 1,0 | 1,0–2,0 | > 2,0 | Coherente con la anterior |
+| Apalancamiento | menos | ≤ 2,0 | 2,0–3,0 | > 3,0 | Ídem |
+| Cobertura de intereses | más | ≥ 3,0 | 1,5–3,0 | < 1,5 | Poco margen para pagar intereses |
+| Margen bruto | más | ≥ 30 % | 15–30 % | < 15 % | **Muy dependiente del sector** (aviso en pantalla) |
 | Margen operativo | más | ≥ 10 % | 3–10 % | < 3 % | |
 | Margen neto | más | ≥ 5 % | 0–5 % | < 0 % | Rojo = pérdidas |
-| Margen EBITDA (nuevo) | más | ≥ 15 % | 5–15 % | < 5 % | |
+| Margen EBITDA | más | ≥ 15 % | 5–15 % | < 5 % | El EBITDA ya lo calcula el generador |
 | ROA (anualizado) | más | ≥ 5 % | 0–5 % | < 0 % | |
-| ROE (anualizado) | más | ≥ 12 % | 0–12 % | < 0 % | Debe superar lo que rendiría el dinero sin riesgo |
-| Días de cobro | menos | ≤ 45 | 45–75 | > 75 | Créditos usuales de 30 días + holgura |
-| Días de pago, días de inventario, ciclo de conversión, rotaciones | — | sin semáforo por defecto | | | Depende del sector y "más" no siempre es mejor; la empresa puede activarlo |
+| ROE (anualizado) | más | ≥ 12 % | 0–12 % | < 0 % | |
+| Días de cobro | menos | ≤ 45 | 45–75 | > 75 | Crédito usual de 30 días + holgura |
+| Días de pago, días de inventario, ciclo de conversión, rotaciones | — | sin semáforo por defecto | | | Depende del sector; activable por empresa |
 
-**Interpretación sencilla**: archivo `src/financial-analysis/ratio-interpretations.ts` con una
-frase por razón y por color, con el valor insertado. Ejemplo (razón corriente, verde): "Por cada
-peso que la empresa debe a corto plazo, tiene 2,42 pesos que puede convertir en efectivo en menos
-de un año. Puede pagar sus deudas inmediatas con holgura." La redacción la revisa el
-documentador y la validan las contadoras. Vive en el backend para que salga igual en pantalla y
-en PDF.
+Interpretación: `src/financial-analysis/ratio-interpretations.ts`, una frase por razón y color, con el valor,
+escrita **para el dueño** (p. ej. razón corriente verde: "Por cada peso que la empresa debe a corto plazo,
+tiene 2,42 pesos que puede convertir en efectivo en menos de un año. Puede pagar sus deudas inmediatas con
+holgura."). En el backend para que salga igual en pantalla y en PDF.
 
-### 6.3 Razones adicionales (Fase 4)
+### 6.3 Tendencia, comparación e indicadores
+- **Tendencia**: mensual/trimestral/anual, **máximo 24 puntos**, 4 cálculos a la vez con
+  `FinancialRatiosGenerator.generate` por punto.
+- **Comparar**: período A vs. B (por defecto el mismo del año anterior): ambos valores, diferencia, %, color y
+  si mejoró.
+- **Indicadores del Panel (6)**, con nombre para el dueño y el técnico debajo: "¿Puedo pagar lo que debo
+  pronto?" (razón corriente), "Sin contar inventario" (prueba ácida), "Cuánto de la empresa es deuda"
+  (endeudamiento), "De cada peso vendido, cuánto me queda" (margen neto), "En cuántos días me pagan" (días de
+  cobro), "Ganancia de la operación" (EBITDA). Desde el 1 de enero hasta hoy, comparado con el mismo tramo del
+  año anterior. Los nombres los valida Carlos (perfil dueño) y las contadoras.
 
-- **EBITDA**: ya lo calcula el generador (`statement.ebitda`); se presenta como indicador con su
-  margen (EBITDA / ingresos operativos). Aviso si no hay cuentas en "Depreciación y
-  amortización" (el EBITDA sería igual al EBIT).
-- **DuPont (3 factores)**: margen neto (utilidad neta / ingresos totales) × rotación de activos
-  (ingresos totales / activo promedio) × multiplicador (activo promedio / patrimonio promedio)
-  = ROE. Usa **las mismas bases** que el generador (ingresos totales, promedios) para que el
-  resultado **coincida exactamente** con el ROE de la pestaña de razones; se muestra la
-  comprobación. Nota: el "Apalancamiento" de las 20 razones usa saldos de cierre, el de DuPont
-  promedios; se explica en pantalla.
-- **Punto de equilibrio** — cómo separar costos fijos y variables con la clasificación existente:
-  1. **Por defecto según la categoría** de la cuenta (`Clasificación de cuentas`): Costo de ventas
-     = 100 % variable; Gastos operativos, Depreciación y amortización y Costos financieros = 0 %
-     variable (fijos). Otros gastos e Impuesto sobre la renta **no entran** (no son de la
-     operación normal). Gastos sin categoría: se tratan como fijos y se avisa (igual que hoy el
-     generador avisa de cuentas sin clasificar).
-  2. **Ajuste por cuenta**: en la pestaña "Costos fijos y variables" se lista cada cuenta de gasto
-     con su porcentaje variable por defecto y se puede cambiar (p. ej. comisiones de venta 100 %,
-     electricidad 30 %). Solo se guardan las que se cambian (`AccountCostBehavior`).
-  3. Cálculo: costos variables = Σ monto × % variable; fijos = el resto; margen de contribución
-     = (ingresos operativos − variables) / ingresos operativos; **ventas de equilibrio** = fijos /
-     margen de contribución; **margen de seguridad** = (ventas − equilibrio) / ventas; y el
-     equivalente por mes. Si el margen de contribución es ≤ 0: sin dato, con explicación.
-- **Análisis vertical**: balance a una fecha (cada cuenta y cada categoría como % del activo
-  total, o del pasivo + patrimonio) y estado de resultados de un período (cada línea como % de
-  los ingresos operativos; si son cero, de los ingresos totales).
-- **Análisis horizontal**: dos fechas (balance) o dos períodos (resultados): variación absoluta
-  y porcentual por cuenta y por categoría; % sin dato cuando la base es cero.
+### 6.4 Endpoints (`@Controller('financial-analysis')`; lecturas para todos los roles, como `/reports`)
+| Método y ruta | Roles |
+|---|---|
+| GET `/financial-analysis/health?from&to` | todos |
+| GET `/financial-analysis/trend?from=AAAA-MM&to=AAAA-MM&granularity=MONTH\|QUARTER\|YEAR&keys=` | todos |
+| GET `/financial-analysis/compare?from&to&compareFrom&compareTo` | todos |
+| GET `/financial-analysis/kpis` | todos |
+| GET `/financial-analysis/thresholds` | todos |
+| PUT `/financial-analysis/thresholds` | ADMIN, ACCOUNTANT |
+| DELETE `/financial-analysis/thresholds/:ratioKey` | ADMIN, ACCOUNTANT |
+| GET `/financial-analysis/export/health\|compare?format=` | todos |
 
-### 6.4 Comparación, tendencia e indicadores clave
+Rendimiento: 24 puntos ≈ 150 consultas agregadas; qa mide con ≈20.000 asientos. Si pasa de 5 s: 12 puntos por
+defecto; solo si no basta, fotos de períodos **cerrados** invalidadas al reabrir.
 
-- **Tendencia**: puntos mensuales, trimestrales o anuales entre dos meses, **máximo 24 puntos**.
-  Cada punto llama a `FinancialRatiosGenerator.generate` con el rango de ese mes/trimestre/año,
-  con un máximo de 4 cálculos a la vez. Se devuelve el valor y el color de cada razón por punto.
-- **Comparar períodos**: período A contra período B (por defecto, el mismo período del año
-  anterior): valor de ambos, diferencia, % de cambio, color de ambos y si mejoró o empeoró
-  (según la dirección de la razón).
-- **Indicadores clave del Panel** (6): Razón corriente, Prueba ácida, Endeudamiento, Margen neto,
-  Días de cobro y EBITDA del año. Período: desde el 1 de enero (como ya hace el Panel) hasta hoy,
-  comparado con el mismo tramo del año anterior (flecha arriba/abajo). Visibles para todos los
-  roles, como el resto del Panel.
-
-### 6.5 Endpoints
-
-Controlador `@Controller('financial-analysis')`, `@UseGuards(JwtAuthGuard, RolesGuard)`. Las
-lecturas son para cualquier rol de la empresa (igual que `/reports`), así que **no cambian** la
-lista de lecturas restringidas de `security.e2e-spec.ts`.
-
-| Método y ruta | Roles | Fase |
-|---|---|---|
-| GET `/financial-analysis/health?from&to` | todos | 1B — razones existentes + color + interpretación + aviso de anualización |
-| GET `/financial-analysis/trend?from=AAAA-MM&to=AAAA-MM&granularity=MONTH\|QUARTER\|YEAR&keys=` | todos | 1B |
-| GET `/financial-analysis/compare?from&to&compareFrom&compareTo` | todos | 1B |
-| GET `/financial-analysis/kpis` | todos | 1B |
-| GET `/financial-analysis/thresholds` | todos | 1B — por defecto + cambios de la empresa |
-| PUT `/financial-analysis/thresholds` | ADMIN, ACCOUNTANT | 1B — lista de `{ ratioKey, greenAt, redAt, enabled }` |
-| DELETE `/financial-analysis/thresholds/:ratioKey` | ADMIN, ACCOUNTANT | 1B — volver al valor por defecto |
-| GET `/financial-analysis/export/health\|compare?format=` | todos | 1B |
-| GET `/financial-analysis/dupont?from&to` | todos | 4 |
-| GET `/financial-analysis/break-even?from&to` | todos | 4 |
-| GET `/financial-analysis/cost-behavior` | todos | 4 |
-| PUT `/financial-analysis/cost-behavior` | ADMIN, ACCOUNTANT | 4 |
-| GET `/financial-analysis/vertical?statement=BALANCE&asOf` / `?statement=INCOME&from&to` | todos | 4 |
-| GET `/financial-analysis/horizontal?statement=...` (dos fechas o dos períodos) | todos | 4 |
-| GET `/financial-analysis/export/dupont\|break-even\|vertical\|horizontal?format=` | todos | 4 |
+### 6.5 Anexo B — diseñado para la v0.3 (después de 2FA y exportación completa)
+Se conserva el diseño para no perderlo; **no se construye en la v0.2**.
+- **DuPont (3 factores)** con las mismas bases del generador (ingresos totales, promedios) para que coincida con
+  el ROE (prueba: T1 2030 = 24,1758 % × 0,4118 × 1,9910 = 19,8198 %).
+- **Punto de equilibrio**: costos variables por categoría (Costo de ventas 100 %; gastos operativos,
+  depreciación y financieros 0 %; otros gastos e ISR fuera) ajustables por cuenta en una tabla
+  `AccountCostBehavior (companyId, accountId, variablePct 0–100)`. Prueba: equilibrio 36.428,57; con gastos
+  operativos al 50 %, 27.500.
+- **Análisis vertical y horizontal** de balance y resultados por cuenta y categoría.
 
 ---
 
-## 6C. C) Observaciones de prueba — usabilidad (Fase 1A)
+## 7. C) Crear sin salir y textos — Fase 1
 
-Vienen de las pruebas de Carlos y las contadoras. **Solo frontend**: la API de terceros ya hace
-todo lo necesario (`POST /partners` y `PATCH /partners/:id` devuelven el tercero completo, y
-exigen ADMIN o ACCOUNTANT). Cero cambios en el backend.
+Solo frontend: `POST /partners` y `PATCH /partners/:id` ya devuelven el tercero completo y exigen ADMIN o
+ACCOUNTANT.
 
-### C1. Crear, editar e ir a clientes/proveedores desde la factura (y desde cobros/pagos)
+### C1. Crear, editar e ir a clientes/proveedores desde la factura y desde cobros/pagos
+1. **Componente nuevo** `[front] features/catalog/partner-dialog.ts` con **el mismo** `<app-modal>` y formulario
+   de `partners.ts` (campos, validaciones, textos, `clean(...)`). Entradas: `open`, `partner` (editar),
+   `defaultType`; salidas: `saved` (tercero devuelto por la API) y `closed`; al guardar,
+   `lookups.ensurePartners(true)`.
+2. **`partners.ts` lo usa** (se quitan su modal y su lógica de formulario; tabla, filtros y activar/desactivar
+   igual). Comportamiento idéntico, verificado por qa.
+3. **Factura**: junto al selector, botones del kit (`btn btn-ghost btn-sm`) visibles solo con
+   `auth.has('ADMIN', 'ACCOUNTANT')`:
+   - **"Crear"**: tipo según `side()` (ventas ⇒ Cliente, compras ⇒ Proveedor, sin tipo ⇒ Cliente); al guardar,
+     `partnerId.setValue(nuevo.id)`; el resto del formulario **no se toca**.
+   - **"Editar"** (deshabilitado sin selección): la factura toma los datos nuevos (el "NCF según el cliente"
+     ya se calcula leyendo `lookups.partners()`). Si el tipo deja de corresponder, se quita la selección con
+     aviso.
+   - **"Ir a clientes y proveedores"**: `/partners` **en otra pestaña** (`target="_blank" rel="noopener"`,
+     D12); la sesión se comparte. Un enlace "Actualizar lista" refresca al volver.
+4. **Cobros y pagos** (`payment-form.ts`, selector en la línea ≈33): mismo patrón; cobro ⇒ Cliente, pago ⇒ Proveedor.
+5. Botones con texto visible; el diálogo es el `<dialog>` nativo del kit.
 
-**Hoy**: `features/catalog/partners.ts` tiene el formulario del tercero **dentro** de su modal
-(campos, validaciones, `save()`); la factura (`invoice-form.html`, campo `partnerId` con
-`<app-combobox>`) y el cobro/pago (`payment-form.ts`, mismo selector) solo permiten elegir de la
-lista. Si falta el cliente, hay que salir de la factura y se pierde lo escrito.
+### C2. "Tercero" → "cliente / proveedor" (D10: **solo en lo que se toca**)
+Reglas: "cliente" o "proveedor" cuando el contexto lo sabe; si no, "cliente / proveedor" ("Nuevo cliente /
+proveedor", "Cliente / proveedor creado."). Solo textos visibles; no cambian variables, rutas ni API.
+Archivos: `partner-dialog.ts`, `partners.ts`, `invoice-form.*`, `payment-form.ts`, `nav.ts` (Fase 1) y, en
+la Fase 4, los que se tocan por la adopción guiada. Lo demás, cuando se toque.
 
-**Diseño**
-1. **Componente reutilizable nuevo** `features/catalog/partner-dialog.ts` (`app-partner-dialog`):
-   contiene **el mismo** `<app-modal>` y el mismo formulario reactivo que hoy está en
-   `partners.ts` (mismos campos, validaciones, textos y llamada `clean(...)`). Interfaz:
-   - entradas: `open`, `partner` (para editar; vacío = crear), `defaultType` (CUSTOMER,
-     SUPPLIER o BOTH);
-   - salidas: `saved` (devuelve el tercero que respondió la API) y `closed`;
-   - al guardar llama a `lookups.ensurePartners(true)` como hoy y muestra el mismo aviso.
-2. **`partners.ts` pasa a usar ese componente** (se borra su modal y su lógica de formulario; la
-   tabla, filtros y "Activar/Desactivar" no cambian). Comportamiento idéntico: qa lo verifica.
-3. **Factura** (`invoice-form.html` + `invoice-form.ts`): junto al selector, una fila de botones
-   pequeños del kit (`btn btn-ghost btn-sm`), visibles solo si `auth.has('ADMIN', 'ACCOUNTANT')`
-   (mismo criterio que `canEdit` en `partners.ts`):
-   - **"Crear"** → abre `app-partner-dialog` con el tipo preseleccionado según `side()`:
-     ventas ⇒ Cliente, compras ⇒ Proveedor, sin tipo aún ⇒ Cliente. Al guardar: refresca la
-     lista y hace `form.controls.partnerId.setValue(nuevo.id)`. El resto del formulario **no se
-     toca** (el modal vive dentro de la misma pantalla: nada se recarga ni se navega).
-   - **"Editar"** (deshabilitado si no hay uno elegido) → abre el diálogo con el tercero actual.
-     Al guardar, la lista se refresca y la factura toma los datos nuevos: el "NCF según el
-     cliente" ya se calcula leyendo `lookups.partners()`, así que cambia solo. Caso borde: si al
-     editar se le cambia el tipo y ya no corresponde (p. ej. pasa a "Proveedor" en una venta), se
-     quita la selección y se avisa: "Este contacto ya no es cliente; elige otro."
-   - **"Ir a clientes y proveedores"** → enlace a `/partners` que se abre **en otra pestaña**
-     (`target="_blank" rel="noopener"`). Se recomienda esta opción frente a "avisar antes de
-     salir" porque no se pierde nada y no exige agregar un guardián de salida a pantallas del
-     socio. La sesión se comparte entre pestañas (el token está en el almacenamiento del
-     navegador), así que la otra pestaña entra directo. Al volver, el botón "Crear/Editar" o un
-     pequeño "Actualizar lista" (`lookups.ensurePartners(true)`) trae lo cambiado allá.
-4. **Cobros y pagos** (`payment-form.ts`): **sí** tiene selector de tercero (línea ≈33). Mismo
-   patrón, con el tipo preseleccionado según la dirección: cobro ⇒ Cliente, pago ⇒ Proveedor.
-5. Accesibilidad: los botones con texto visible (no solo íconos); el diálogo es el `<dialog>`
-   nativo del kit (foco atrapado y Esc ya resueltos).
-
-### C2. "Tercero" → "cliente / proveedor" en pantalla
-
-Hay ≈43 apariciones de "tercero" visibles al usuario en 16 archivos. Reglas de redacción:
-- Cuando el contexto sabe el lado: "cliente" (ventas, cobros) o "proveedor" (compras, pagos).
-- Cuando no: "cliente / proveedor" (p. ej. botón **"Nuevo cliente / proveedor"**, título
-  "Editar cliente / proveedor", avisos "Cliente / proveedor creado.", "Elige el cliente o
-  proveedor.").
-- Solo textos visibles. **No** cambian nombres de variables, rutas (`/partners`) ni la API.
-
-**Alcance recomendado (D10)**: en la Fase 1A, los archivos que igual se tocan por C1 y C3
-(`partner-dialog.ts` nuevo, `partners.ts`, `invoice-form.html`, `invoice-form.ts`,
-`payment-form.ts`, `nav.ts`) — cubre los textos que las contadoras ven al crear facturas y
-pagos. El **barrido completo** de los otros ≈11 archivos (`invoices.ts`, `payments.ts`,
-`receivables.ts`, `invoice-detail.*`, `payment-detail.ts`, `reports.*`, `opening-balances.ts`,
-`entry-detail.ts`, `dashboard.html`, `combobox.ts`, `lookups.ts`) es fácil (≈medio día, solo
-textos) pero suma 11 archivos del socio a la lista de posibles choques: se hace si Carlos lo
-pide, idealmente **acordado con el socio**.
-
-### C3. Mover "Clientes y proveedores" a "Ventas y compras"
-
-**Recomendado**: es donde se usa (facturas, cobros, cuentas por cobrar y pagar) y es lo que
-esperan las contadoras. Cambio de 2 líneas en `layout/nav.ts` (quitar de "Catálogos", poner
-primero en "Ventas y compras"). La ruta `/partners` no cambia, así que los enlaces siguen
-funcionando. `nav.ts` ya está en la lista de choques por otras razones.
+### C3. Menú
+"Clientes y proveedores" pasa a "Ventas y compras". **El cambio de menú completo está en un solo lugar: 9.4.**
 
 ---
 
-## 6D. D) Ayuda integrada — manual de usuario dentro del sistema (Fases 1A y 1B, y crece con cada fase)
+## 8. D) Ayuda integrada — Fases 1 a 6
 
-### D.1 Qué ve la contadora
-- **"Ayuda"** en el menú (al final, visible para todos los roles) → pantalla `/help` con el
-  índice del manual y cada sección en `/help/:seccion`, con buscador sencillo por título.
-- **Botón "?"** en la barra superior de **todas** las pantallas: abre un **panel lateral** con la
-  sección del manual que corresponde a la pantalla actual (p. ej. en una factura nueva, "Crear una
-  factura de venta"). Es un panel, no una navegación: **no se pierde lo que se está escribiendo**.
-  Desde el panel, "Abrir el manual completo" lleva a `/help` en otra pestaña.
+### 8.1 Qué ve el usuario
+- **"Ayuda"** en el menú → `/help` (índice) y `/help/:seccion`, con buscador por título.
+- **Botón "?"** en la barra superior de **todas** las pantallas: abre un **panel lateral** con la sección de
+  esa pantalla, sin perder lo escrito. "Abrir el manual completo" lleva a `/help` en otra pestaña.
 
-### D.2 Organización del manual (por tareas, para contadoras)
+### 8.2 Organización, para dos audiencias (P3)
+Cada sección tiene tres bloques: **"En pocas palabras"** (para el dueño, lenguaje de negocio), **"Paso a
+paso"** (para quien registra) y **"Detalle contable"** (para la contadora). Revisión obligatoria de cada
+sección con la pregunta **"¿lo entiende un dueño?"** (Carlos) y "¿le sirve a una contadora?" (las contadoras).
+
 | # | Sección (archivo) | Fase |
 |---|---|---|
-| 1 | Primeros pasos: entrar, cambiar la clave, el menú, el panel (`01-primeros-pasos.md`) | 1A |
-| 2 | Configuración inicial: plan de cuentas y su clasificación, impuestos, NCF, diarios, numeración, años y períodos fiscales, configuración contable (`02-configuracion-inicial.md`) | 1B |
-| 3 | Clientes y proveedores (incluye crearlos desde la factura) (`03-clientes-proveedores.md`) | 1A |
-| 4 | Facturas de venta y compra; notas de crédito y débito; NCF; anulación (`04-facturas.md`) | 1A |
-| 5 | Cobros y pagos; anticipos; cuentas por cobrar y por pagar; antigüedad (`05-cobros-pagos.md`) | 1A |
-| 6 | Asientos, aprobación, saldos iniciales y cierre de período y de año (`06-asientos-cierre.md`) | 1B |
-| 7 | Bancos, cajas, extractos, reglas y conciliación (`07-bancos-conciliacion.md`) | 1B |
-| 8 | Reportes: estados financieros, razones (y semáforo), DGII 606/607/608, presupuestos (`08-reportes.md`) | 1B |
-| 9 | Usuarios y permisos: qué puede hacer cada rol (`09-usuarios-permisos.md`) | 1B (se amplía con "Auditor" en la Fase 2) |
-| 10 | Preguntas frecuentes (`10-preguntas-frecuentes.md`) | 1A (inicial) y se alimenta en cada fase con lo que pregunten las contadoras |
-| 11 | Análisis financiero: semáforo, tendencia, comparación; luego EBITDA, DuPont, punto de equilibrio, vertical y horizontal (`11-analisis-financiero.md`) | 1B y 4 |
-| 12 | Auditoría: para la auditora y para la gerencia (`12-auditoria.md`) | 2 y 3 |
+| 1 | Primeros pasos: entrar, cambiar la clave, el menú, el Panel, ocultar ayudas, enviar comentarios | 1 |
+| 2 | Arranque: el asistente, los NCF, los datos de ejemplo | 2 |
+| 3 | Clientes y proveedores (incluye crearlos desde la factura) | 1 |
+| 4 | Facturas de venta y compra; notas de crédito y débito; anulación | 1 |
+| 5 | Cobros y pagos; anticipos; lo que me deben y lo que debo | 1 |
+| 6 | Asientos, aprobación, saldos iniciales, cierre de mes y de año | 2 (cierre guiado) y 4 |
+| 7 | Bancos, cajas, extractos, reglas y conciliación | 4 |
+| 8 | Reportes: estados financieros, razones, DGII 606/607/608, presupuestos | 3 y 4 |
+| 9 | Usuarios y permisos (y el rol Auditor) | 4 y 5 |
+| 10 | Preguntas frecuentes | 1, y crece con los comentarios recibidos |
+| 11 | Semáforo y análisis financiero | 3 |
+| 12 | Auditoría (para la auditora y para la gerencia) | 5 y 6 |
 
-### D.3 Cómo se guarda el contenido (para que el documentador lo mantenga sin tocar código)
-
-**Recomendación: archivos Markdown en `frontend/public/manual/`** que la pantalla de Ayuda lee y
-convierte a HTML en el navegador con `marked` (ver 2.3).
-
+### 8.3 Cómo se guarda el contenido (sin tocar código)
 ```
-frontend/public/manual/
-  indice.json                 ← orden, títulos y qué pantalla abre qué sección
+[front] public/manual/
+  ayuda.json            ← UN solo archivo de configuración (ver abajo)
   01-primeros-pasos.md ... 12-auditoria.md
-  img/                        ← capturas, con fecha en el nombre: facturas-nueva-2026-10.png
-  GUIA-DE-ESTILO.md           ← cómo escribir (no se publica en el índice)
+  img/                  ← capturas con fecha en el nombre: factura-nueva-2026-10.png
+  GUIA-DE-ESTILO.md     ← cómo escribir (no se publica)
 ```
+`ayuda.json` reúne lo que en la v1.0 eran 4 archivos, con 4 claves:
+- `secciones`: `{ slug, archivo, titulo }` en orden;
+- `pantallas`: por ruta, `{ seccion, ancla, siguiente: { texto, ruta } }` (el "?" y el "siguiente paso");
+- `campos`: ayudas de los campos difíciles por clave (`"factura.tipoNcf": "..."`);
+- `errores`: patrón del mensaje → explicación → enlace a la solución.
 
-- `indice.json` (lo edita el documentador): lista de secciones `{ slug, archivo, titulo }` y un
-  mapa de **pantallas → sección y ancla**, por prefijo de ruta, p. ej.
-  `"/invoices/new": "04-facturas#crear-una-factura"`, `"/partners": "03-clientes-proveedores"`,
-  `"/analysis": "11-analisis-financiero"`. El botón "?" usa la regla más específica que coincida;
-  si ninguna coincide, abre el índice. Agregar una sección o ligar una pantalla nueva = editar
-  este archivo, **sin programar**.
-- Por qué Markdown y no HTML estático: es texto casi normal (títulos con `#`, listas con `-`,
-  negritas con `**`), fácil de revisar por Carlos y las contadoras y de comparar entre versiones.
-  El HTML a mano es más propenso a errores y mezcla formato con contenido.
-- Por qué no páginas Angular por sección: el documentador tendría que editar código y cada
-  cambio de texto pasaría por los desarrolladores.
-- **Compatibilidad con la CSP actual** (`default-src 'self'; script-src 'self' + hash;
-  style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:`):
-  - los `.md`, `indice.json` y las imágenes se piden al **mismo servidor** (`connect-src 'self'`,
-    `img-src 'self'`) ⇒ permitido;
-  - `marked` produce solo HTML (sin scripts ni estilos en línea); Angular lo limpia al
-    insertarlo ⇒ nada que la CSP tenga que permitir. **La CSP no se cambia.**
-  - Regla de la guía de estilo: nada de HTML incrustado en el Markdown ni imágenes de internet
-    (además la CSP las bloquearía).
-- Los enlaces dentro del manual a pantallas del sistema (p. ej. "abre [Facturas](/invoices)")
-  se interceptan y navegan con el router; los enlaces externos (DGII) se abren en otra pestaña.
+**Verificación automática (qa, en cada fase)**: guion `[front] scripts/verificar-ayuda.mjs` (Node, sin
+dependencias) que comprueba que `ayuda.json` es válido, que cada `.md` y cada ancla existen, que cada imagen
+existe, y que **ninguna ruta de los `*.routes.ts` queda sin mapear** en `pantallas`. Se corre con
+`npm run verificar-ayuda` (1 línea en `package.json`). Una fase no se cierra con rutas sin mapear.
 
-**Dos detalles del servidor web** (`frontend/deploy/nginx.conf`, archivo del socio — 3 líneas):
-1. Hoy las imágenes `.png` se guardan en caché **un año** ("immutable"): si el documentador
-   reemplaza una captura con el mismo nombre, las contadoras seguirían viendo la vieja. Y si se
-   pide un `.md` que no existe, el servidor devuelve la página principal en vez de "no
-   encontrado". Se agrega un bloque `location /manual/ { try_files $uri =404; Cache-Control
-   "no-cache" }` (con las cabeceras de seguridad incluidas como en los demás bloques).
-2. Por eso los archivos van en `/manual/...` y la pantalla en `/help/...`: rutas distintas para
-   que la regla anterior no rompa la recarga de la pantalla de Ayuda.
-   Aun sin el cambio de nginx funciona si las capturas llevan **fecha en el nombre** (regla de la
-   guía de estilo, se aplica igual) y la pantalla detecta la respuesta HTML como "sección no
-   encontrada".
+CSP: los `.md`, `ayuda.json` e imágenes salen del mismo servidor (`'self'`); `marked` produce HTML sin scripts
+ni estilos en línea y Angular lo limpia: **la CSP no cambia**. La guía de estilo prohíbe HTML incrustado e
+imágenes de internet. Enlaces internos navegan con el router; externos (DGII) en otra pestaña.
 
-### D.4 Piezas de frontend
-| Pieza | Archivo | Nota |
-|---|---|---|
-| Área nueva | `features/help/help.routes.ts` | `/help` (índice) y `/help/:slug` |
-| Servicio | `features/help/help-content.ts` | Lee `indice.json` y los `.md` (con `fetch`/`HttpClient` relativo a `/manual/`), los guarda en memoria durante la sesión, resuelve "pantalla → sección" |
-| Visor | `features/help/help-page.ts` | Índice lateral + contenido; carga `marked` con `import()` dinámico (solo aquí) |
-| Panel lateral | `features/help/help-drawer.ts` | Se abre desde el "?"; reutiliza el visor; cierra con Esc |
-| Botón "?" | **1–2 líneas** en `layout/shell.html` (barra superior) + import en `layout/shell.ts` | Un solo punto para todas las pantallas: **no se tocan las ~40 pantallas** |
-| Estilos | estilos locales del visor para títulos, listas, tablas e imágenes del manual, con las variables de `styles.css` | Sin estilos globales nuevos |
+nginx (`[front] deploy/nginx.conf`, 3 líneas): bloque `location /manual/ { try_files $uri =404;
+Cache-Control "no-cache" }` con las cabeceras de seguridad. Por eso los archivos van en `/manual/` y la
+pantalla en `/help/` (rutas distintas para no romper la recarga de `/help/...`).
 
-### D.5 Cuándo entra el documentador
-- **Desde la Fase 0**, en paralelo con los desarrolladores: escribe la guía de estilo y las
-  secciones 1, 3, 4, 5 y 10 **basándose en las pantallas actuales** del ambiente de pruebas (son
-  las que ya usan las contadoras). No necesita que exista el visor: escribe Markdown.
-- Fase 1A: se publica lo anterior + el mapa de pantallas; el texto de "crear cliente desde la
-  factura" se escribe con la pantalla nueva.
-- Fase 1B: secciones 2, 6, 7, 8, 9 y la primera parte de la 11.
-- Fases 2–4: secciones 12 (auditoría) y resto de la 11, **en la misma fase** que la función.
-- **Capturas**: con datos ficticios del ambiente de pruebas, nunca datos reales. Se recomienda
-  tomarlas con Playwright (ya instalado en `frontend/` como herramienta de desarrollo) mediante un
-  guion que recorre las pantallas, para poder **repetirlas** cuando cambie el diseño; si eso se
-  complica, a mano. Los nombres llevan fecha.
-- **Validación**: cada sección la leen las contadoras (¿se entiende?, ¿es correcto
-  contablemente?) antes de publicarse; qa revisa que cada "?" abra la sección correcta.
+### 8.4 Piezas
+| Pieza | Archivo [front] |
+|---|---|
+| Área | `features/help/help.routes.ts` (`/help`, `/help/:slug`) |
+| Servicio | `features/help/help-content.ts` (lee `ayuda.json` y los `.md`, memoria de sesión, "pantalla → sección") |
+| Visor | `features/help/help-page.ts` (carga `marked` con `import()` dinámico) |
+| Panel lateral | `features/help/help-drawer.ts` |
+| Botón "?" | 1–2 líneas en `layout/shell.html` + import en `shell.ts` |
+
+### 8.5 Documentador
+Desde la **Fase 0**, en paralelo: guía de estilo, `ayuda.json` inicial y secciones 1, 3, 4, 5 y 10 sobre las
+pantallas actuales. Luego cada sección **en la misma fase** que su función. Capturas solo del ambiente de
+pruebas con datos ficticios, de preferencia con un guion de Playwright (ya instalado) para poder repetirlas.
 
 ---
 
-## 6E. E) Experiencia guiada — PRINCIPIO RECTOR de toda la v0.2
+## 9. E) Experiencia guiada — PRINCIPIO RECTOR (Guía P7, P2, P3)
 
-> **"Que cualquier persona lo pueda usar sin capacitación."** Es el criterio más importante de
-> la v0.2 (decisión de Carlos). Se aplica a **cada pantalla nueva o tocada** y es condición para
-> dar una fase por terminada.
+### 9.1 Auditoría de usabilidad de las pantallas actuales
+**Lo bueno**: todas las pantallas tienen `page-head` con título y propósito; acción principal casi siempre
+arriba a la derecha con `btn-primary` (verde `#0c6b5e`); errores de negocio del backend en español;
+`core/errors.ts` ya traduce nombres de la configuración contable; muchos `hint` (7 en la factura); 6 buenos
+estados vacíos (Diarios, NCF, Años fiscales, Presupuestos, Movimientos bancarios, Panel).
 
-### E.0 Criterios de aceptación (definición de "terminado" de cada pantalla)
-| # | Criterio | Cómo se comprueba |
+| Prio. | Hallazgo | Mejora | Fase | Costo | Archivos del socio |
+|---|---|---|---|---|---|
+| P1 | Sin asistente ni pendientes; empresa vacía (Guía P2 en rojo) | Arranque guiado (9.3) | 2 | back 6 d, front 5 d | `dashboard.html` |
+| P1 | Validación en inglés técnico (13 de 856 en español) | Traductor central (9.6) | 1 | front 1,5 d | `core/errors.ts` |
+| P1 | Errores sin enlace a la solución | `app-error-notice` + `ayuda.json/errores` | 1 (factura, pago) y 4 (resto) | front 1 d + doc 1 d | ya tocados / Fase 4 |
+| P1 | Sin migas ni siguiente paso | Automático en la barra superior | 1 | front 1 d | `shell.*` |
+| P1 | No se crea el cliente desde la factura | C1 | 1 | front 2 d | `partners.ts`, `invoice-form.*`, `payment-form.ts` |
+| P2 | Estados vacíos genéricos ("con esos filtros" aunque no haya ninguno) en 12 listas | `app-empty-state` | 4 | front 2 d | 12 |
+| P2 | Campos difíciles sin explicación (606/607, retenciones, clasificación, agente de retención) | `app-field-help` | 1 (factura, pago, diálogo) y 4 | front 2 d + doc 1,5 d | 8–9 |
+| P2 | Sin pasos en factura → cobro → conciliación ni en el cierre | `app-stepper` + cierre guiado | 2 | back 1,5 d, front 2 d | `invoice-detail.*`, `ledger.routes.ts` |
+| P2 | Menú técnico ("Catálogos", "Diarios", "tercero") | Menú por intención (9.4) | 1 | front 0,5 d | `nav.ts` |
+| P2 | Estados solo con color | Ícono en `StatusBadge` | 4 | front 0,5 d | `shared/ui/badge.ts` |
+| P3 | Varios botones principales (3–4) en 5 pantallas | Uno solo | 4 | front 0,5 d | 5 |
+| P3 | Formularios sin aviso previo ("no puedes facturar todavía") | `app-readiness-notice` | 2 | front 0,5 d | ya tocados |
+| P3 | Revisar todas las pantallas a 375 px y con teclado (checklist de la Guía) | Ajustes puntuales | 4 | front 2 d | hasta ≈15 |
+
+### 9.2 Componentes del kit (se construye cada uno **en la fase que lo usa**)
+| Componente | Qué hace | Fase |
 |---|---|---|
-| E1 | Se ve **dónde estoy** (migas: "Ventas y compras › Facturas › Nueva"), una línea de **para qué sirve** la pantalla y el **siguiente paso sugerido** | A simple vista, sin hacer clic |
-| E2 | En procesos de varios pasos, un **indicador de pasos** (hechos, actual, pendientes) | Configuración inicial, factura → cobro → conciliación, cierre de mes |
-| E3 | Una tabla vacía **explica** qué es y ofrece un **botón grande** para crear el primero, o un enlace a lo que falta configurar. Distingue "aún no hay ninguno" de "ninguno con estos filtros" (botón "Quitar filtros") | Probar con empresa nueva y con filtros sin resultado |
-| E4 | La **acción principal** siempre arriba a la derecha, una sola por pantalla, con el botón principal verde del sistema (`btn-primary`, color `--primary`, que ya es verde); menú con **nombres de negocio**, agrupado por lo que el usuario quiere hacer; nada de "tercero" | Revisión visual |
-| E5 | Todo error dice **qué pasó y cómo arreglarlo**, en español sencillo, con **enlace a la solución** cuando la hay. Nunca un mensaje técnico (nombres de campos en inglés, códigos) | Provocar los errores típicos de cada pantalla |
-| E6 | Botón "?" (sección D) y **ayudas en los campos contables difíciles** (tipo de NCF, retenciones, tipo de gasto 606 / ingreso 607, clasificación de cuenta, tasa de cambio...) | Pasar el cursor o tocar el ícono en cada campo listado |
+| `app-breadcrumbs` | Migas automáticas: grupo del menú › opción › `title` de la ruta. Las pantallas no pasan nada | 1 (en el `shell`) |
+| `app-next-step` | "Siguiente paso: …" con enlace, desde `ayuda.json/pantallas` | 1 (en el `shell`) |
+| `app-field-help` | "?" pequeño junto a la etiqueta con 1–3 frases y "Más en el manual"; textos en `ayuda.json/campos`; accesible con teclado, sin librerías | 1 |
+| `app-error-notice` | Error traducido + "Cómo arreglarlo" + botón a la solución | 1 |
+| `app-page-header` | Título, propósito, siguiente paso según el estado, acción principal a la derecha | 2 |
+| `app-stepper` | Pasos hecho / actual / pendiente / con problema, con enlaces | 2 |
+| `app-readiness-notice` | "Para facturar falta X → Configurar" | 2 |
+| `app-empty-state` | Explicación + botón grande; variante "con filtros" con "Quitar filtros" | 4 |
+Archivos nuevos en `shared/ui/` + 1 línea por componente en `shared/ui/index.ts`. Solo clases y variables
+de `styles.css`; ningún color ni fuente nuevos.
 
-**Quién valida:** **dev-frontend** es responsable del diseño y de cumplir E1–E6 con el kit;
-**revisor-critico** lo revisa en cada entrega de pantallas; **qa** hace la prueba de **"usuario
-nuevo sin capacitación"** por flujo (E.6); **Carlos** da la aprobación final (él es el mejor
-"usuario sin capacitación" contable que tenemos).
+### 9.3 Arranque guiado (Fase 2) — meta: **primera factura válida en menos de 15 minutos** (P2)
 
-### E.1 Auditoría de usabilidad de las pantallas actuales (E7)
-
-Revisadas las ≈33 pantallas de `frontend/src/app/features/`. **Lo bueno** (el socio ya hizo
-buena parte): todas tienen encabezado `page-head` con título y una línea `sub` que dice para qué
-sirven; la acción principal casi siempre está arriba a la derecha con `btn-primary` (verde
-azulado `#0c6b5e`); los errores de reglas de negocio del backend ya vienen en español
-("La conciliación está completada", "El período fiscal "X" está cerrado") y `core/errors.ts` ya
-traduce nombres técnicos de la configuración contable; muchos formularios tienen textos `hint`
-bajo los campos (la factura tiene 7); 6 pantallas tienen buenos estados vacíos (Diarios: "Usa
-«Crear diarios estándar» para empezar", NCF, Años fiscales, Presupuestos, Movimientos bancarios,
-Panel).
-
-**Lo que falta**, priorizado:
-
-| Prio. | Hallazgo | Evidencia | Mejora | Costo | Archivos del socio | Choque |
-|---|---|---|---|---|---|---|
-| **P1** | No hay **asistente de configuración** ni lista de pendientes: una empresa nueva no sabe por dónde empezar; si falta NCF, cuentas automáticas o año fiscal, la primera factura falla | No existe; tampoco un plan de cuentas base de RD (estaba previsto en `PLAN.md` Fase 8) | Asistente `/setup` + "pendientes de configurar" en el Panel + plan de cuentas base RD (E.3) | backend 4 d, frontend 4 d | `dashboard.html` (+1 línea) | Bajo |
-| **P1** | **Mensajes de validación en inglés técnico**: 856 reglas de validación en los DTOs y solo 13 con mensaje en español; si el navegador deja pasar algo, llega "partnerId must be a UUID" o "property x should not exist" | `grep` en `src/**/dto` | Traductor central en el frontend (E.4) — no se tocan los 856 DTOs del socio | frontend 1,5 d | `core/errors.ts` (2–3 líneas) | Bajo |
-| **P1** | Errores sin **enlace a la solución** ("No hay secuencia NCF..." no lleva a NCF) | Avisos `notice neg` con solo texto | Componente `app-error-notice` + tabla "mensaje → cómo arreglarlo → enlace" (E.4) | frontend 1 d + doc 1 d | se adopta en factura, pago, asiento (ya tocados o pocos) | Bajo-medio |
-| **P1** | No hay **migas de pan** ni **siguiente paso** | Ninguna pantalla | En la barra superior, automático desde el menú y las rutas (E.2): **ninguna pantalla se toca** | frontend 1 d | `layout/shell.*` (ya en la lista) | Bajo |
-| **P2** | **Estados vacíos genéricos**: "No hay facturas con esos filtros" aparece aunque no exista ninguna factura | 12 listas: usuarios, clasificación, cuentas, numeración, clientes/proveedores, impuestos, asientos, presupuestos, facturas, cobros y pagos, conciliaciones, CxC/CxP | `app-empty-state` con las dos variantes | frontend 2 d | 12 archivos (≈3–6 líneas cada uno) | **Medio** (muchos archivos) |
-| **P2** | **Ayudas en campos difíciles** incompletas: hay `hint` en algunos, ninguno explica tipo de gasto 606, retenciones, clasificación de cuenta o "agente de retención" | `invoice-form`, `payment-form`, `account-classification`, `accounts`, `tax-rates`, `accounting-settings`, `ncf`, `opening-balances`, diálogo de clientes | `app-field-help` con textos en un archivo que mantiene el documentador | frontend 2 d + doc 1,5 d | 8–9 archivos (1 línea por campo) | Medio |
-| **P2** | **Sin indicador de pasos** en factura → cobro → conciliación ni en el cierre de mes | `invoice-detail`, `fiscal-periods` | Stepper en el detalle de factura + pantalla nueva "Cierre de mes guiado" (E.3) | backend 1,5 d, frontend 2 d | `invoice-detail.html` (+1 línea), `fiscal-periods.ts` (+1 enlace, opcional) | Bajo |
-| **P2** | **Nombres técnicos en el menú**: "Catálogos", "Diarios", "Numeración de documentos", "Clasificación de cuentas", "Configuración contable"; "tercero" en ≈43 textos | `layout/nav.ts`, 16 archivos | Menú reagrupado por intención (E.5) y barrido de "tercero" (D10) | frontend 0,5 d + barrido 0,5 d | `nav.ts` (ya en la lista) + 13 archivos solo de textos | Bajo / medio |
-| **P3** | Pantallas con **varios botones principales** compitiendo (3–4 `btn-primary`) | `users`, `budget-detail`, `receivables`, `bank-account-detail`, `reconciliation-detail` | Dejar uno principal; los demás `btn` normales | frontend 0,5 d | 5 archivos (1–3 líneas) | Bajo |
-| **P3** | Formularios sin aviso previo de "no puedes hacer esto todavía" (p. ej. facturar sin NCF) | `invoice-form`, `payment-form` (sin caja/banco) | `app-readiness-notice` con enlace a configurar (usa el estado de E.3) | frontend 0,5 d | ya tocados | Bajo |
-| **P3 (opcional)** | No hay **buscador global / paleta de acciones** | — | `Ctrl+K` / botón "Buscar o hacer…" en la barra: acciones del menú ("crear factura") y búsqueda de clientes y facturas con los filtros `q` que ya existen | frontend 2,5 d | `shell.*` (ya en la lista) | Bajo |
-
-**Dimensión del cambio sobre el código del socio**: hacer **todo** P1+P2+P3 toca **≈30
-archivos suyos** (la mayoría con 1–6 líneas), además de los de C y D. Por eso se propone (D13):
-1. **Primero lo global** (migas, siguiente paso, traductor de errores, Ayuda): logra mucho
-   tocando solo 3 archivos (`shell.*`, `errors.ts`).
-2. **Luego lo nuevo** (asistente, pendientes, flujos guiados): casi todo en archivos nuevos.
-3. **Al final, la adopción pantalla por pantalla** (estados vacíos, ayudas de campo, un solo
-   botón principal), en una fase propia (**Fase G2**) **acordada con el socio**: o la hacemos
-   nosotros en un momento en que él no esté tocando esas pantallas, o le entregamos los
-   componentes y una guía de adopción para que la haga él en su repositorio.
-
-### E.2 Componentes reutilizables (nuevos, en `shared/ui/`, siguiendo el estilo del kit)
-
-En vez de rediseñar pantallas, se agregan piezas pequeñas al kit (archivos nuevos + 1 línea cada
-uno en `shared/ui/index.ts`, archivo del socio):
-
-| Componente | Qué hace | Dónde se usa |
+**Checklist de 5 grupos** (no 10 pasos), en el asistente `/setup` y en la tarjeta del Panel:
+| Grupo | Qué incluye | Cómo se resuelve |
 |---|---|---|
-| `app-breadcrumbs` | Migas **automáticas**: grupo del menú (`NAV` en `nav.ts`) › opción › `title` de la ruta ("Nueva", "Factura B0100000012"). Las pantallas no pasan nada | En la barra superior del `shell` (todas las pantallas sin tocarlas) |
-| `app-next-step` | Una línea "Siguiente paso: …" con enlace, leída de `public/manual/guia.json` (ruta → texto y enlace) que **mantiene el documentador** | En el `shell`, debajo de las migas |
-| `app-page-header` | Título, descripción, siguiente paso según el estado (p. ej. "Esta factura está emitida: registra el cobro") y la acción principal siempre a la derecha | Pantallas nuevas; las existentes conservan su `page-head` (ya cumple) salvo que se toquen |
-| `app-empty-state` | Ícono suave, título, explicación, botón grande de "crear el primero" o enlace a configurar; variante "con filtros" con "Quitar filtros" | Listas nuevas; adopción en las 12 existentes (G2) |
-| `app-stepper` | Pasos con estado hecho / actual / pendiente / con problema, cada uno con enlace | Asistente, flujo de factura, cierre de mes, encargo de auditoría |
-| `app-field-help` | Ícono "?" pequeño junto a la etiqueta; al tocarlo muestra 1–3 frases y "Más en el manual". Textos en `public/manual/ayudas-campos.json` (los mantiene el documentador, sin programar). Hecho con un botón y un panel propio (accesible con teclado, sin librerías, compatible con la CSP) | Campos difíciles (E.1, P2) |
-| `app-error-notice` | Muestra el error traducido + "Cómo arreglarlo" + botón al lugar donde se arregla | Formularios principales |
-| `app-help-button` | El "?" de la sección D, reutilizable también dentro de un panel | Barra superior; asistente |
+| 1. Tu empresa | Nombre, RNC, dirección; año fiscal en curso | Lleva a "Empresa" y vuelve; el año se crea con un botón (`POST /fiscal-years`) |
+| 2. Tu contabilidad lista | Plan de cuentas base RD clasificado, cuentas automáticas, impuestos base, diarios estándar | **Un solo botón** "Preparar mi contabilidad" (`chart-template` + `POST /journals/defaults`) |
+| 3. Tus comprobantes fiscales (NCF) | Al menos una secuencia vigente para vender | **Guía NCF** (abajo) |
+| 4. Dónde entra el dinero | Una cuenta de banco o una caja | Formulario corto guiado |
+| 5. Tu primera factura | Un cliente y una factura emitida | Diálogo de cliente (C1) y la factura nueva |
+Cada grupo explica en 2 líneas qué es y por qué hace falta. **Todo se puede saltar** ("Saltar este paso",
+"Ocultar la lista") — ver 9.5.
 
-Todo con las clases y variables de `styles.css` (`panel`, `notice`, `btn`, `--primary`,
-`--pos`, `--text-dim`...). **Ningún color ni fuente nuevos.**
+**Guía NCF** (lo que más se equivoca un usuario nuevo): pantalla guiada dentro del asistente
+(`features/setup/ncf-guide.ts`, nueva; usa el endpoint existente `POST /ncf/sequences`, sin tocar `ncf.ts`):
+1. Qué es un NCF en una frase y **cuál necesitas** con preguntas sencillas: "¿Le vendes a empresas que piden
+   crédito fiscal?" ⇒ B01; "¿a consumidores finales?" ⇒ B02 (y E31/E32 si la empresa ya emite e-CF, con el
+   aviso de que requiere proveedor).
+2. **Dónde conseguirlo**: paso a paso de la solicitud en la Oficina Virtual de la DGII, con capturas, y qué
+   datos copiar de la autorización.
+3. Formulario con los campos **en el mismo orden que la autorización de la DGII** (tipo, desde, hasta,
+   vencimiento), con ejemplo al lado y validaciones en vivo (rango coherente, fecha futura).
+4. **Vista previa**: "Tus facturas saldrán con B0100000051, B0100000052…" y aviso de cuántos quedan.
+5. Si existe la secuencia de los datos de ejemplo, pide borrarlos primero.
 
-### E.3 Configuración inicial guiada y flujos (backend + pantallas nuevas)
+**Datos de ejemplo borrables con un clic** (Guía P2 y sección 4: dominicanos y realistas):
+- Paso opcional al inicio: "¿Quieres ver primero cómo se ve con datos de ejemplo?". Carga, con los
+  **servicios existentes** (facturación, pagos, tesorería; todos ya exportados): ≈5 clientes y 3 proveedores
+  ficticios (p. ej. "Colmado La Esquina SRL", RNC de formato válido pero ficticios), ≈10 facturas de venta,
+  5 de compra, 6 cobros/pagos, una cuenta de banco con movimientos para conciliar. Las ventas usan una
+  secuencia NCF **de ejemplo** (marcada como tal).
+- Cada registro creado se anota en una tabla nueva **`SampleRecord (companyId, entityType, entityId)`**.
+- Mientras existan, una franja fija dice "Estás viendo datos de ejemplo — **Borrarlos**", y la pantalla de
+  DGII avisa "Borra los datos de ejemplo antes de generar tu 606/607".
+- **Borrar** (ADMIN): elimina **solo** los registros anotados, en orden, en una transacción, con
+  `writeAudit` del total. Se niega con explicación si: algún documento **real** usa uno de ejemplo (p. ej. un
+  cobro real aplicado a una factura de ejemplo) o un período con datos de ejemplo está cerrado.
+- Solo se pueden cargar en una empresa **sin documentos** y con la contabilidad base preparada (grupo 2).
+- Es el único lugar del sistema que borra documentos contabilizados: lo revisa seguridad y tiene pruebas
+  propias (16.4).
 
-**Módulo backend nuevo `src/guidance/`** (misma forma que los demás módulos):
-
+**Backend nuevo `[back] src/guidance/`**:
 | Método y ruta | Roles | Qué hace |
 |---|---|---|
-| GET `/guidance/setup-status` | todos | Lista de pasos con estado y motivo: datos de la empresa (RNC, nombre, dirección); plan de cuentas (hay cuentas; % clasificadas); cuentas automáticas (CxC, CxP, ingresos y gastos por defecto en `AccountingSettings`); impuestos (ITBIS de venta y compra); comprobantes (secuencia NCF activa y vigente para venta); diarios; año fiscal abierto que incluya hoy; banco o caja; al menos un cliente; primera factura emitida. Cada paso trae la ruta donde se resuelve |
-| POST `/guidance/chart-template` | ADMIN | Carga el **plan de cuentas base de RD**: cuentas con su tipo, categoría, flujo de efectivo y auxiliar ya puestos; llena las **cuentas automáticas** y crea los **impuestos base** (ITBIS 18 %, 16 %, exento; retenciones habituales de ISR e ITBIS) ligados a sus cuentas. **Solo si la empresa no tiene cuentas** (si no, 409 "Ya tienes un plan de cuentas; puedes ajustarlo en Plan de cuentas"). Todo en una transacción con `writeAudit` |
-| GET `/guidance/invoice-flow/:id` | todos | Pasos de una factura: creada → emitida → cobrada/pagada (total o parcial) → conciliada en el banco (si el cobro está enlazado a un movimiento bancario conciliado) |
-| GET `/guidance/period-close?periodId=` | todos | Chequeos antes de cerrar un mes: asientos pendientes de aprobar, facturas en borrador con fecha del mes, cuentas bancarias sin conciliar al cierre del mes, balanza que cuadra, avisos del 606/607 del mes (reutiliza `DgiiService`, que su módulo ya exporta). Cada chequeo con enlace |
+| GET `/guidance/setup-status` | todos | Los 5 grupos con estado, motivo y ruta |
+| POST `/guidance/chart-template` | ADMIN | Plan de cuentas base RD clasificado + cuentas automáticas + impuestos base; solo si no hay cuentas (si no, 409); una transacción, `writeAudit` |
+| POST `/guidance/sample-data` | ADMIN | Carga los datos de ejemplo (condiciones arriba) |
+| DELETE `/guidance/sample-data` | ADMIN | Los borra (condiciones arriba) |
+| GET `/guidance/invoice-flow/:id` | todos | creada → emitida → cobrada → conciliada |
+| GET `/guidance/period-close?periodId=` | todos | Chequeos antes de cerrar el mes (asientos pendientes, facturas en borrador, bancos sin conciliar, balanza, avisos 606/607 vía `DgiiService`) |
+El plan de cuentas base vive en `src/guidance/templates/plan-cuentas-rd.ts`. **Las contadoras lo validan
+antes de programarlo (bloquea, D14).** Migración nueva `<fecha>_guidance_sample_records/`.
 
-El plan de cuentas base vive en `src/guidance/templates/plan-cuentas-rd.ts`. **Su contenido lo
-validan las dos contadoras** (cuentas, códigos, categorías, tasas e impuestos) **antes** de
-programarlo (D14). Esto adelanta el "plan de cuentas base dominicano" que `PLAN.md` dejaba para su
-Fase 8. Aunque las acciones las ejecuten los botones existentes (crear diarios estándar
-`POST /journals/defaults`, crear año fiscal `POST /fiscal-years`, clasificar automático
-`POST /account-classification/auto`), **ningún controlador existente cambia**.
+**Pantallas nuevas**: `/setup` (asistente con `app-stepper`, botones grandes, regreso desde pantallas
+existentes); tarjeta "Pendientes (2 de 5)" en el Panel (`setup-checklist.ts`, +1 línea en `dashboard.html`);
+`app-stepper` en el detalle de factura; **"Cierre de mes guiado"** (`features/ledger/period-close.ts`, +1
+ruta en `ledger.routes.ts`); `app-readiness-notice` en factura y pago.
 
-**Pantallas nuevas**
-- **`/setup` — "Configuración inicial"** (`features/setup/`): un `app-stepper` vertical con los
-  pasos de `setup-status`. Cada paso explica en 2 líneas qué es y por qué hace falta, y tiene **un
-  botón grande** que: hace la acción ahí mismo cuando se puede (cargar plan base, crear diarios
-  estándar, crear el año fiscal en curso, crear el primer cliente con el diálogo de 6C), o abre la
-  pantalla donde se hace (datos de la empresa, NCF —los rangos los da la DGII y no se pueden
-  inventar—, banco). Al volver, el paso aparece hecho. Para ADMIN; los demás roles lo ven en modo
-  lectura con "Pide a tu administrador que complete: …".
-- **Panel**: tarjeta "Pendientes de configurar (3 de 10)" con los pasos que faltan y botón
-  "Continuar configuración"; desaparece sola cuando todo está hecho (`setup-checklist.ts`, +1 línea
-  en `dashboard.html`).
-- **Detalle de factura**: `app-stepper` horizontal con creada → emitida → cobrada → conciliada y
-  el botón del siguiente paso (+1 línea en `invoice-detail.html`).
-- **`/period-close` — "Cierre de mes guiado"** (`features/ledger/period-close.ts`, archivo nuevo en
-  el área existente; +1 ruta en `ledger.routes.ts`): elegir el mes, ver los chequeos con su estado
-  y enlace, y al final el botón "Cerrar el mes" (usa el endpoint existente de cierre de período).
-- Avisos previos `app-readiness-notice` en la factura y el pago ("Para facturar con comprobante
-  fiscal falta configurar la secuencia NCF de tipo B01 → Configurar comprobantes").
-
-### E.4 Errores que explican y llevan a la solución
-- **Traductor central** (`core/error-text.ts`, nuevo) que reconoce los mensajes estándar de
-  validación en inglés ("must be a UUID", "should not be empty", "must not be greater than",
-  "property X should not exist"...) y los convierte a español con el nombre del campo en lenguaje
-  de negocio (diccionario `partnerId` → "Cliente o proveedor", `issueDate` → "Fecha"...).
-  `errorMessage()` de `core/errors.ts` lo llama (2–3 líneas): **todas las pantallas mejoran sin
-  tocarlas**. Se elige el frontend y no un cambio global en el `ValidationPipe` del backend para no
-  alterar respuestas que las pruebas e2e del socio ya verifican.
-- **"Cómo arreglarlo"**: dev-backend saca la lista completa de mensajes de reglas de negocio
-  (`throw new ...Exception('...')`) y el documentador escribe, para los ≈30 más frecuentes, la
-  explicación y el lugar donde se arregla, en `public/manual/errores.json` (mensaje o patrón →
-  explicación → enlace). `app-error-notice` lo usa. Los mensajes técnicos del backend (p. ej.
-  "Indica exactamente uno: invoiceId, paymentId…") se reescriben ahí, **sin tocar el backend**.
-
-### E.5 Menú por intención (`layout/nav.ts`, a validar con las contadoras)
+### 9.4 Menú por intención — **definición única** (se aplica una vez, en la Fase 1)
 | Grupo | Opciones |
 |---|---|
-| (sin título) | Panel · **Configuración inicial** (mientras falten pasos) |
-| Ventas y compras | **Clientes y proveedores** · Facturas · Cobros y pagos · Cuentas por cobrar y pagar |
+| (sin título) | Panel · Configuración inicial (desde la Fase 2, mientras falten grupos y no se haya ocultado) |
+| Ventas y compras | **Clientes y proveedores** · Facturas · Cobros y pagos · Lo que me deben y lo que debo (antes "Cuentas por cobrar y pagar") |
 | Bancos y caja | Bancos y cajas · Conciliación bancaria |
-| Contabilidad | Asientos · Plan de cuentas · **Cierre de mes guiado** · Períodos fiscales · Años fiscales y cierre · Saldos iniciales |
-| Reportes | Estados financieros · **Análisis financiero** · DGII 606 · 607 · 608 · Presupuestos |
-| Auditoría | Encargos de auditoría (ADMIN y AUDITOR) |
-| Configuración (antes "Catálogos" y "Administración") | Empresa · Usuarios · Impuestos · Comprobantes fiscales (NCF) · **Clasificación de cuentas para reportes** · **Cuentas automáticas** (antes "Configuración contable") · **Libros diarios** (antes "Diarios") · **Numeración de facturas y pagos** (antes "Numeración de documentos") |
-| Ayuda | Manual de usuario |
-Las rutas no cambian: solo nombres y orden.
+| Contabilidad | Asientos · Plan de cuentas · Cierre de mes guiado (Fase 2) · Períodos fiscales · Años fiscales y cierre · Saldos iniciales |
+| Reportes | Estados financieros · Semáforo financiero (Fase 3) · DGII 606 · 607 · 608 · Presupuestos |
+| Auditoría | Encargos de auditoría (ADMIN y AUDITOR, Fase 5) |
+| Configuración (antes "Catálogos" y "Administración") | Empresa · Usuarios · Impuestos · Comprobantes fiscales (NCF) · Clasificación de cuentas para reportes · Cuentas automáticas · Libros diarios · Numeración de facturas y pagos |
+| Ayuda | Manual de usuario · Comentarios recibidos (ADMIN) |
+Las rutas no cambian. Revisión con la pregunta **"¿lo entiende un dueño?"** (Carlos) antes de cerrar la Fase 1;
+las contadoras confirman que no falta nada. Las entradas marcadas con fase se agregan en esa fase (1 línea).
 
-### E.6 Prueba de "usuario nuevo sin capacitación" (qa)
-Por cada flujo: **configurar una empresa nueva**; **crear un cliente y su factura de venta**;
-**registrar el cobro**; **registrar una compra con retención**; **conciliar el banco del mes**;
-**cerrar el mes**; y en sus fases, **leer el semáforo** y **hacer un encargo de auditoría**.
-1. qa escribe una **tarjeta de tarea** que solo dice el objetivo ("Tu empresa vendió RD$ 11.800
-   a Ferretería X con comprobante de crédito fiscal; regístralo"), sin instrucciones.
-2. **Recorrido de qa** (con Playwright, que ya está instalado como herramienta de desarrollo):
-   avanza **solo con lo que dice la pantalla** y anota cada punto donde el siguiente paso no es
-   obvio, cada error sin "cómo arreglarlo" y cada término técnico. Criterio: el flujo se completa
-   sin salir de lo que la pantalla indica, sin callejones sin salida.
-3. **Prueba con una persona real** al cierre de cada fase: Carlos o alguien de su equipo que
-   **no** haya usado el sistema, 15–20 minutos por flujo, sin ayuda. qa toma notas de dónde se
-   detiene. Lo que salga se corrige antes de cerrar la fase.
+### 9.5 Todo lo guiado se puede saltar u ocultar (P7)
+- Interruptor **"Ocultar ayudas"** en el menú del usuario (barra superior): oculta la línea de "siguiente
+  paso", la tarjeta de pendientes, los avisos previos y los íconos de ayuda de campos. **No** oculta el botón
+  "?", las migas ni las explicaciones de errores. Se guarda en el navegador por usuario (alternativa
+  descartada en 4.3); se puede volver a activar en el mismo lugar.
+- **"Saltar este paso"** en cada grupo del asistente y **"Ocultar la lista"** en la tarjeta del Panel (se puede
+  reabrir desde Ayuda → "Configuración inicial").
 
-### E.7 Lo que cambia en las fases
-- **Fase 1A** suma lo global (migas, siguiente paso, traductor de errores, componentes del kit) y
-  aplica E1–E6 a todo lo que toca (factura, pago, diálogo de clientes, Ayuda).
-- **Fase G1 (nueva)**: configuración inicial guiada y flujos (E.3).
-- **Fase G2 (nueva)**: adopción en las pantallas existentes del socio (estados vacíos, ayudas de
-  campo, errores con enlace, un solo botón principal, menú por intención), **acordada con el
-  socio**; paleta de acciones si Carlos la aprueba.
-- **Fases 1B, 2, 3 y 4**: toda pantalla nueva nace cumpliendo E1–E6 (el encargo de auditoría usa
-  `app-stepper` para su estado; el semáforo usa `app-field-help` en cada razón).
+### 9.6 Errores que explican y llevan a la solución
+- **Traductor central** `[front] core/error-text.ts` (nuevo): convierte los mensajes estándar en inglés
+  ("must be a UUID", "should not be empty", "must not be greater than", "property X should not exist"...) a
+  español con el nombre del campo en lenguaje de negocio. `errorMessage()` lo llama (2–3 líneas en
+  `core/errors.ts`): **todas las pantallas mejoran sin tocarlas**. Si no reconoce el mensaje, muestra el original.
+- **"Cómo arreglarlo"**: dev-backend lista los mensajes de negocio del backend (solo lectura); el documentador
+  escribe los ≈30 más frecuentes en `ayuda.json/errores` con enlace; `app-error-notice` los muestra. Los
+  mensajes técnicos del backend ("Indica exactamente uno: invoiceId, paymentId…") se reescriben ahí, sin
+  tocar el backend.
+
+### 9.7 Prueba de "usuario nuevo sin capacitación" (qa organiza)
+**Quiénes** (decisión de Carlos): **Carlos (perfil dueño, no contador)**, **el socio**, **las 2 contadoras** y
+cualquiera que tenga usuario. Cada flujo lo prueba al menos una persona **con perfil dueño** y una contadora.
+Flujos: arranque desde cero hasta la primera factura; cliente + factura de venta; cobro; compra con retención;
+conciliar el banco del mes; cierre de mes; leer el semáforo (Fase 3); encargo de auditoría (Fases 5–6).
+1. **Tarjeta de tarea** con solo el objetivo ("Tu empresa vendió RD$ 11.800 a Ferretería X con comprobante de
+   crédito fiscal; regístralo"), sin instrucciones.
+2. **Recorrido de qa** con Playwright, avanzando solo con lo que dice la pantalla: anota cada punto donde el
+   siguiente paso no es obvio, cada error sin solución y cada término técnico; cuenta los clics de las tareas
+   frecuentes (línea base de P8).
+3. **Prueba cronometrada de arranque (P2)**: empresa nueva, desde el **primer login** hasta la **primera
+   factura válida emitida** (NCF real de prueba configurado, cliente con RNC válido, ITBIS correcto). Meta:
+   **menos de 15 minutos** con Carlos y con una contadora. Si no se cumple, la Fase 2 no se cierra: qa entrega
+   la lista de dónde se fue el tiempo.
+4. Las observaciones se recogen con "Enviar comentario" (sección 10) y se convierten en tareas.
+
+### 9.8 Validación
+**dev-frontend** es responsable del diseño y del checklist de la Guía; **revisor-critico** lo revisa en cada
+entrega; **qa** hace las pruebas de 9.7; **Carlos** aprueba.
 
 ---
 
-## 7. Permisos y aislamiento
+## 10. F) "Enviar comentario" — Fase 1
 
-### 7.1 Matriz de permisos
+### 10.1 Qué ve el usuario
+Botón **"Enviar comentario"** en la barra superior (y en el panel de Ayuda). Abre un diálogo corto:
+- **¿Qué pasó?** (una opción): "No entendí algo" · "Algo no funciona" · "Tengo una idea".
+- **Cuéntanos** (texto, hasta 2.000 caracteres) con ejemplo: "Quería crear un cliente y no encontré dónde".
+- Se adjunta solo, sin que lo escriba: la pantalla (ruta), fecha y hora, su rol y el navegador.
+- Al enviar: "Gracias. Lo revisamos cada semana; verás la respuesta en Ayuda → Mis comentarios."
 
-| Acción | ADMIN | ACCOUNTANT | APPROVER | VIEWER | **AUDITOR** |
+### 10.2 Backend `[back] src/feedback/`
+Tabla **`Feedback`**: `id, companyId, userId, kind (FeedbackKind: CONFUSING, BROKEN, IDEA), message (≤2.000),
+route (≤200), userAgent, status (FeedbackStatus: NEW, PLANNED, DONE, WONT_DO, DUPLICATE), response? (≤1.000),
+taskRef? (≤100, p. ej. el número del issue), createdAt, updatedAt`. Migración `<fecha>_feedback/`.
+| Método y ruta | Roles |
+|---|---|
+| POST `/feedback` | ADMIN, ACCOUNTANT, APPROVER, VIEWER, AUDITOR (todos explícitos) — máximo 20 por usuario por hora |
+| GET `/feedback/mine` | todos (solo los propios) |
+| GET `/feedback` | ADMIN (los de su empresa) |
+| PATCH `/feedback/:id` | ADMIN (estado, respuesta, referencia de tarea) |
+Pantallas: "Mis comentarios" en Ayuda (todos) y "Comentarios recibidos" (ADMIN) con filtros por estado y tipo.
+El texto se muestra siempre escapado.
+
+### 10.3 Cómo se convierten en tareas
+1. **Cada semana** (o al cierre de cada fase), devops exporta los comentarios nuevos de todas las empresas del
+   ambiente de pruebas con un guion de solo lectura (`deploy/feedback-export.sh` → CSV).
+2. **Triaje** (arquitecto + coordinador, 30 min): cada comentario se clasifica:
+   - "Algo no funciona" → qa lo reproduce → tarea para dev-backend/dev-frontend con prioridad por gravedad;
+   - "No entendí" → tarea de **P7** para dev-frontend o el documentador (pantalla, texto, ayuda o pregunta frecuente);
+   - "Idea" → lista de ideas para que **Carlos** decida (versión y prioridad);
+   - repetido → se une al existente.
+3. La tarea se registra como **issue** con la etiqueta `comentario` y la de la fase: en el tablero de la
+   organización (Plan A) o en `modulo-financiero` (Plan B).
+4. El ADMIN (o el equipo) marca el comentario con el estado, la respuesta y el número de tarea; quien lo envió
+   lo ve en "Mis comentarios" ("Resuelto en la versión 0.2-fase 2").
+
+---
+
+## 11. G) Confianza: respaldos y regla de datos reales — Fase 0 (P10)
+
+### 11.1 Regla
+> **Sin datos reales hasta tener respaldos probados, 2FA y exportación completa.**
+Consecuencia: la v0.2 entrega los respaldos; 2FA y la exportación completa van en la v0.3. **Hasta entonces el
+sistema solo se usa con datos ficticios** (como hoy en finanzas.biodesch.com). seguridad verifica la regla en
+cada release; ninguna fase puede pedir datos reales a las contadoras.
+
+### 11.2 Diseño del respaldo (devops, 1–2 días)
+
+> **Estado al 2026-10-10: la base YA está hecha** (commit `2672217`, docs/OPERACION-BACKUPS.md). Se hizo con
+> `scripts/backup.sh` y `scripts/restore-test.sh` y con el crontab del usuario `claude` (respaldo diario a las 2:30,
+> prueba de restauración los domingos a las 4:00), con 14 diarios y 8 semanales en
+> `proyectos/Software/financiero-backups/`. La restauración se ensayó con resultado OK. **Faltan:**
+> - el cifrado con frase secreta (D18);
+> - la copia fuera del servidor (D17; gancho `OFFSITE_CMD` listo);
+> - el aviso de fallo;
+> - la verificación de la balanza y de un adjunto en la prueba de restauración.
+>
+> El diseño de abajo con un contenedor queda como alternativa. Solo se migra a él si el cron del usuario
+> deja de servir, por ejemplo al salir de claude-docker.
+
+- Archivo nuevo **`deploy/docker-compose.backup.yml`** (en el repo de despliegue, sección 12) que agrega un
+  servicio `backup` al proyecto `financiero-pruebas`, sin tocar `docker-compose.prod.yml`. Imagen propia
+  `deploy/backup/Dockerfile` basada en `postgres:18-alpine` (trae `pg_dump`) + `gnupg` + `rclone`.
+- **Cada día a las 02:00**: `pg_dump -Fc` de la base + copia de la carpeta de adjuntos (volumen `uploads`
+  montado solo lectura) → un archivo con fecha, **cifrado** con una frase secreta que **Carlos guarda fuera del
+  servidor** (gestor de claves o papel). Si se pierde la frase, los respaldos no sirven.
+- **Conservación local**: 14 diarios + 8 semanales en una carpeta del servidor **fuera** de los volúmenes de Docker.
+- **Copia fuera del servidor**: `rclone` sube cada respaldo cifrado a un destino que Carlos elige (D17; p. ej.
+  otro servidor suyo por SFTP o un almacenamiento de respaldo). Lo que sale ya va cifrado.
+- **Aviso de fallo**: el servicio deja un archivo de estado; el healthcheck falla si el último respaldo tiene más
+  de 26 horas; devops revisa semanalmente (alertas por correo, en la v0.3).
+- **Restauración ensayada** (`deploy/backup/restore.sh` + procedimiento escrito): restaurar el último respaldo en
+  una base y carpeta **temporales**, y comprobar: cantidad de filas por tabla, que la balanza de comprobación
+  cuadra por empresa, y que un adjunto al azar abre. Se mide cuánto tarda. Se repite **una vez por fase**.
+- Lo que Carlos deba hacer (guardar la frase, elegir y dar acceso al destino) se le da **paso a paso**.
+
+---
+
+## 12. H) Repositorios y forma de trabajar con el socio — Fase 0 y cada fase
+
+Carlos propondrá al socio el **Plan A (organización compartida)**. Si el socio no lo acepta, se usa el
+**Plan B (forks)**. El resto del plan sirve igual con cualquiera de los dos: lo que cambia es dónde vive el código
+y cómo se aprueba cada entrega. Antes de decidir, el código actual del socio se compara archivo por archivo con
+lo que tenemos (`b552cfe`, 9-oct), porque él pudo avanzar desde entonces.
+
+### 12.1 Plan A (preferido por Carlos) — organización de GitHub compartida
+
+**Qué es**: una **organización** de GitHub (nombre por definir; D20) donde **Carlos y el socio son dueños
+(owners) por igual**. El socio **transfiere** sus dos repos a la organización: conservan todo su historial,
+issues y PRs, y GitHub redirige las direcciones viejas.
+
+| Repo en la organización | Contenido |
+|---|---|
+| `finanzas_run` | Backend (transferido por el socio, con historial) |
+| `finanzas_run_frontend` | Frontend (transferido por el socio, con historial) |
+| `finanzas_docs` (recomendado) | `carlosjfriast-sketch/modulo-financiero` **transferido y renombrado**, solo con `CLAUDE.md`, `docs/` (guía, planes, normativa DGII) y `deploy/` (compose de pruebas, respaldos, guiones) |
+
+**Qué hacer con `modulo-financiero`** — recomendación: los **commits de código** propios (lock regenerado,
+body 6 MB, seguridad nginx/CSP) entran a `finanzas_run` y `finanzas_run_frontend` como **PR 0**; el repo
+**no se archiva**: se queda solo con docs y despliegue y se **transfiere a la organización** como
+`finanzas_docs`, porque la guía de producto, los planes y el despliegue del ambiente de pruebas son de los dos
+socios. Archivarlo dejaría la guía y el plan fuera de la vista del socio.
+
+**Reglas de los repos de código** (en *Settings → Rules / Branches*):
+- Rama `main` protegida: **se exige PR** y **1 aprobación de una persona dueña distinta de quien lo pidió**;
+  **prohibido el push directo** (también para los dueños) y prohibido borrarla o reescribirla.
+- Archivo `CODEOWNERS` con Carlos y el socio, y la opción "exigir revisión de los dueños del código": así la
+  aprobación **siempre** es de una persona, nunca de la cuenta de Claude.
+- Quién aprueba: lo que pide Carlos (y hace Claude) lo aprueba **el socio**; lo que hace el socio lo aprueba
+  **Carlos** (Claude le prepara un resumen en lenguaje sencillo de qué cambia y qué riesgo tiene).
+- **Una rama por tarea o por fase** (`v0.2/fase-1`, `v0.2/fase-1-dialogo-clientes`...). Fases grandes (la 4)
+  en varias ramas y PRs por área.
+- **Costo** (D21): en repos **privados**, las reglas de protección de ramas exigen el plan **GitHub Team**
+  (≈4 USD por usuario al mes; con Carlos, el socio y la cuenta de Claude son 3 puestos, ≈12 USD/mes). Con el plan
+  gratuito las reglas no se pueden activar en privados: no se recomienda.
+
+**Tablero (GitHub Projects de la organización)** con el plan v0.2:
+- **Cada tarea de la sección 15 es un issue** (en el repo que corresponda: backend, frontend o `finanzas_docs`),
+  con etiqueta de fase y asignado a **Carlos**, **el socio** o **Claude** (la cuenta máquina).
+- Columnas: **Pendiente · En curso · En revisión · Terminado**. Campos: Fase, Repo, Agente (dev-backend,
+  dev-frontend, qa...).
+- Cada PR se enlaza a sus issues ("Cierra #12"); al unirse el PR, el issue pasa solo a Terminado.
+- Los comentarios de los usuarios (sección 10) que se convierten en tareas entran también como issues, con la
+  etiqueta `comentario`.
+- Claude crea y mueve los issues; Carlos y el socio ven el avance sin preguntar.
+
+**Cómo entra Claude (el servidor)** — dos opciones:
+| | Deploy keys con escritura, una por repo | **Usuario máquina** (recomendado) |
+|---|---|---|
+| Qué es | Una llave SSH por repo | Una cuenta de GitHub aparte (p. ej. `biodesch-claude`), miembro de la organización con rol **Write** (no dueño) |
+| Subir ramas | Sí | Sí |
+| Abrir PRs, crear y mover issues, usar el tablero | **No** (las llaves solo sirven para git) | **Sí** |
+| Puede saltarse la protección de `main` | No | No (no es dueño; y `CODEOWNERS` exige aprobación humana) |
+| Si se compromete | Afecta solo a ese repo | Se le quita de la organización en un clic; acceso acotado por su rol y por un token con permisos mínimos y vencimiento |
+| Costo | 0 | 1 puesto del plan Team |
+**Recomendación: usuario máquina**, porque el Plan A necesita que Claude abra PRs y mantenga el tablero; con
+deploy keys, Carlos tendría que abrir cada PR y mover cada tarea a mano. GitHub permite una cuenta máquina por
+persona. Credenciales en el servidor: una llave SSH para git y un token *fine-grained* limitado a los repos de la
+organización (contenido, PRs, issues, proyectos), con vencimiento de 90 días y renovación anotada en el tablero.
+
+**Pasos del Plan A — quién hace qué**
+| # | Quién | Dónde | Paso |
+|---|---|---|---|
+| 1 | Carlos | Web de GitHub | Crear la organización: avatar → **Your organizations → New organization** → plan **Team** → nombre (D20) → correo de contacto |
+| 2 | Carlos | Web | Invitar al socio como **Owner**: *People → Invite member → rol Owner* |
+| 3 | Socio | Correo / web | Aceptar la invitación |
+| 4 | Socio | Web, en cada uno de sus 2 repos | *Settings → General → Danger Zone → Transfer ownership* → elegir la organización → confirmar escribiendo el nombre del repo |
+| 5 | Carlos | Web, en `modulo-financiero` | Mismo paso de transferencia hacia la organización; luego *Settings → General → Repository name* → `finanzas_docs` |
+| 6 | Claude (devops) | Servidor | Crear la llave SSH de la cuenta máquina y preparar los textos de configuración (reglas, `CODEOWNERS`, etiquetas) |
+| 7 | Carlos | Web | Crear la cuenta máquina (correo propio de Carlos, p. ej. con `+claude`), activarle 2FA, y en la organización invitarla con rol **Member** y luego darle **Write** en los 3 repos (*Settings → Collaborators and teams*) |
+| 8 | Carlos | Web, con la sesión de la cuenta máquina | Pegar la llave SSH (*Settings → SSH and GPG keys*) y crear el token *fine-grained* (*Settings → Developer settings*) con los permisos que indica devops; entregárselo a devops por el canal que acuerden (nunca por correo en texto) |
+| 9 | Carlos o socio | Web, en `finanzas_run` y `finanzas_run_frontend` | *Settings → Rules → New branch ruleset* para `main`: exigir PR, 1 aprobación, revisión de `CODEOWNERS`, bloquear push directo y borrado (devops pasa la lista exacta de casillas) |
+| 10 | Claude | Repos | PR con `CODEOWNERS` en cada repo (lo aprueba el socio) |
+| 11 | Carlos | Web | Crear el tablero: organización → **Projects → New project → Board**, nombre "Plan v0.2"; dar acceso de escritura a la cuenta máquina |
+| 12 | Claude | Tablero | Crear columnas, campos, etiquetas y **un issue por tarea** de la sección 15, asignados |
+| 13 | Claude (devops) | Servidor | Clonar los 3 repos en la carpeta de trabajo (12.3), reconstruir el ambiente de pruebas desde ellos y verificar (qa) |
+| 14 | Claude | Repos | **PR 0** con los commits propios (12.3); los aprueba el socio |
+| 15 | Socio | Web | Revisar y aprobar los PRs que le toquen; Carlos aprueba los del socio |
+
+### 12.2 Plan B (si el socio no acepta la organización) — forks
+
+| Repo | Contenido | Quién escribe |
+|---|---|---|
+| `shadowhunt87/finanzas_run` y `shadowhunt87/finanzas_run_frontend` | Repos del socio | Solo el socio; nosotros le enviamos PRs (no da permiso de escritura) |
+| **`carlosjfriast-sketch/finanzas_run`** y **`.../finanzas_run_frontend`** (forks) | Copias con historial compartido; una rama por fase | Nuestro equipo |
+| `carlosjfriast-sketch/modulo-financiero` | `CLAUDE.md`, `docs/`, `deploy/`, issues de tareas | Nuestro equipo |
+
+Forma de trabajo: antes de cada fase, sincronizar `main` de cada fork con el del socio y crear `v0.2/fase-N`; al
+aprobar Carlos la fase, **un PR por repo** hacia el socio, pequeño y en español (qué cambia, archivos suyos
+tocados según la sección 17, migraciones, cómo probar). Si el socio pide cambios, se hacen en la misma rama; si
+tarda, la fase siguiente parte de nuestra rama y se dice en el PR. Acceso del servidor: **una deploy key con
+escritura por fork** (en el Plan B no hace falta usuario máquina: Carlos abre cada PR desde la web).
+
+**Pasos del Plan B — quién hace qué**
+| # | Quién | Dónde | Paso |
+|---|---|---|---|
+| 1 | Socio | Web | Dar a Carlos acceso de **solo lectura** a sus 2 repos si son privados, y permitir forks |
+| 2 | Carlos | Web | En cada repo del socio: **Fork** → *Owner* `carlosjfriast-sketch` → mismo nombre → **Create fork** |
+| 3 | Claude (devops) | Servidor | Crear dos llaves SSH (una por fork) y pasarle los textos a Carlos |
+| 4 | Carlos | Web, en cada fork | *Settings → Deploy keys → Add deploy key* → título `servidor-contabo` → pegar → **Allow write access** → **Add key** |
+| 5 | Claude (devops) | Servidor | Clonar, traer los commits propios (12.3), reconstruir el ambiente de pruebas y verificar |
+| 6 | Carlos | Web, cada fase | En el fork: **Compare & pull request** → de `v0.2/fase-N` hacia `shadowhunt87/...:main` → pegar título y descripción que prepara el documentador → **Create pull request** |
+| 7 | Socio | Web | Revisar y unir los PRs |
+| 8 | Carlos (opcional) | Web | Activar Issues en `modulo-financiero` para las tareas |
+
+### 12.3 Migración inicial (devops, Fase 0, ≈1 día, igual en ambos planes)
+1. Comparar `modulo-financiero` (`b552cfe`) con el `main` actual de cada repo del socio, archivo por archivo.
+2. Carpeta de trabajo en el servidor: **una sola** (`proyectos/Software/financial-backend`, regla de separación
+   de proyectos). Es el repo de docs y despliegue; dentro se clonan los de código en `backend/` y `frontend/`
+   (ignorados por su `.gitignore`). El compose de pruebas pasa a construir desde `./backend` y `./frontend`.
+3. Traer **nuestros 4 commits propios**, conservando autor y fecha y ajustando rutas (`git format-patch` +
+   `git am --directory`):
+   | Commit | Va a | Contenido |
+   |---|---|---|
+   | `c5efa7c` (parte) | backend | `package-lock.json` regenerado (`npm ci` fallaba) |
+   | `f9a4715` (parte) | backend | `src/app.setup.ts`: body 6 MB |
+   | `f9a4715` (parte) | frontend | `Dockerfile`, `deploy/nginx.conf`, `deploy/security-headers.conf` (CSP y cabeceras) |
+   | `c5efa7c` (parte) y `a1d21cf` | repo de docs y despliegue | `docker-compose.pruebas.yml` (a `deploy/`), `.gitignore`, `CLAUDE.md`, `docs/` |
+   Toda otra diferencia del paso 1 se lista y se decide con el coordinador.
+4. En el repo de docs, sacar de la raíz el código viejo (queda en su historial).
+5. Respaldo de la base de pruebas → reconstruir el ambiente desde los repos nuevos → qa: suite e2e completa y
+   recorrido rápido de pantallas.
+6. **PR 0** a cada repo de código con lo del paso 3 (no bloquea las fases).
+
+### 12.4 Cómo se entrega cada fase (ambos planes)
+Rama por fase (y por área en la Fase 4) → desarrollo, qa, seguridad y documentador sobre esa rama → despliegue
+en pruebas desde ella → Carlos aprueba la fase → PR con descripción en español y enlace a los issues → aprobación
+del otro socio (Plan A) o unión por el socio (Plan B). Los pasos detallados para Carlos se le dan con capturas
+cuando llegue el momento, sin asumir conocimientos previos.
+
+---
+
+## 13. Permisos y aislamiento
+
+### 13.1 Matriz
+| Acción | ADMIN | ACCOUNTANT | APPROVER | VIEWER | AUDITOR |
 |---|---|---|---|---|---|
-| Leer contabilidad, reportes, exportaciones | Sí | Sí | Sí | Sí | **Sí** |
-| Escribir en contabilidad (asientos, facturas, pagos, maestros...) | según hoy | según hoy | según hoy | No | **No** |
-| Ver análisis financiero e indicadores | Sí | Sí | Sí | Sí | Sí |
-| Cambiar límites del semáforo y costos fijos/variables | Sí | Sí | No | No | No |
+| Leer contabilidad, reportes, exportaciones, semáforo, Panel | Sí | Sí | Sí | Sí | Sí |
+| Escribir en contabilidad | según hoy | según hoy | según hoy | No | **No** |
+| Límites del semáforo | Sí | Sí | No | No | No |
+| Asistente: preparar contabilidad, datos de ejemplo (cargar/borrar) | Sí | No | No | No | No |
+| Enviar comentario / ver los propios | Sí | Sí | Sí | Sí | Sí |
+| Ver y gestionar comentarios de la empresa | Sí | No | No | No | No |
 | Crear encargo | Sí | No | No | No | Sí |
-| Papeles de trabajo, procedimientos, tildes, archivos, hallazgos | Ver según D3 | No | No | No | **Sí** |
-| Comunicar / cerrar hallazgos, cerrar encargo | No | No | No | No | Sí |
-| Responder hallazgos (gerencia) | Sí (solo comunicados) | No (D4) | No | No | No |
-| Reabrir encargo cerrado (con motivo) | Sí | No | No | No | Sí |
-| Informe final | Sí | No | No | No | Sí |
-| Crear usuarios Auditor | Sí (pantalla de Usuarios existente) | No | No | No | No |
+| Papeles, procedimientos, marcas, archivos, hallazgos | Solo hallazgos comunicados, informe y sus archivos (D3) | No | No | No | Sí |
+| Comunicar/cerrar hallazgos, cerrar **y reabrir** encargo | **No** | No | No | No | Sí |
+| Responder hallazgos | Sí (comunicados) | No | No | No | No |
+| Crear usuarios Auditor | Sí | No | No | No | No |
 
-### 7.2 Aislamiento por empresa
+D3 (se aplica la recomendación): **lo que la auditora todavía está trabajando no lo ve la gerencia hasta que ella
+lo comunica**; la gerencia ve los hallazgos comunicados, responde y descarga el informe.
 
-- `companyId` siempre de `user.companyId`; nunca del navegador.
-- Toda lectura con `where: { companyId }`; todo `update/delete` por id con `companyId` (lo vigila el
-  test existente de regresión).
-- Llaves compuestas `(engagementId, companyId)` y `(workpaperId, companyId)`: la base rechaza
-  mezclar empresas aunque el programa se equivoque.
-- Tildes: antes de guardar, el servicio busca el documento con `{ id, companyId }` (como
-  `resolveParent` en adjuntos); si no existe ⇒ 404.
-- `AccountCostBehavior`: se verifica que la cuenta sea de la empresa y sea de tipo gasto.
-- Archivos: clave generada por el servidor bajo la carpeta de la empresa; descarga busca por
-  `{ id, companyId }`.
-
-### 7.3 Rendimiento
-
-Una tendencia de 24 meses son ≈24 × 6 consultas agregadas. Con los datos de prueba debería
-tardar 1–3 segundos. qa mide el tiempo con un volumen realista (p. ej. 20.000 asientos) en la
-Fase 1B. Si pasa de 5 segundos: limitar a 12 puntos por defecto y, solo si no basta, evaluar las
-fotos (`FinancialRatioSnapshot`) **únicamente para períodos cerrados**, invalidándolas al reabrir.
+### 13.2 Aislamiento
+`companyId` siempre del token; lecturas con `where: { companyId }`; `update/delete` por id con `companyId`
+(test de regresión existente); llaves compuestas en auditoría; marcas: el documento se busca con
+`{ id, companyId }` (404 si no); archivos con clave generada por el servidor; datos de ejemplo: solo los
+registros anotados de la propia empresa; comentarios: cada usuario solo los suyos, el ADMIN los de su empresa.
 
 ---
 
-## 8. Pantallas y rutas (frontend)
+## 14. Pantallas y rutas nuevas (frontend)
+Todas con el kit, `OnPush`, signals, etiquetas en `labels.ts`, checklist de la Guía.
 
-Todas con el kit existente, `OnPush`, signals, etiquetas en `labels.ts`, sin estilos sueltos.
-
-### 8.1 Análisis financiero (área `reporting`)
-
-Ruta `/analysis` en `features/reporting/reporting.routes.ts`; componente
-`features/reporting/analysis.ts` (+ `analysis.html`), con pestañas `.tabs/.tab` como
-`reports.html` y enlace profundo `?tab=`:
-
-| Pestaña | Contenido | Fase |
+| Ruta / pieza | Archivo [front] | Fase |
 |---|---|---|
-| Semáforo | Selector de período; tarjetas por grupo (liquidez, endeudamiento, rentabilidad, actividad) con valor, `StatusBadge`-tono verde/amarillo/rojo/gris + texto, interpretación y fórmula; aviso si hay cuentas sin clasificar (enlace a Clasificación de cuentas); Excel/PDF con `ExportButtons` | 1B |
-| Tendencia | Elegir razones (máx. 4 a la vez) y granularidad; gráfica de líneas con `ChartView`, bandas de color de fondo opcionales; tabla debajo | 1B |
-| Comparar períodos | Dos selectores de período (atajo "mismo período del año anterior"); tabla con A, B, diferencia, flecha mejoró/empeoró; gráfica de barras agrupadas | 1B |
-| Configuración | Tabla de límites por razón: por defecto, valor de la empresa, activar/desactivar, "volver al valor por defecto". Solo editable para ADMIN y ACCOUNTANT | 1B |
-| EBITDA y DuPont | Cascada de utilidad (ingresos → EBITDA → EBIT → neta) y el árbol DuPont con la comprobación del ROE | 4 |
-| Punto de equilibrio | Cifras clave, gráfica clásica de ingresos vs. costos totales con el punto marcado; sub-pestaña "Costos fijos y variables" con la tabla editable | 4 |
-| Vertical y horizontal | Selector balance/resultados y fechas; tabla por categoría con desplegable por cuenta; % y variaciones; exportar | 4 |
-
-Componentes compartidos nuevos dentro de la carpeta del área (no en `shared/ui`, para no chocar):
-`features/reporting/analysis-light.ts` (la pastilla de semáforo con texto) y
-`features/reporting/analysis-types.ts` (tipos de respuesta).
-
-En la pestaña "Razones financieras" existente, **opcional**: un enlace "Ver semáforo y tendencia"
-(1 línea en `reports.html`).
-
-### 8.2 Indicadores en el Panel
-
-Componente nuevo `features/dashboard/kpi-strip.ts` (6 `.figure` con color, texto y flecha contra
-el año anterior; clic lleva a `/analysis`). En `dashboard.html` se agrega **una línea**
-`<app-kpi-strip />` debajo de las cifras, y en `dashboard.ts` el import. Carga independiente:
-si falla, el resto del Panel sigue funcionando.
-
-### 8.3 Auditoría (área nueva `audit`)
-
-`features/audit/audit.routes.ts`, todas con `roleGuard('ADMIN', 'AUDITOR')`:
-
-| Ruta | Pantalla | Fase |
-|---|---|---|
-| `/audit` | Lista de encargos (estado, período, avance, hallazgos por gravedad) y "Nuevo encargo" (modal con período y áreas) | 2 |
-| `/audit/:id` | Encargo: encabezado y pestañas **Resumen** (avance, conclusión general, cambiar estado), **Áreas**, **Partidas**, **Hallazgos**, **Informe** | 2 (Partidas e Informe en 3) |
-| `/audit/:id/areas/:wpId` | Papel de trabajo: objetivo, lista de procedimientos con casillas y resultado, conclusión, preparado/revisado, archivos (fase 3), hallazgos de esa área | 2 |
-| `/audit/:id/items` (pestaña Partidas) | Selector de tipo (asientos, facturas, pagos, conciliaciones), búsqueda y filtro revisadas/pendientes; tabla con columna de tilde (menú con las 5 marcas + nota); enlace que abre el documento en su pantalla existente (`/entries/:id`, `/invoices/:id`...) en otra pestaña; aviso O2 y botón O1 si se aprueban | 3 |
-| `/audit/:id/findings/:fId` | Hallazgo: campos, gravedad, estado, archivos; bloque "Respuesta de la gerencia" editable solo para ADMIN cuando está comunicado | 2 |
-
-Vista del ADMIN: entra a `/audit`, ve los encargos de su empresa, los hallazgos comunicados y
-responde; descarga el informe. No ve borradores ni (según D3) los papeles.
-
-Archivos del auditor: componente nuevo `features/audit/audit-files.ts` siguiendo **el mismo
-diseño** que `shared/ui/attachments.ts` (mismo HTML y clases), apuntando a `/auditing/files`.
-Se copia en vez de modificar el compartido para no chocar con el socio (deuda menor anotada).
-
-Menú (`layout/nav.ts`): en "Reportes" se agrega "Análisis financiero" (`/analysis`); grupo nuevo
-"Auditoría" con "Encargos de auditoría" (`/audit`, roles ADMIN y AUDITOR).
-
-Usuarios: la pantalla existente toma los roles de `opts.role`, así que al agregar `AUDITOR:
-'Auditor'` en `ROLE` aparece sola en el selector. Sin otro cambio.
-
-### 8.4 Impacto en diseño visual
-
-Se usa **solo** el sistema existente: clases de `styles.css`, tonos `pos/warn/neg` de `.badge`
-para verde/amarillo/rojo (más un gris con la clase `faint`), `ChartView` para todas las gráficas
-y `ExportButtons` para descargar. Ningún color, fuente ni componente visual nuevo fuera de
-estilos locales cortos de cada componente (como hace `dashboard.ts`). Los botones de "Crear /
-Editar / Ir a..." junto al selector usan `btn btn-ghost btn-sm` como las acciones de las tablas;
-el diálogo de cliente/proveedor es **el mismo** que ya existe; el panel de Ayuda usa `panel` y las
-variables de color de `styles.css`. Los componentes de experiencia guiada (6E.2) son piezas
-nuevas **del mismo kit** (`shared/ui`), con sus clases y variables; el botón principal sigue siendo
-`btn-primary` (`--primary`, verde ya existente). qa revisa en pantalla de
-portátil y de tableta que nada desentone.
+| Diálogo cliente/proveedor | `features/catalog/partner-dialog.ts` | 1 |
+| Ayuda | `features/help/*` (`/help`, `/help/:slug`, panel lateral) | 1 |
+| Enviar comentario, Mis comentarios, Comentarios recibidos | `features/help/feedback-*.ts` (rutas `/help/comments`, `/help/comments/received`) | 1 |
+| Migas, siguiente paso, ayuda de campo, aviso de error, "Ocultar ayudas" | `shared/ui/*` nuevos + `layout/shell.*` | 1 |
+| Asistente | `features/setup/setup-wizard.ts`, `ncf-guide.ts`, `sample-data-banner.ts` (`/setup`) | 2 |
+| Pendientes en el Panel | `features/dashboard/setup-checklist.ts` | 2 |
+| Pasos de la factura | `app-stepper` en `invoice-detail.html` | 2 |
+| Cierre de mes guiado | `features/ledger/period-close.ts` (`/period-close`) | 2 |
+| Semáforo financiero | `features/reporting/analysis.ts/.html` (`/analysis`: Semáforo, Tendencia, Comparar, Configuración), `analysis-light.ts`, `analysis-types.ts` | 3 |
+| Indicadores en el Panel | `features/dashboard/kpi-strip.ts` | 3 |
+| Auditoría | `features/audit/*` (`/audit`, `/audit/:id` con Resumen, Áreas, Partidas, Hallazgos, Informe; `/audit/:id/areas/:wpId`; `/audit/:id/findings/:fId`), `audit-files.ts` (mismo diseño que `shared/ui/attachments.ts`) | 5–6 |
+La auditoría usa `app-stepper` para el estado del encargo y el aviso de 5.6 en un `notice warn`.
 
 ---
 
-## 9. Plan por fases
+## 15. Fases
 
-Flujo de agentes en **cada fase**:
-1. **arquitecto** (este plan) → **revisor-critico** revisa el plan completo **una vez antes de
-   empezar** y cada fase si cambia algo de fondo → **Carlos** aprueba las decisiones de la
-   sección 12.
-2. **dev-backend** (migración, servicio, controlador, pruebas e2e propias del módulo) →
-   **dev-frontend** (puede empezar en paralelo contra el contrato de la API definido aquí).
-3. **qa**: corre **toda** la suite e2e (las existentes + las nuevas), revisa pantallas con cada
-   rol y emite el veredicto.
-4. **seguridad**: en las fases que tocan permisos, datos o archivos (**2 y 3** completa; **1 y 4**
-   revisión corta de roles en las rutas nuevas).
-5. **documentador**: trabaja **en paralelo desde la Fase 0** escribiendo el manual (6D.5); al
-   cerrar cada fase publica la sección de lo entregado y las notas para el socio.
-6. **Despliegue en el ambiente de pruebas** (finanzas.biodesch.com) por devops con
-   autorización de Carlos: `docker compose -p financiero-pruebas -f docker-compose.prod.yml -f
-   docker-compose.pruebas.yml --env-file .env.production up -d --build` (las migraciones se
-   aplican solas en el contenedor `migrate`). Antes: copia de la base de pruebas.
-7. **Carlos y las contadoras** prueban; sus comentarios entran a la fase siguiente.
-
-Además, en **toda** fase con pantallas: dev-frontend aplica los criterios E1–E6 (6E.0), el
-revisor-critico los verifica y qa hace la prueba de "usuario nuevo sin capacitación" (6E.6).
-
-**Orden de ejecución recomendado**: 0 → **1A** → **G1** → **1B** → **G2** → **2** → **3** → **4** → **5**.
-(Los nombres de las fases se conservan para no confundir referencias; G = "guiada".)
-
+Flujo de agentes en **cada fase** (según `CLAUDE.md`): arquitecto → revisor-critico → **Carlos aprueba** →
+dev-backend / dev-frontend → qa → seguridad → documentador (que además trabaja en paralelo desde la Fase 0) →
+**revisor-critico final** → despliegue en pruebas (devops, con autorización de Carlos, respaldo previo) →
+prueba de usuarios nuevos (9.7) → **PR** con aprobación del otro socio (Plan A) o PR al socio (Plan B) (12.4).
+En el Plan A, cada tarea de esta sección es un issue del tablero, asignado y movido por columnas.
 Tamaños: **S** = horas · **M** ≈ 1 día · **L** = 2–3 días.
 
-### Fase 0 — Preparación (≈1–2 días)
+### Fase 0 — Preparación, repositorios y respaldos · P10 · efectivo ≈1 sem · calendario ≈1,5 sem
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 0.1 | revisor-critico | Revisión de este plan | S |
-| 0.2 | Carlos | Decisiones D1–D16; **avisar al socio antes de empezar** (D9): la Fase 1A ya toca `partners.ts`, `invoice-form.*`, `payment-form.ts`, `nav.ts` y `shell.*` | — |
-| 0.3 | qa | Línea base: toda la suite e2e en verde **antes** de tocar nada; anotar tiempos | S |
-| 0.4 | documentador + contadoras | Revisar textos de la plantilla de áreas/procedimientos y los límites del semáforo (borrador del arquitecto en 5.2 y 6.2) | S |
-| 0.5 | documentador | Guía de estilo del manual + `indice.json` inicial; empieza las secciones 1, 3, 4, 5 y 10 sobre las pantallas actuales | M |
-| 0.6 | documentador + contadoras | Borrador del **plan de cuentas base RD** e impuestos base para que las contadoras lo validen (D14); borrador de `guia.json` (siguiente paso por pantalla) y de `errores.json` | M |
+| 0.1 | Carlos (+ socio) | Proponer el Plan A al socio; hacer los pasos de 12.1 (o de 12.2 si es el Plan B); elegir destino de la copia externa (D17) | — |
+| 0.2 | devops | Migración inicial (12.3), con respaldo previo del ambiente de pruebas; en el Plan A, reglas de `main`, `CODEOWNERS` y cuenta máquina | M |
+| 0.2b | devops | Plan A: tablero con un issue por tarea de la sección 15, asignado, con fase y agente | S |
+| 0.3 | devops | **Respaldos** (11.2): servicio, cifrado, copia externa, **restauración ensayada** y procedimiento escrito | L |
+| 0.4 | seguridad | Revisión de respaldos (cifrado, permisos de la carpeta, frase fuera del servidor) | S |
+| 0.5 | qa | Línea base: suite e2e completa en verde desde los repos nuevos; tiempos | S |
+| 0.6 | documentador | Guía de estilo, `ayuda.json` inicial; secciones 1, 3, 4, 5 y 10 | M |
+| 0.7 | documentador + contadoras | Borradores a validar: plan de cuentas base RD e impuestos (D14), límites del semáforo (D5), plantillas de auditoría | M |
 
-### Fase 1A — Usabilidad, Ayuda y base de la experiencia guiada (≈1,5 semanas) — **lo primero que prueban las contadoras**
-**Entregable:** crear/editar cliente o proveedor desde la factura y desde cobros/pagos sin
-perder lo escrito; enlace a la lista en otra pestaña; textos "cliente / proveedor"; menú
-reordenado por intención; migas y "siguiente paso" en todas las pantallas; errores de validación
-en español; pantalla "Ayuda" con las secciones 1, 3, 4, 5 y 10 y el botón "?" funcionando.
+### Fase 1 — Crear sin salir, Ayuda, base guiada y comentarios · P1: "sin tener que ser contador" · efectivo ≈1,5 sem · calendario ≈2 sem
+**Entregable:** C1–C3; menú por intención (9.4); migas y siguiente paso en todas las pantallas; errores de
+validación en español; ayudas de campo y errores con enlace en factura, pago y diálogo; "Ocultar ayudas"; Ayuda
+con secciones 1, 3, 4, 5 y 10; "Enviar comentario".
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 1A.1 | dev-frontend | Extraer `features/catalog/partner-dialog.ts` y hacer que `partners.ts` lo use, sin cambiar su comportamiento | M |
-| 1A.2 | dev-frontend | Factura: botones Crear / Editar / Ir a clientes y proveedores, tipo según `side()`, caso "ya no corresponde el tipo" | M |
-| 1A.3 | dev-frontend | Cobros y pagos: mismo patrón, tipo según dirección | S |
-| 1A.4 | dev-frontend | C2 en los archivos tocados (y barrido completo si Carlos lo aprueba, D10); C3 en `nav.ts` | S |
-| 1A.5 | dev-frontend | Ayuda: área `help`, servicio de contenido, visor con `marked` cargado bajo demanda, panel lateral, botón "?" en `shell`, entrada "Ayuda" en el menú | L |
-| 1A.6 | devops | Bloque `location /manual/` en `frontend/deploy/nginx.conf` (sin caché larga, 404 real) | S |
-| 1A.7 | documentador | Publicar secciones 1, 3, 4, 5 y 10 + mapa de pantallas; capturas con datos ficticios | M |
-| 1A.8 | qa | Suite e2e completa (debe seguir igual: no hay cambios de backend); pruebas manuales 10.5 con cada rol | M |
-| 1A.9 | seguridad | Revisión corta: contenido del manual insertado de forma segura, CSP sin cambios, enlaces externos | S |
-| 1A.10 | dev-frontend | Componentes del kit: `app-breadcrumbs`, `app-next-step` (con `guia.json`), `app-page-header`, `app-empty-state`, `app-stepper`, `app-field-help`, `app-error-notice`; migas y siguiente paso en el `shell`; menú por intención (6E.5) | L |
-| 1A.11 | dev-frontend | Traductor de errores `core/error-text.ts` + 2–3 líneas en `errors.ts`; `app-error-notice` y ayudas de campo en factura, pago y diálogo de clientes | M |
-| 1A.12 | dev-backend | Lista de todos los mensajes de error de negocio del backend (para `errores.json`) — solo lectura del código | S |
-| 1A.13 | qa | Prueba "usuario nuevo" de los flujos "crear cliente y factura" y "registrar el cobro" (6E.6) | M |
+| 1.1 | dev-frontend | `partner-dialog.ts`; `partners.ts` lo usa sin cambiar comportamiento | M |
+| 1.2 | dev-frontend | Factura y cobro/pago: Crear / Editar / Ir a…; textos C2 | M |
+| 1.3 | dev-frontend | `app-breadcrumbs`, `app-next-step`, "Ocultar ayudas" en `shell`; menú 9.4 | M |
+| 1.4 | dev-frontend | Traductor de errores + `app-error-notice` + `app-field-help` (factura, pago, diálogo) | M |
+| 1.5 | dev-frontend | Ayuda: área, servicio, visor con `marked`, panel, "?"; `scripts/verificar-ayuda.mjs` | L |
+| 1.6 | dev-backend | `src/feedback/` + migración + e2e (16.5); lista de mensajes de error de negocio | M |
+| 1.7 | dev-frontend | Enviar comentario, Mis comentarios, Comentarios recibidos | M |
+| 1.8 | devops | Bloque `/manual/` en nginx; guion `feedback-export.sh` | S |
+| 1.9 | documentador | Secciones 1, 3, 4, 5, 10 publicadas; `ayuda.json` completo para las rutas existentes | M |
+| 1.10 | qa | Suite completa; 16.6; `verificar-ayuda`; usuario nuevo: "cliente + factura" y "cobro" (9.7) | M |
+| 1.11 | seguridad | Contenido del manual, CSP sin cambios, comentarios (límite, escape, roles) | S |
 
-### Fase G1 — Configuración inicial y flujos guiados (≈2 semanas)
-**Requisito previo:** plan de cuentas base RD validado por las contadoras (0.6, D14).
-**Entregable:** una empresa nueva se configura sola con el asistente; el Panel muestra lo que
-falta; la factura muestra sus pasos hasta la conciliación; el cierre de mes es guiado.
+### Fase 2 — Arranque guiado, datos de ejemplo, NCF y flujos · P1: "en orden" y "al día con la DGII" sin ser contador · efectivo ≈2,5 sem · calendario ≈3–3,5 sem
+**Requisito que bloquea:** plan de cuentas base RD validado por las contadoras (D14).
+**Entregable:** asistente de 5 grupos con guía NCF; datos de ejemplo borrables; pendientes en el Panel; pasos
+de la factura; cierre de mes guiado; **prueba cronometrada < 15 min aprobada**.
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| G1.1 | dev-backend | Módulo `src/guidance/` + registro en `app.module.ts`; `setup-status` | M |
-| G1.2 | dev-backend | `chart-template` con el plan base RD, cuentas automáticas e impuestos base (una transacción, `writeAudit`, 409 si ya hay cuentas) | L |
-| G1.3 | dev-backend | `invoice-flow` y `period-close` | M |
-| G1.4 | dev-backend | e2e `test/guidance.e2e-spec.ts` (10.6) | M |
-| G1.5 | dev-frontend | Asistente `/setup` con `app-stepper`, acciones directas y regreso desde las pantallas existentes | L |
-| G1.6 | dev-frontend | Pendientes en el Panel; stepper en el detalle de factura; avisos previos en factura y pago | M |
-| G1.7 | dev-frontend | Pantalla "Cierre de mes guiado" | M |
-| G1.8 | documentador | Sección 2 del manual reescrita alrededor del asistente; sección "Cierre de mes" en la 6; mapas `guia.json` | M |
-| G1.9 | qa | Suite completa; prueba "usuario nuevo" de "configurar una empresa nueva" (empezando de cero) y "cerrar el mes"; verificar contra una contadora el plan cargado | M |
-| G1.10 | seguridad | Revisión corta: solo ADMIN carga plantilla, aislamiento del estado | S |
+| 2.1 | dev-backend | `src/guidance/` + registro; `setup-status` (5 grupos) | M |
+| 2.2 | dev-backend | `chart-template` (plan base RD, cuentas automáticas, impuestos) | L |
+| 2.3 | dev-backend | Datos de ejemplo: `SampleRecord` + migración, carga con servicios existentes, borrado seguro | L |
+| 2.4 | dev-backend | `invoice-flow`, `period-close` | M |
+| 2.5 | dev-backend | e2e `test/guidance.e2e-spec.ts` (16.4) | M |
+| 2.6 | dev-frontend | `app-page-header`, `app-stepper`, `app-readiness-notice` | M |
+| 2.7 | dev-frontend | Asistente `/setup`, guía NCF, franja de datos de ejemplo, "Saltar" | L |
+| 2.8 | dev-frontend | Pendientes en el Panel (con "Ocultar"), pasos en la factura, cierre de mes guiado | L |
+| 2.9 | documentador | Sección 2 (arranque y NCF con capturas de la Oficina Virtual), cierre en la 6; `ayuda.json` | M |
+| 2.10 | qa | Suite completa; **prueba cronometrada** (9.7.3) con Carlos y una contadora; usuario nuevo "cierre de mes" | M |
+| 2.11 | seguridad | `chart-template` y datos de ejemplo (borrado limitado a lo anotado, solo ADMIN, aislamiento) | M |
 
-### Fase 1B — Semáforo, comparación, Panel y resto del manual (≈1,5 semanas)
-**Entregable:** pantalla "Análisis financiero" con Semáforo, Tendencia, Comparar y
-Configuración; 6 indicadores en el Panel; exportar semáforo y comparación; secciones 2, 6, 7,
-8, 9 y la primera parte de la 11 del manual.
+### Fase 3 — Semáforo, comparación y Panel · P1: "en orden", entendido por el dueño · efectivo ≈1,5 sem · calendario ≈2 sem
+**Requisito que bloquea:** límites por defecto validados por las contadoras (D5).
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 1B.1 | dev-backend | Esqueleto `src/financial-analysis/` + registro en `app.module.ts`; modelo `RatioThreshold` + migración; valores por defecto y dirección en `ratio-thresholds.defaults.ts` | M |
-| 1B.2 | dev-backend | `health` (color, anualización, interpretaciones en `ratio-interpretations.ts`) y `thresholds` GET/PUT/DELETE con validación y `writeAudit` | L |
-| 1B.3 | dev-backend | `trend` (máx. 24 puntos, 4 a la vez), `compare`, `kpis`; exportaciones de semáforo y comparación | L |
-| 1B.4 | dev-backend | e2e `test/financial-analysis.e2e-spec.ts` (sección 10.1) | M |
-| 1B.5 | dev-frontend | Ruta, menú, etiquetas; pestañas Semáforo y Configuración | L |
-| 1B.6 | dev-frontend | Pestañas Tendencia y Comparar con `ChartView`; `kpi-strip` en el Panel | L |
-| 1B.7 | documentador | Secciones 2, 6, 7, 8, 9 y "Cómo leer el semáforo" (11); mapa de pantallas de `/analysis` | M |
-| 1B.8 | qa | Suite completa; cifras contra cálculo a mano; prueba de tiempo de la tendencia; revisión visual por rol | M |
-| 1B.9 | seguridad | Revisión corta: roles en PUT/DELETE, aislamiento de límites | S |
+| 3.1 | dev-backend | `src/financial-analysis/` + registro; `RatioThreshold` + migración; defaults | M |
+| 3.2 | dev-backend | `health` (color, anualización, interpretaciones) y `thresholds` | L |
+| 3.3 | dev-backend | `trend`, `compare`, `kpis`; exportaciones | L |
+| 3.4 | dev-backend | e2e `test/financial-analysis.e2e-spec.ts` (16.1) | M |
+| 3.5 | dev-frontend | `/analysis`: Semáforo y Configuración | L |
+| 3.6 | dev-frontend | Tendencia, Comparar; `kpi-strip` en el Panel | L |
+| 3.7 | documentador | Sección 11; reportes en la 8 | M |
+| 3.8 | qa | Suite completa; cifras a mano; tiempo de la tendencia; usuario nuevo "leer el semáforo" (dueño) | M |
+| 3.9 | seguridad | Roles en PUT/DELETE, aislamiento | S |
 
-### Fase G2 — Pantallas existentes guiadas (≈1,5 semanas) — **acordada con el socio**
-**Entregable:** las pantallas actuales cumplen E3–E6: estados vacíos útiles, ayudas en campos
-difíciles, errores con enlace a la solución, un solo botón principal; barrido de "tercero" si
-se aprobó (D10); paleta de acciones si se aprobó (D15).
+### Fase 4 — Pantallas existentes guiadas (las hacemos nosotros) · P1: "sin tener que ser contador" en todo el sistema · efectivo ≈1,5 sem · calendario ≈2 sem
+**Entregable:** las pantallas del socio cumplen el checklist de la Guía (9.1, P2–P3). Es la fase que más archivos
+del socio toca (≈30): su PR se arma **por áreas** (ventas, contabilidad, bancos, configuración, reportes) para que
+él lo revise por partes.
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| G2.1 | dev-frontend | `app-empty-state` en las 12 listas (6E.1, P2) | L |
-| G2.2 | dev-frontend | `app-field-help` en los 8–9 formularios con campos difíciles | M |
-| G2.3 | dev-frontend | `app-error-notice` en asiento, conciliación y períodos; un solo `btn-primary` en las 5 pantallas señaladas | M |
-| G2.4 | dev-frontend | (Opcional, D15) Paleta "Buscar o hacer…" en la barra superior | L |
-| G2.5 | documentador | `ayudas-campos.json` y `errores.json` completos; revisión de todo el manual | M |
-| G2.6 | qa | Prueba "usuario nuevo" de "compra con retención" y "conciliar el banco"; repaso de E1–E6 pantalla por pantalla | M |
-| G2.7 | revisor-critico | Verifica que cada cambio en archivos del socio sea mínimo y esté en la lista de la sección 11 | S |
-Alternativa (D13): en vez de G2.1–G2.3, entregar al socio los componentes y una **guía de
-adopción** con la lista exacta de pantallas, para que él lo haga en su repositorio.
+| 4.1 | dev-frontend | `app-empty-state` en las 12 listas | L |
+| 4.2 | dev-frontend | `app-field-help` en los formularios restantes; `app-error-notice` en asiento, conciliación y períodos | M |
+| 4.3 | dev-frontend | Ícono en `StatusBadge`; un solo botón principal; ajustes a 375 px y teclado | L |
+| 4.4 | documentador | Secciones 6, 7, 8 y 9 completas; `ayuda.json` (campos y errores) completo | M |
+| 4.5 | qa | Checklist de la Guía pantalla por pantalla; usuario nuevo "compra con retención" y "conciliar el banco" | M |
+| 4.6 | revisor-critico | Cambios mínimos y todos en la lista de la sección 17 | S |
 
-### Fase 2 — Auditor: rol, encargos, papeles y hallazgos (≈2 semanas)
-**Entregable:** el ADMIN crea un usuario Auditor; la auditora abre un encargo, trabaja las
-áreas con sus procedimientos y registra hallazgos; la gerencia los responde.
+### Fase 5 — Auditoría I: rol, encargos, papeles y hallazgos · P1: "con tu contador trabajando en el mismo lugar" · efectivo ≈2 sem · calendario ≈2,5 sem
+**Requisito que bloquea:** plantillas de papeles de trabajo validadas por las contadoras.
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 2.1 | dev-backend | `AUDITOR` en `UserRole`; modelos Engagement/Workpaper/Procedure/Finding + migración aditiva; `audit-templates.ts` | M |
-| 2.2 | dev-backend | Encargos (CRUD, estados, cierre/reapertura, bloqueo de cerrado) | L |
-| 2.3 | dev-backend | Papeles y procedimientos; firmas preparado/revisado | M |
-| 2.4 | dev-backend | Hallazgos (numeración, estados, respuesta de gerencia, visibilidad del ADMIN) | L |
-| 2.5 | dev-backend | Actualizar la lista de lecturas restringidas en `security.e2e-spec.ts`; e2e `test/auditing.e2e-spec.ts` y `test/auditor-role.e2e-spec.ts` (10.2) | M |
-| 2.6 | dev-frontend | `Role` + etiquetas + rutas + menú; lista de encargos y "Nuevo encargo" | M |
-| 2.7 | dev-frontend | Pantalla del encargo (Resumen, Áreas, Hallazgos), papel de trabajo, hallazgo y respuesta de gerencia | L |
-| 2.8 | qa | Suite completa; recorrido con AUDITOR, ADMIN, ACCOUNTANT y VIEWER; que el auditor no vea ningún botón de escritura contable (y si alguno aparece, que la API dé 403) | M |
-| 2.9 | seguridad | Revisión completa: rol nuevo, rutas, aislamiento, bitácora | M |
-| 2.10 | documentador | Sección 12 del manual "Auditoría paso a paso" (para la auditora y para la gerencia); ampliar la 9 con el rol Auditor; mapa de pantallas `/audit` | S |
+| 5.1 | dev-backend | Migración propia del enum `AUDITOR`; modelos y migración de encargos, papeles, procedimientos, hallazgos; plantillas | M |
+| 5.2 | dev-backend | Encargos (estados; reabrir solo AUDITOR; bloqueo de cerrado); avisos de la cuenta auditora (5.6) | L |
+| 5.3 | dev-backend | Papeles, procedimientos, firmas | M |
+| 5.4 | dev-backend | Hallazgos (numeración, estados, respuesta de gerencia, visibilidad) | L |
+| 5.5 | dev-backend | Lista de lecturas restringidas en `security.e2e-spec.ts`; e2e 16.2 | M |
+| 5.6 | dev-frontend | `Role` + etiquetas + rutas + menú; lista y alta de encargos | M |
+| 5.7 | dev-frontend | Encargo, papel de trabajo, hallazgo y respuesta de la gerencia; aviso 5.6 | L |
+| 5.8 | documentador | Sección 12 (auditora y gerencia); rol Auditor en la 9 | S |
+| 5.9 | qa | Suite completa; recorrido con cada rol; usuario nuevo "encargo de auditoría" con las contadoras | M |
+| 5.10 | seguridad | Rol nuevo, rutas, aislamiento, riesgo 5.6 | M |
 
-### Fase 3 — Tildes, archivos e informe (≈2 semanas)
-**Entregable:** la auditora marca partidas revisadas, sube soportes y descarga el informe en
-PDF y Excel.
+### Fase 6 — Auditoría II: marcas, archivos e informe · P1: "con tu contador trabajando en el mismo lugar" · efectivo ≈2 sem · calendario ≈2,5 sem
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 3.1 | dev-backend | Modelos `AuditCheckmark`, `AuditFile` + migración aditiva | S |
-| 3.2 | dev-backend | `items` (consulta de documentos del período por tipo, con tilde) y `marks` | L |
-| 3.3 | dev-backend | Archivos reutilizando `LocalFileStorage`, `detectFile`, `sanitizeFileName`, `contentDisposition` | M |
-| 3.4 | dev-backend | Informe: `auditing-report.builder.ts` + `renderPdf/renderXlsx` | L |
-| 3.5 | dev-backend | Opcionales O1/O2 si Carlos los aprueba | M |
-| 3.6 | dev-backend | e2e (10.3) | M |
-| 3.7 | dev-frontend | Pestaña Partidas con tildes; `audit-files.ts`; pestaña Informe con `ExportButtons` | L |
-| 3.8 | qa | Suite completa; informe abierto en Excel y lector de PDF, revisado por una contadora | M |
-| 3.9 | seguridad | Archivos (tipos, tamaños, rutas), tildes sobre documentos ajenos | S |
-| 3.10 | documentador | Completar la sección 12 (tildes, archivos, informe) | S |
+| 6.1 | dev-backend | Marcas y archivos + migración | S |
+| 6.2 | dev-backend | `items`, `marks`, O1, O2 | L |
+| 6.3 | dev-backend | Archivos reutilizando almacenamiento y validación | M |
+| 6.4 | dev-backend | Informe (incluye "Control de la cuenta auditora") | L |
+| 6.5 | dev-backend | e2e 16.3 | M |
+| 6.6 | dev-frontend | Partidas con marcas, historial, aviso O2; `audit-files.ts`; Informe | L |
+| 6.7 | documentador | Completar la sección 12 | S |
+| 6.8 | qa | Suite completa; informe revisado por una contadora | M |
+| 6.9 | seguridad | Archivos y marcas sobre documentos ajenos | S |
 
-### Fase 4 — Razones adicionales (≈1,5–2 semanas)
-**Entregable:** EBITDA y DuPont, punto de equilibrio con costos fijos/variables, análisis
-vertical y horizontal, con exportación.
+### Fase 7 — Cierre de la v0.2 · efectivo ≈0,5 sem · calendario ≈0,5–1 sem
 | # | Agente | Tarea | Tam. |
 |---|---|---|---|
-| 4.1 | dev-backend | `AccountCostBehavior` + migración; GET/PUT `cost-behavior` | M |
-| 4.2 | dev-backend | `dupont`, `break-even` (+ margen EBITDA en el semáforo) | L |
-| 4.3 | dev-backend | `vertical`, `horizontal`; exportaciones | L |
-| 4.4 | dev-backend | e2e (10.4) | M |
-| 4.5 | dev-frontend | Pestañas EBITDA y DuPont, Punto de equilibrio (con tabla de costos), Vertical y horizontal | L |
-| 4.6 | qa | Cifras contra cálculo a mano; suite completa | M |
-| 4.7 | seguridad | Revisión corta | S |
-| 4.8 | documentador | Completar la sección 11: EBITDA, DuPont, "Punto de equilibrio: cómo marcar costos fijos y variables", vertical y horizontal | S |
-
-### Fase 5 — Entrega al socio (≈3–4 días)
-| # | Agente | Tarea | Tam. |
-|---|---|---|---|
-| 5.1 | qa | Suite completa final sobre una base de pruebas **nueva** (aplicando todas las migraciones desde cero) | S |
-| 5.2 | revisor-critico | Revisión final: convenciones de la sección 2, archivos modificados = lista de la sección 11, nada fuera de alcance | M |
-| 5.3 | documentador | Paquete para el socio: resumen de cambios, lista de archivos nuevos y modificados con el motivo de cada línea, orden de migraciones, cómo probar, notas sobre posibles choques | M |
-| 5.4 | Carlos | Entrega al socio por el medio que acuerden (D9) | — |
+| 7.1 | qa | Suite completa sobre una base **nueva** con todas las migraciones; restauración de respaldo ensayada otra vez | S |
+| 7.2 | revisor-critico | Revisión final contra la Guía y este plan | M |
+| 7.3 | documentador | Notas de versión dentro del sistema (P10: "nunca cambiar sin avisar"); estado de los PRs al socio | S |
+| 7.4 | seguridad | Auditoría del release y verificación de la regla de datos reales | S |
 
 ---
 
-## 10. Pruebas que debe hacer qa (e2e con vitest, patrón `test/*.e2e-spec.ts`)
+## 16. Pruebas que debe hacer qa (e2e con vitest, patrón `test/*.e2e-spec.ts`)
+Esqueleto de `test/financial-ratios.e2e-spec.ts`. Antes de cada fase y al final, **toda** la suite en verde.
 
-Todas siguen el esqueleto de `test/financial-ratios.e2e-spec.ts` (dos empresas, usuarios por
-rol, `token[...]`, montos a mano en el comentario inicial, limpieza en `afterAll` borrando
-primero las tablas nuevas). Antes de cada fase y al final: **toda** la suite existente en verde.
+### 16.1 `test/financial-analysis.e2e-spec.ts` (Fase 3)
+Datos del T1 2030 de `financial-ratios.e2e-spec.ts` (utilidad neta 22.000; ingresos totales 91.000; activo
+200.000 → 242.000; patrimonio 100.000 → 122.000).
+- Razón corriente 2,4167 ⇒ verde; endeudamiento 49,5868 % ⇒ verde (límite 50 %); límite movido a 49,5868 ⇒
+  sigue verde, a 49,58 ⇒ amarillo; denominador cero ⇒ gris con nota.
+- ROA del T1 = 9,9548 % evaluado como 40,3722 % (× 365/90) con marca "anualizado".
+- Límites: PUT de ADMIN y ACCOUNTANT; 403 para APPROVER, VIEWER y AUDITOR; incoherentes ⇒ 400; clave
+  inexistente ⇒ 400; A no afecta a B; DELETE restaura; `AuditLog`.
+- Tendencia enero–marzo 2030 = 3 puntos a mano; > 24 puntos ⇒ 400; `from > to` ⇒ 400.
+- Comparar T1 2030 vs. T1 2029; indicadores (6 claves, cualquier rol, solo su empresa); exportaciones
+  (`%PDF`; Excel con "Razón corriente").
 
-### 10.1 `test/financial-analysis.e2e-spec.ts` (Fases 1B y 4)
-Se reutiliza el mismo juego de asientos del T1 2030 de `financial-ratios.e2e-spec.ts`
-(utilidad neta 22.000; ingresos totales 91.000; ventas 90.000; costo 48.000; gastos op. 12.000;
-depreciación 3.000; intereses 2.000; activo 200.000 → 242.000; patrimonio 100.000 → 122.000).
-- Semáforo: razón corriente 2,4167 ⇒ verde; endeudamiento 49,5868 % ⇒ verde (límite 50 %);
-  **valores justo en el límite** (cambiar el límite a 49,5868 y comprobar que sigue verde; a
-  49,58 ⇒ amarillo); denominador cero ⇒ gris con nota.
-- Anualización: ROA del T1 = 22.000 / 221.000 = 9,9548 % y se evalúa como 40,3722 %
-  (× 365/90) con la marca "anualizado".
-- Límites: PUT por ADMIN y ACCOUNTANT; 403 para APPROVER, VIEWER y AUDITOR; verde/rojo
-  incoherentes ⇒ 400; clave inexistente ⇒ 400; los límites de A no afectan a B; DELETE vuelve
-  al valor por defecto; cada cambio deja una fila en `AuditLog`.
-- Tendencia: enero–marzo 2030 mensual = 3 puntos con la utilidad de cada mes calculada a mano;
-  más de 24 puntos ⇒ 400; `from > to` ⇒ 400.
-- Comparar: T1 2030 contra T1 2029 (sin movimientos) ⇒ diferencias y "sin dato" donde
-  corresponde.
-- Indicadores: devuelve las 6 claves, para cualquier rol, solo con datos de su empresa.
-- Exportaciones: PDF empieza con `%PDF`, Excel es un zip válido y contiene "Razón corriente".
-- Fase 4 — DuPont: 24,1758 % × 0,4118 × 1,9910 = ROE 19,8198 % (= 22.000 / 111.000) e igual al
-  `roe` del generador.
-- Fase 4 — Punto de equilibrio por defecto: variables 48.000, fijos 17.000, margen de
-  contribución 46,6667 %, **ventas de equilibrio 36.428,57**, margen de seguridad 59,5238 %.
-  Con gastos operativos al 50 % variable: variables 54.000, fijos 11.000, margen 40 %,
-  **equilibrio 27.500**. Cuenta de otra empresa ⇒ 404; cuenta que no es gasto ⇒ 422;
-  porcentaje fuera de 0–100 ⇒ 400.
-- Fase 4 — Vertical: caja 88.000 / 242.000 = 36,3636 %. Horizontal: activo total 200.000 →
-  242.000 = +42.000 (+21 %); base cero ⇒ % sin dato.
+### 16.2 `test/auditing.e2e-spec.ts` y `test/auditor-role.e2e-spec.ts` (Fase 5)
+- Con la enumeración de rutas de "Política de rutas": AUDITOR recibe **403 en toda escritura fuera de
+  `/auditing`**, con una sola excepción explícita (`POST /feedback`); 200 en lecturas de muestra.
+- `/auditing` da 403 a ACCOUNTANT, APPROVER y VIEWER; `security.e2e-spec.ts` lista exactamente las lecturas
+  restringidas diseñadas.
+- **El ADMIN recibe 403 al reabrir un encargo**; el AUDITOR reabre con motivo (sin motivo ⇒ 400).
+- Restablecer la clave del AUDITOR (como ADMIN, con el endpoint existente) ⇒ sus tokens dejan de servir y el
+  encargo muestra el aviso con el nombre del ADMIN y la fecha; el informe lo incluye.
+- La migración del enum está sola en su carpeta (comprobación sobre `prisma/migrations`).
+- Aislamiento (404 en todo lo de otra empresa); encargo duplicado ⇒ 409; fechas invertidas ⇒ 400;
+  precarga de áreas; cerrar con pendientes ⇒ 422; cerrado ⇒ escrituras 422.
+- Hallazgos: 10 altas en paralelo sin huecos ni repetidos; ADMIN no ve DRAFT; responde solo COMMUNICATED;
+  AUDITOR no responde (403); borrar solo DRAFT; `AuditLog` en cada escritura.
 
-### 10.2 `test/auditing.e2e-spec.ts` y `test/auditor-role.e2e-spec.ts` (Fase 2)
-- **El auditor no escribe en la contabilidad**: reutilizando la enumeración de rutas de
-  "Política de rutas", un usuario AUDITOR recibe **403 en toda ruta que modifica datos fuera de
-  `/auditing`** (así cubre también las rutas que el socio agregue en el futuro). Además recibe 200
-  en una muestra de lecturas (reportes, facturas, asientos).
-- Las rutas de `/auditing` dan 403 a ACCOUNTANT, APPROVER y VIEWER.
-- `security.e2e-spec.ts` actualizado: la lista de lecturas restringidas incluye exactamente las
-  de `/auditing` que se diseñaron, ni una más.
-- Aislamiento: el auditor de A no ve, edita ni borra nada de B (404 en cada caso).
-- Encargo duplicado (misma empresa y período) ⇒ 409. `periodStart > periodEnd` ⇒ 400.
-- Al crear un encargo se precargan las áreas elegidas con sus procedimientos.
-- Estados: cerrar con áreas pendientes o hallazgos en borrador ⇒ 422; cerrado ⇒ cualquier
-  escritura 422; reabrir sin motivo ⇒ 400; con motivo ⇒ queda en `AuditLog`.
-- Hallazgos: numeración correlativa sin huecos ni repetidos con **10 altas en paralelo**; el
-  ADMIN no ve los DRAFT; responde solo COMMUNICATED (otro estado ⇒ 422); el AUDITOR no puede
-  responder (403); borrar solo en DRAFT.
-- Cada escritura deja su fila en `AuditLog` con el usuario correcto.
+### 16.3 Fase 6 (en `auditing.e2e-spec.ts`)
+Marcas en los 4 tipos; documento ajeno ⇒ 404; fuera del período ⇒ 422; reemplazo; filtros y paginación; O1
+devuelve solo filas del documento pedido; O2: anular una factura marcada ⇒ aviso. Archivos: PDF válido ok;
+ejecutable renombrado ⇒ rechazado; ajeno ⇒ 404; encargo cerrado ⇒ bloqueado; tope 50. Informe: `%PDF`, Excel
+con H-001, título y respuesta; "BORRADOR" si no está cerrado; VIEWER ⇒ 403.
 
-### 10.3 Fase 3 (en `auditing.e2e-spec.ts`)
-- Tildes: sobre asiento, factura, pago y conciliación de la empresa ⇒ ok; documento de otra
-  empresa ⇒ 404; fuera del período ⇒ 422; segunda tilde sobre lo mismo la reemplaza; `items`
-  filtra revisadas/pendientes y pagina.
-- O2 (si se aprueba): anular una factura después de marcarla ⇒ `items` la devuelve con el aviso.
-- Archivos: PDF válido ⇒ ok; ejecutable renombrado a `.pdf` ⇒ rechazado (mismas reglas que
-  adjuntos); archivo de otra empresa ⇒ 404; encargo cerrado ⇒ no se sube ni se borra;
-  tope de 50 por papel.
-- Informe: PDF (`%PDF`) y Excel (zip); el Excel leído con exceljs contiene H-001, el título del
-  hallazgo y la respuesta de la gerencia; sin cerrar dice "BORRADOR"; VIEWER ⇒ 403.
+### 16.4 `test/guidance.e2e-spec.ts` (Fase 2)
+- Empresa nueva: los 5 grupos pendientes con su ruta; cada acción los va completando.
+- `chart-template`: solo ADMIN (403 a los demás, incluido AUDITOR); cuentas todas clasificadas y cuentas
+  automáticas completas; impuestos ligados a cuentas de la misma empresa; **segunda llamada ⇒ 409** sin
+  cambios; empresa B intacta; `AuditLog`.
+- Tras la plantilla y una secuencia NCF, emitir una factura de venta funciona sin más configuración.
+- **Datos de ejemplo**: solo en empresa sin documentos (si no, 422); carga y anota todo; el balance cuadra;
+  **borrar** deja la empresa sin un solo registro de ejemplo y sin tocar nada real ni de otra empresa; se niega
+  si un cobro **real** está aplicado a una factura de ejemplo o si un período con ejemplos está cerrado; solo
+  ADMIN; `AuditLog`.
+- `invoice-flow` (borrador → emitida → cobro parcial → cobrada → conciliada; ajena ⇒ 404) y `period-close`
+  (chequeos fallidos con enlace; al resolverlos, todo en verde).
 
-### 10.4b Usabilidad y Ayuda (Fase 1A) — pruebas manuales guiadas de qa
-No hay cambios de backend, así que las e2e existentes deben pasar **sin cambios** (en especial
-`masters.e2e-spec.ts`, que cubre `/partners`). El frontend no tiene hoy pruebas automáticas
-propias; no se introducen en la v0.2. Lista de comprobación:
-- Factura de venta a medio llenar (3 líneas, fechas, moneda) → "Crear" → guardar un cliente →
-  queda seleccionado y **las 3 líneas y demás datos siguen intactos**. Igual en compra (tipo
-  Proveedor preseleccionado), en nota de crédito, y en cobro y pago.
-- "Editar" cambia el NCF por defecto del cliente → la factura muestra "Según el cliente (B01)"
-  con el valor nuevo. Cambiar el tipo a Proveedor en una venta → se quita la selección con aviso.
-- Error del servidor al guardar (p. ej. RNC repetido) → el mensaje aparece dentro del diálogo y
-  la factura no se altera. Cancelar el diálogo no cambia nada.
-- "Ir a clientes y proveedores" abre otra pestaña ya con sesión; la factura sigue intacta.
-- Con APPROVER y VIEWER no aparecen "Crear" ni "Editar" (y la API respondería 403).
-- La pantalla `/partners` se comporta **igual que antes** (crear, editar, activar/desactivar,
-  filtros, paginación).
-- No queda ningún "tercero" visible en las pantallas incluidas en el alcance decidido (D10).
-- Ayuda: el "?" en cada pantalla del mapa abre la sección y el ancla correctas; pantallas sin
-  mapa abren el índice; el panel no borra lo escrito en un formulario; enlaces internos navegan
-  y los externos abren otra pestaña; imágenes visibles; recargar `/help/04-facturas` funciona;
-  un archivo inexistente muestra "sección no encontrada"; la consola del navegador **no**
-  muestra bloqueos de la CSP.
+### 16.5 `test/feedback.e2e-spec.ts` (Fase 1)
+POST de cada uno de los 5 roles; > 2.000 caracteres ⇒ 400; límite por hora ⇒ 429; `mine` solo los propios;
+listado y PATCH solo ADMIN y solo de su empresa; `security.e2e-spec.ts` sigue pasando (escritura con roles
+explícitos).
 
-### 10.6 `test/guidance.e2e-spec.ts` (Fase G1)
-- Empresa nueva: `setup-status` devuelve todos los pasos pendientes con su ruta; tras cada acción
-  (cargar plan, crear diarios, año fiscal, banco, cliente, factura) el paso correspondiente pasa
-  a hecho.
-- `chart-template`: solo ADMIN (403 a los demás, incluido AUDITOR); carga N cuentas, todas
-  clasificadas y con las cuentas automáticas completas; crea los impuestos base ligados a
-  cuentas de la misma empresa; **segunda llamada ⇒ 409** sin cambiar nada; si la empresa ya
-  tenía cuentas ⇒ 409; la empresa B no se ve afectada; deja su fila en `AuditLog`.
-- Después de cargar la plantilla, crear y emitir una factura de venta funciona sin más
-  configuración que la secuencia NCF (prueba de que la plantilla es usable de punta a punta).
-- `invoice-flow`: borrador → emitida → cobrada parcial → cobrada → conciliada, con los datos de
-  `treasury.e2e-spec.ts` como modelo; factura de otra empresa ⇒ 404.
-- `period-close`: un asiento pendiente, una factura en borrador y un banco sin conciliar
-  aparecen como chequeos fallidos con su enlace; al resolverlos, todo en verde.
-- La enumeración de rutas de `security.e2e-spec.ts` sigue pasando (lecturas abiertas, escritura
-  con `@Roles(ADMIN)`).
+### 16.6 Pruebas manuales de la Fase 1 (qa)
+- Factura a medio llenar (3 líneas, fechas, moneda) → Crear cliente → queda elegido y **todo lo escrito sigue
+  igual**; igual en compra (Proveedor), nota de crédito, cobro y pago.
+- Editar el NCF por defecto del cliente ⇒ la factura muestra el nuevo; cambiar el tipo a Proveedor en una venta
+  ⇒ se quita la selección con aviso; error del servidor dentro del diálogo; Cancelar no cambia nada.
+- "Ir a clientes y proveedores" abre otra pestaña con sesión; `/partners` se comporta igual que antes.
+- APPROVER y VIEWER no ven Crear ni Editar.
+- Ayuda: cada "?" abre la sección y el ancla correctas; `verificar-ayuda` sin rutas sin mapear; el panel no
+  borra lo escrito; recargar `/help/04-facturas` funciona; archivo inexistente ⇒ "sección no encontrada"; la
+  consola **no** muestra bloqueos de CSP.
+- "Ocultar ayudas" oculta lo definido en 9.5 y no lo demás; se recuerda al volver a entrar.
+- Un mensaje de validación provocado a propósito sale en español con el nombre del campo.
+- Enviar comentario desde 3 pantallas distintas: la ruta queda bien registrada.
 
-### 10.7 Experiencia guiada (todas las fases con pantallas)
-Prueba de "usuario nuevo sin capacitación" según 6E.6 y lista E1–E6 de 6E.0 por cada pantalla
-nueva o tocada. Su resultado forma parte del veredicto de qa.
-
-### 10.4 Revisión manual de pantallas (qa)
-Con cada rol (ADMIN, ACCOUNTANT, APPROVER, VIEWER, AUDITOR): menú correcto, sin botones que
-lleven a un 403, mensajes en español, cifras con formato es-DO, gráficas legibles, portátil y
-tableta.
+### 16.7 En todas las fases con pantallas
+Checklist de la Guía (sección 6) y prueba de usuario nuevo (9.7). Su resultado es parte del veredicto de qa.
 
 ---
 
-## 11. Archivos existentes que se modifican (para coordinar con el socio)
+## 17. Archivos existentes del socio que se modifican (para coordinar)
 
-Todo lo demás son **archivos nuevos** en `src/auditing/`, `src/financial-analysis/`,
-`prisma/migrations/<nuevas carpetas>/`, `test/` (3 archivos nuevos), `frontend/src/app/features/audit/`,
-`frontend/src/app/features/help/`, `frontend/public/manual/`, y archivos nuevos dentro de
-`features/reporting/`, `features/dashboard/` y `features/catalog/` (`partner-dialog.ts`).
+Lo demás son **archivos nuevos**. Conteo real por fase (un archivo cuenta una vez, en la primera fase que lo toca).
 
-| # | Archivo | Cambio | Fase | Riesgo de choque |
+**Repo backend (`finanzas_run`)**
+| # | Archivo | Cambio | Fase | Riesgo |
 |---|---|---|---|---|
-| 1 | `prisma/schema.prisma` | `AUDITOR` en `UserRole` (1 línea); en `Company` 3 líneas de relación (`auditEngagements`, `ratioThresholds`, `accountCostBehaviors`); en `Account` 1 línea (`costBehavior`); bloque de modelos nuevos **al final** | 1–4 | **Medio**: es el archivo que más toca el socio. Las líneas son agregados, fáciles de unir a mano |
-| 2 | `src/app.module.ts` | 2 imports + 2 entradas (`AuditingModule`, `FinancialAnalysisModule`) | 1B, 2 | Bajo |
-| 3 | `test/security.e2e-spec.ts` | Agregar las rutas `/auditing/...` a la lista esperada de "lecturas restringidas" | 2 | Bajo (si el socio agrega lecturas restringidas, se suman ambas) |
-| 4 | `frontend/src/app/core/auth.ts` | `'AUDITOR'` en el tipo `Role` | 2 | Bajo |
-| 5 | `frontend/src/app/shared/labels.ts` | `AUDITOR: 'Auditor'` en `ROLE`; mapas nuevos al final (estados de encargo y hallazgo, gravedad, áreas, marcas, semáforo); casos nuevos en `tone()` | 1–4 | Medio-bajo |
-| 6 | `frontend/src/app/app.routes.ts` | 1 `loadChildren` para `audit` + la línea del comentario de áreas | 2 | Bajo |
-| 7 | `frontend/src/app/features/reporting/reporting.routes.ts` | 1 ruta `analysis` | 1B | Bajo |
-| 8 | `frontend/src/app/layout/nav.ts` | 1 entrada en "Reportes" y 1 grupo "Auditoría" | 1B, 2 | Bajo |
-| 9 | `frontend/src/app/features/dashboard/dashboard.html` | 1 línea `<app-kpi-strip />` | 1B | Bajo |
-| 10 | `frontend/src/app/features/dashboard/dashboard.ts` | 1 import en `imports: [...]` | 1B | Bajo |
-| 11 | `frontend/src/app/features/reporting/reports.html` | *(Opcional)* 1 enlace "Ver semáforo y tendencia" | 1B | Bajo |
-| 13 | `frontend/src/app/features/catalog/partners.ts` | Su modal y su lógica de formulario pasan a `partner-dialog.ts` (nuevo); la pantalla lo usa. Textos "cliente / proveedor" | 1A | **Alto**: es un cambio de ≈70 líneas en la pantalla "de referencia" del socio. Si él la está modificando, conviene acordar el momento |
-| 14 | `frontend/src/app/features/sales/invoice-form.html` y `invoice-form.ts` | Botones junto al selector, diálogo, lógica de selección tras crear/editar, textos | 1A | Medio (≈15–30 líneas) |
-| 15 | `frontend/src/app/features/sales/payment-form.ts` | Igual que la factura | 1A | Medio (≈15–25 líneas) |
-| 16 | `frontend/src/app/layout/nav.ts` | (además de lo de la fila 8) mover "Clientes y proveedores" a "Ventas y compras" (C3) y entrada "Ayuda" | 1A | Bajo |
-| 17 | `frontend/src/app/layout/shell.html` y `shell.ts` | Botón "?" en la barra superior y el panel de Ayuda | 1A | Bajo (≈3–5 líneas) |
-| 18 | `frontend/src/app/app.routes.ts` | (además de la fila 6) 1 `loadChildren` para `help` | 1A | Bajo |
-| 19 | `frontend/package.json` y `package-lock.json` | Dependencia `marked` (si se aprueba, D11) | 1A | Bajo-medio (el lockfile choca fácil; se regenera al unir) |
-| 20 | `frontend/deploy/nginx.conf` | Bloque `location /manual/` (3 líneas) | 1A | Bajo |
-| 22 | `frontend/src/app/shared/ui/index.ts` | 1 línea por componente nuevo del kit (≈8) | 1A | Bajo |
-| 23 | `frontend/src/app/core/errors.ts` | 2–3 líneas: llamar al traductor de mensajes de validación | 1A | Bajo |
-| 24 | `frontend/src/app/features/sales/invoice-detail.html` (y `.ts`) | 1 línea del indicador de pasos + import | G1 | Bajo |
-| 25 | `frontend/src/app/features/ledger/ledger.routes.ts` | 1 ruta `period-close` | G1 | Bajo |
-| 26 | `frontend/src/app/features/ledger/fiscal-periods.ts` | *(Opcional)* 1 enlace "Cierre de mes guiado" | G1 | Bajo |
-| 27 | `frontend/src/app/features/dashboard/dashboard.html` | (además de la fila 9) 1 línea para "Pendientes de configurar" | G1 | Bajo |
-| 28 | **Fase G2** (si la hacemos nosotros, D13): `users.ts`, `account-classification.ts`, `accounts.ts`, `document-sequences.ts`, `tax-rates.ts`, `entries.ts`, `budgets.ts`, `invoices.ts`, `payments.ts`, `reconciliations.ts`, `receivables.ts` (estados vacíos); `accounting-settings.ts`, `ncf.ts`, `opening-balances.ts` (ayudas de campo); `entry-form.ts`, `reconciliation-detail.ts/.html` (errores); `budget-detail.html`, `bank-account-detail.html` (un solo botón principal) | 1–6 líneas cada uno | G2 | **Medio** por cantidad (≈18 archivos) |
-| 29 | *(Solo si Carlos aprueba el barrido completo de C2, D10)* `invoices.ts`, `payments.ts`, `receivables.ts`, `invoice-detail.html/.ts`, `payment-detail.ts`, `reports.html/.ts`, `opening-balances.ts`, `entry-detail.ts`, `dashboard.html`, `shared/ui/combobox.ts`, `core/lookups.ts` | Solo textos visibles ("tercero" → "cliente / proveedor") | 1A | Bajo por archivo, pero son 13 archivos más |
-| 12 | `prisma/migrations/` | **No se modifica ninguna existente**; se agregan 3 carpetas nuevas (auditoría Fase 2, archivos/tildes Fase 3; análisis Fases 1B y 4 — o una por fase). Riesgo: si el socio crea migraciones en paralelo, el orden por fecha debe revisarse al unir | 1–4 | Medio: se documenta en el paquete de entrega |
+| B1 | `package-lock.json` | Regenerado (PR 0) | 0 | Medio (los lockfiles chocan fácil) |
+| B2 | `src/app.setup.ts` | Body 6 MB (PR 0, ya hecho en el ambiente de pruebas) | 0 | Bajo |
+| B3 | `prisma/schema.prisma` | `Feedback` (1); `SampleRecord` (2); `RatioThreshold` (3); `AUDITOR` + modelos de auditoría (5–6); en `Company` 4 líneas de relación (`feedbacks`, `sampleRecords`, `ratioThresholds`, `auditEngagements`); bloques nuevos **al final** | 1–6 | **Medio**: lo que más toca el socio |
+| B4 | `src/app.module.ts` | Imports de `FeedbackModule` (1), `GuidanceModule` (2), `FinancialAnalysisModule` (3), `AuditingModule` (5) | 1–5 | Bajo |
+| B5 | `test/security.e2e-spec.ts` | Lecturas restringidas: `/feedback` (1) y `/auditing/...` (5) | 1, 5 | Bajo |
+Más carpetas nuevas en `prisma/migrations/` (ninguna existente se modifica). **Total backend: 5 archivos.**
 
-**No se tocan**: `financial-ratios.generator.ts` ni ningún otro generador, `reports.*`,
-`exports.*`, `attachments.*`, `common/audit.ts`, `auth/*`, `users/*`, `masters/partners/*`,
-servicios contables, la pantalla de Usuarios, `shared/ui/*` (salvo el barrido opcional de
-textos), `styles.css`, `index.html` y la CSP (`frontend/deploy/security-headers.conf`).
+**Repo frontend (`finanzas_run_frontend`)**
+| # | Archivo | Cambio | Fase | Riesgo |
+|---|---|---|---|---|
+| F1 | `Dockerfile` | Seguridad (PR 0) | 0 | Bajo |
+| F2 | `deploy/nginx.conf` | Seguridad (PR 0) + bloque `/manual/` (1) | 0, 1 | Bajo |
+| F3 | `deploy/security-headers.conf` | CSP y cabeceras (PR 0) | 0 | Bajo |
+| F4 | `package.json` | `marked`; script `verificar-ayuda` | 1 | Bajo |
+| F5 | `package-lock.json` | Por `marked` | 1 | Medio (se regenera al unir) |
+| F6 | `src/app/app.routes.ts` | `help` (1), `setup` (2), `audit` (5) + comentario de áreas | 1, 2, 5 | Bajo |
+| F7 | `src/app/layout/nav.ts` | Menú 9.4 (1) + entradas por fase (2, 3, 5) | 1–5 | Bajo-medio |
+| F8 | `src/app/layout/shell.html` | "?", migas, siguiente paso, Enviar comentario, Ocultar ayudas, franja de ejemplos (2) | 1, 2 | Bajo-medio |
+| F9 | `src/app/layout/shell.ts` | Imports | 1, 2 | Bajo |
+| F10 | `src/app/shared/ui/index.ts` | 1 línea por componente nuevo | 1, 2, 4 | Bajo |
+| F11 | `src/app/core/errors.ts` | 2–3 líneas: traductor | 1 | Bajo |
+| F12 | `src/app/shared/labels.ts` | Etiquetas nuevas al final; `AUDITOR` en `ROLE` (5); casos en `tone()` | 1–6 | Medio-bajo |
+| F13 | `src/app/features/catalog/partners.ts` | Modal y formulario pasan a `partner-dialog.ts`; textos | 1 | **Alto** (≈70 líneas en su pantalla de referencia) |
+| F14 | `src/app/features/sales/invoice-form.html` | Botones, diálogo, ayudas, aviso previo (2), textos | 1, 2 | Medio |
+| F15 | `src/app/features/sales/invoice-form.ts` | Lógica de selección, imports | 1, 2 | Medio |
+| F16 | `src/app/features/sales/payment-form.ts` | Igual que la factura | 1, 2 | Medio |
+| F17 | `src/app/features/dashboard/dashboard.html` | Pendientes (2), indicadores (3) | 2, 3 | Bajo |
+| F18 | `src/app/features/dashboard/dashboard.ts` | Imports | 2, 3 | Bajo |
+| F19 | `src/app/features/sales/invoice-detail.html` | Pasos de la factura | 2 | Bajo |
+| F20 | `src/app/features/sales/invoice-detail.ts` | Import | 2 | Bajo |
+| F21 | `src/app/features/ledger/ledger.routes.ts` | Ruta `period-close` | 2 | Bajo |
+| F22 | `src/app/features/reporting/reporting.routes.ts` | Ruta `analysis` | 3 | Bajo |
+| F23 | `src/app/core/auth.ts` | `'AUDITOR'` en `Role` | 5 | Bajo |
+| F24–F35 | `admin/users.ts`, `catalog/account-classification.ts`, `catalog/accounts.ts`, `catalog/document-sequences.ts`, `catalog/tax-rates.ts`, `ledger/entries.ts`, `reporting/budgets.ts`, `sales/invoices.ts`, `sales/payments.ts`, `treasury/reconciliations.ts`, `sales/receivables.ts`, `reporting/dgii.html` | Estados vacíos (+ textos C2 donde se toquen) | 4 | Medio por cantidad |
+| F36–F41 | `catalog/accounting-settings.ts`, `catalog/ncf.ts`, `ledger/opening-balances.ts`, `ledger/entry-form.ts`, `treasury/reconciliation-detail.ts`, `ledger/fiscal-periods.ts` | Ayudas de campo / errores con enlace / enlace al cierre guiado | 4 | Medio |
+| F42–F44 | `treasury/reconciliation-detail.html`, `reporting/budget-detail.html`, `treasury/bank-account-detail.html` | Un solo botón principal | 4 | Bajo |
+| F45 | `src/app/shared/ui/badge.ts` | Ícono en los estados | 4 | Bajo (afecta a todas las pantallas a la vez) |
+| F46–F57 | Hasta 12 pantallas más por ajustes de 375 px / teclado (`company.ts`, `profile.ts`, `journals.ts`, `entry-detail.ts`, `fiscal-years.html`, `payment-detail.ts`, `bank-accounts-tab.ts`, `bank-rules-tab.ts`, `cash-registers-tab.ts`, `transfers-tab.ts`, `reports.html`, `styles.css`) | Ajustes puntuales, solo si qa los encuentra | 4 | Medio |
 
----
-
-## 12. Decisiones abiertas para Carlos (en lenguaje sencillo)
-
-| # | Pregunta | Recomendación | Qué pasa si se elige lo otro |
+**Resumen del conteo**
+| | Backend | Frontend | Total |
 |---|---|---|---|
-| D1 | ¿Creamos un tipo de usuario nuevo **"Auditor"** o la auditora usa "Solo lectura"? | **Auditor**. | Con "Solo lectura", cualquier empleado de solo lectura podría escribir hallazgos o borrar el trabajo de la auditora. |
-| D2 | Hoy cada usuario pertenece a una sola empresa y el correo no se puede repetir. Una auditora que revisa 3 empresas necesitaría **3 correos** (p. ej. `ana+empresa1@...`). ¿Te sirve por ahora? | Sí por ahora. Un usuario en varias empresas es un cambio grande del inicio de sesión (era tema del plan de plataforma). | Hacerlo ya suma ≈2 semanas y toca el login del socio. |
-| D3 | ¿Qué ve el **administrador de la empresa auditada**? | Los encargos, los hallazgos **ya comunicados**, para responderlos, y el informe. **No** los papeles de trabajo, tildes ni borradores (son el trabajo interno de la auditora, como en la vida real). | Si ve todo: más transparencia, pero la auditora pierde independencia. |
-| D4 | ¿Quién responde los hallazgos por la empresa? | Solo el **Administrador** en esta versión. | Permitirlo al Contador es fácil (una línea), pero el contador suele ser el auditado. |
-| D5 | Los **límites del semáforo** por defecto (tabla 6.2) son reglas generales. | Que las dos contadoras los revisen en media hora antes de la Fase 1B; cada empresa puede cambiarlos después. | Si no se revisan, puede salir rojo algo que en ese sector es normal (p. ej. margen bruto en comercio). |
-| D6 | Dos extras pequeños para el auditor: **O1** ver el historial de un documento (quién lo creó, aprobó o anuló) y **O2** avisar si algo cambió después de que la auditora lo marcó como revisado. | **Ambos** (≈1,5 días en total). O2 es casi imprescindible. | Sin O2, una tilde puede dar por bueno algo que se anuló después. |
-| D7 | ¿Qué va primero? | **1A** (usabilidad, Ayuda y base guiada) → **G1** (configuración y flujos guiados) → **1B** (semáforo) → **G2** → auditoría → razones adicionales. Pone primero tu principio de "usable sin capacitación". | Si las contadoras prefieren ver el semáforo antes, se cambian G1 y 1B de lugar sin costo extra. Auditoría primero retrasa todo lo demás ≈4 semanas. |
-| D8 | ¿El informe final debe ser un **dictamen formal** de auditoría (la opinión firmada del auditor)? | **No**. El sistema genera un informe de revisión con hallazgos; el dictamen lo redacta y firma la auditora bajo su responsabilidad profesional. | Hacerlo dictamen exige asesoría profesional y textos legales; fuera de esta versión. |
-| D9 | **Tu socio**: la Fase 1A ya modifica pantallas suyas (clientes/proveedores, factura, pagos, menú) y la Fase 2 agrega un tipo de usuario. | Avisarle **antes de empezar**, mostrarle la lista de la sección 11 (sobre todo la fila 13, `partners.ts`) y acordar cómo se le entrega (archivo comprimido o rama en GitHub). | Si él cambia esas mismas pantallas a la vez, habrá que unir a mano; no es grave pero conviene saberlo. |
-| D10 | Cambiar "tercero" por "cliente / proveedor": ¿solo en las pantallas de facturas, pagos y clientes (las que se tocan igual), o en **todo** el sistema? | Empezar por esas pantallas (Fase 1A) y hacer el resto **acordándolo con tu socio**, porque son 13 archivos más suyos (solo textos, ≈medio día). | Todo de una vez: más parejo para las contadoras, más posibilidades de choque al unir. |
-| D11 | Para mostrar el manual se propone una **pieza pequeña de software libre** (`marked`, gratuita, sin conexión a internet, muy usada). | Aprobarla. | Sin ella: o el manual se escribe en un formato más técnico (HTML), o los programadores hacen su propio convertidor (+1,5 días). |
-| D13 | ¿Quién adapta las **pantallas existentes de tu socio** a la experiencia guiada (tablas vacías útiles, ayudas, errores con enlace)? Son ≈18 archivos suyos con cambios pequeños. | **Nosotros, en la Fase G2, en un momento acordado con él** (≈1,5 semanas). | Si lo hace él con nuestros componentes y una guía: ahorras ≈1,5 semanas de nuestro lado, pero depende de su tiempo y el resultado puede quedar disparejo. |
-| D14 | El asistente ofrece **cargar un plan de cuentas base de RD** con impuestos. Su contenido debe ser correcto. | Que las **dos contadoras lo revisen y aprueben** antes de programarlo (1–2 horas de su tiempo). | Sin su visto bueno no se carga nada base: cada empresa arma su catálogo a mano, que es justo lo que asusta a un usuario nuevo. |
-| D15 | ¿Agregamos un **buscador de acciones** ("crear factura", "buscar cliente") en la barra superior? | Sí, pero **después** de lo esencial (opcional en G2, ≈2,5 días). | Sin él, todo se encuentra igual por el menú, que ya queda ordenado por tareas. |
-| D16 | La prueba de "usuario sin capacitación" funciona mejor con **una persona real que nunca haya usado el sistema**. | Tú o alguien de tu equipo, 15–20 minutos por flujo al final de cada fase. | Solo con la revisión de qa se detectan menos problemas reales. |
-| D12 | "Ir a clientes y proveedores" desde la factura: ¿abrir en **otra pestaña** o avisar "vas a perder lo escrito"? | Otra pestaña (no se pierde nada). | Con aviso: si la contadora acepta, pierde la factura a medias. |
+| Fase 0 (PR 0) | 2 | 3 | 5 |
+| Fases 1–3 | 3 | 20 | 23 |
+| Fase 4 (adopción guiada) | 0 | 22 seguros + hasta 12 posibles | 22–34 |
+| Fases 5–6 | 0 nuevos (B3–B5 ya contados) | 1 nuevo (F23) | 1 |
+| **Total** | **5** | **46 a 58** | **≈51 seguros, ≈63 en el peor caso** |
+Lo más delicado: `partners.ts` (F13), `schema.prisma` (B3) y la Fase 4 por cantidad. Por eso cada fase va en
+su propio PR y la Fase 4 se divide por áreas.
 
 ---
 
-## 13. Estimación de esfuerzo
+## 18. Decisiones
 
-Supuestos: equipo de agentes continuo; Carlos y las contadoras revisan cada entrega en 1–2 días;
-**no incluye** esperas por respuestas del socio ni por comentarios de las contadoras.
+### 18.1 Tomadas por Carlos (2026-10-10)
+| # | Decisión |
+|---|---|
+| D1 | Rol **AUDITOR**, con restricciones: el ADMIN no reabre encargos; riesgo de clave mitigado (5.6); sin hablar de "independencia" |
+| D2 | Un correo por empresa para auditoras con varias empresas: **se acepta como deuda** (20.1) |
+| D3 | Se aplica la recomendación: la gerencia ve hallazgos comunicados, responde y descarga el informe (13.1) |
+| D4 | Solo el ADMIN responde hallazgos |
+| D5 | Límites del semáforo validados por las contadoras: **requisito que bloquea la Fase 3** |
+| D6 | O1 (historial de un documento) y O2 (cambió después de revisado): **sí** |
+| D7 | Orden de fases de la sección 15 |
+| D8 | Informe de revisión, **no** dictamen |
+| D9 | Socio: **entrega pequeña por fase con historial compartido**. Plan A: organización compartida (Carlos la propone); Plan B: forks (12) |
+| D10 | "Tercero" → "cliente / proveedor" **solo en lo que se toca** |
+| D11 | `marked` aprobada |
+| D12 | "Ir a clientes y proveedores" en **otra pestaña** |
+| D13 | Las pantallas del socio (Fase 4) las adaptamos **nosotros** |
+| D14 | Plan de cuentas base RD validado por las contadoras: **requisito que bloquea la Fase 2** |
+| D15 | Paleta Ctrl+K: **a la v0.3** |
+| D16 | Prueba de usuario nuevo: Carlos (perfil dueño), el socio, las 2 contadoras y quien tenga usuario |
+| — | Auditoría **se queda** en la v0.2 (la usan y prueban las contadoras, que validan las plantillas) |
+| — | DuPont, punto de equilibrio y vertical/horizontal **a la v0.3** |
 
-| Fase | Trabajo (días) | Calendario |
+### 18.2 Pendientes (en lenguaje sencillo)
+| # | Pregunta | Recomendación |
 |---|---|---|
-| 0 Preparación | 1–2 | ≈0,5 semana |
-| 1A Usabilidad (C), Ayuda (D) y base guiada (E) | frontend 8, backend 0,5, devops 0,5, qa 2, seguridad 0,5, doc 3 (en paralelo desde la Fase 0) | **≈1,5 semanas** |
-| G1 Configuración inicial y flujos guiados | backend 5, frontend 5, qa 2, seguridad 0,5, doc 2 | **≈2 semanas** |
-| 1B Semáforo, comparación, Panel + resto del manual | backend 5, frontend 4, qa 1,5, seguridad 0,5, doc 2,5 | **≈1,5 semanas** |
-| G2 Pantallas existentes guiadas (+ paleta opcional 2,5 d) | frontend 5, qa 1,5, doc 2, revisor 0,5 | **≈1,5 semanas** |
-| 2 Rol auditor, encargos, papeles, hallazgos | backend 6, frontend 5, qa 2, seguridad 1, doc 0,5 | **≈2 semanas** |
-| 3 Tildes, archivos, informe (+O1/O2) | backend 6, frontend 3, qa 2, seguridad 0,5, doc 0,5 | **≈2 semanas** |
-| 4 EBITDA, DuPont, equilibrio, vertical/horizontal | backend 5, frontend 4, qa 2, seguridad 0,5, doc 0,5 | **≈1,5–2 semanas** |
-| 5 Entrega al socio | 3–4 | ≈0,5–1 semana |
-| **Total** | | **≈13 a 15 semanas** (incluye ≈1 semana de margen para correcciones tras cada prueba) |
-
-Backend y frontend avanzan en paralelo dentro de cada fase; las fases van en serie para que las
-contadoras prueben cada una. Variantes: si la Fase G2 la hace el socio (D13), ≈11,5–13,5 semanas;
-si además la Fase 4 (razones adicionales) se deja para después, ≈10–11,5. La experiencia guiada
-(1A ampliada + G1 + G2) suma ≈4,5 semanas a la propuesta original: es el costo del principio
-rector, y es la parte que más reduce el soporte y la capacitación futura. El barrido completo
-de "tercero" (D10) suma ≈medio día; el convertidor propio en vez de `marked` (D11), ≈1,5 días.
+| D17 | ¿**Dónde** guardamos la copia de los respaldos fuera del servidor? | Otro servidor o almacenamiento tuyo, con acceso solo para esto; el respaldo sale cifrado. Te damos las opciones con precio y el paso a paso |
+| D18 | ¿Quién guarda la **frase secreta** de los respaldos? | Tú, en un gestor de claves y en papel en un lugar seguro. Sin ella, los respaldos no se pueden abrir |
+| D19 | ¿Le pedimos al socio que impida que un administrador restablezca la clave de un usuario Auditor (5.6, alternativa fuerte)? | Proponérselo como mejora; no bloquea la v0.2 |
+| D20 | Nombre de la organización de GitHub (Plan A) | Uno neutro que sirva para todo el producto, no solo Finanzas; lo eligen tú y tu socio |
+| D21 | Plan **GitHub Team** para la organización (≈12 USD/mes con 3 puestos) | Sí: sin él no se puede proteger la rama principal en repos privados |
+| D22 | Respuesta del socio al Plan A | Si no acepta, se aplica el Plan B sin cambiar el resto del plan |
 
 ---
 
-## 14. Riesgos y avisos de deuda técnica
+## 19. Estimación: trabajo efectivo y calendario
 
-### 14.1 Aviso de deuda (para decidir con los ojos abiertos)
-1. **El plan v3.1 y la realidad se separaron.** `PLAN.md` describe pantallas en Next.js dentro de
-   plataforma, login centralizado y permisos `fin.*`. Lo que existe y se está probando es Angular
-   con login propio y 4 roles fijos. La v0.2 sigue la realidad (lo correcto para entregarla al
-   socio), pero **cada pantalla y cada rol nuevo hace más cara una futura migración a
-   plataforma**. No bloquea la v0.2; sí conviene que Carlos y su socio decidan pronto si el plan
-   de plataforma sigue en pie. Costo de no decidirlo: seguir construyendo dos caminos.
-2. **Roles fijos.** AUDITOR es el quinto rol fijo. Si después aparecen más perfiles ("auditor
-   interno", "gerente que solo responde"...), lo sano es pasar a permisos por acción (como
-   proponía v3.1), no seguir sumando roles. Con 5 todavía es simple y auditable.
-3. **Duplicado menor**: `audit-files.ts` y el servicio de archivos del auditor se parecen a los
-   de adjuntos. Se aceptan para no tocar código del socio; unificarlos más adelante cuesta ≈1 día.
+**Trabajo efectivo** = días de los agentes. **Calendario** = además las esperas: revisión de cada PR por el
+socio (≈2–3 días por fase, no bloquea empezar la siguiente salvo choques), validaciones de las contadoras que
+**bloquean** (plan de cuentas antes de la Fase 2, límites antes de la 3, plantillas antes de la 5: ≈2–5 días cada
+una si se piden en la Fase 0) y pruebas de usuarios nuevos (≈2 días por fase).
 
-### 14.2 Riesgos
+| Fase | Trabajo efectivo (días por agente) | Efectivo | Calendario con esperas |
+|---|---|---|---|
+| 0 Preparación, repos, respaldos | devops 3,5, seguridad 0,5, qa 0,5, doc 2 (+ Carlos en GitHub) | ≈1 sem | ≈1,5 sem |
+| 1 Crear sin salir, Ayuda, base guiada, comentarios | front 8, back 1,5, devops 0,5, qa 2, seguridad 0,5, doc 3 | ≈1,5 sem | ≈2 sem |
+| 2 Arranque guiado, ejemplos, NCF, flujos | back 8, front 7, qa 2,5, seguridad 1, doc 2 | ≈2,5 sem | ≈3–3,5 sem |
+| 3 Semáforo, comparación, Panel | back 5, front 4, qa 1,5, seguridad 0,5, doc 1,5 | ≈1,5 sem | ≈2 sem |
+| 4 Pantallas existentes guiadas | front 7, qa 2, doc 2, revisor 0,5 | ≈1,5 sem | ≈2 sem |
+| 5 Auditoría I | back 6, front 5, qa 2, seguridad 1, doc 0,5 | ≈2 sem | ≈2,5 sem |
+| 6 Auditoría II | back 6, front 3, qa 2, seguridad 0,5, doc 0,5 | ≈2 sem | ≈2,5 sem |
+| 7 Cierre | qa 0,5, revisor 1, doc 0,5, seguridad 0,5 | ≈0,5 sem | ≈0,5–1 sem |
+| **Total** | | **≈12,5 semanas** | **≈15,5 a 17 semanas** |
+
+Backend y frontend avanzan en paralelo dentro de cada fase; las fases van en serie para que las contadoras
+prueben cada una. Lo que más puede alargar el calendario: que las validaciones de las contadoras no se pidan
+desde la Fase 0, y choques con el socio en la Fase 4.
+
+---
+
+## 20. Riesgos y avisos de deuda técnica
+
+### 20.1 Deuda (para decidir con los ojos abiertos)
+1. **`PLAN.md` v3.1 y la realidad se separaron** (Next.js en plataforma vs. Angular con login propio). Cada
+   pantalla y rol nuevo encarece una migración futura a plataforma. Conviene que Carlos y el socio decidan si
+   ese plan sigue en pie.
+2. **Roles fijos**: AUDITOR es el quinto. Más perfiles ⇒ pasar a permisos por acción, no sumar roles.
+3. **Usuario de una sola empresa** (D2): la auditora con varias empresas usa varios correos; el portal del
+   contador (P9) lo resolverá.
+4. **Duplicado menor**: archivos del auditor y `audit-files.ts` se parecen a adjuntos (≈1 día unificarlos).
+5. **Preferencia "Ocultar ayudas" en el navegador**: no viaja entre equipos; pasar al servidor cuando haya
+   preferencias de usuario.
+6. **Guía NCF** con su propio formulario (además de `ncf.ts`): las validaciones deben mantenerse iguales a las del
+   backend; qa lo comprueba.
+
+### 20.2 Riesgos
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| El auditor termina pudiendo modificar contabilidad (por una ruta nueva del socio sin `@Roles` o con todos los roles) | Grave | Prueba automática: AUDITOR recibe 403 en **toda** escritura fuera de `/auditing`, recorriendo las rutas reales; la prueba existente ya exige `@Roles` en toda escritura; regla del plan: nunca `Object.values(UserRole)` |
-| Datos de auditoría de una empresa visibles para otra | Grave | `companyId` del token, llaves compuestas en la base, 404 en documentos ajenos, pruebas por cada ruta |
-| Tilde que da por bueno algo que cambió después | Alto (falsa seguridad) | Opcional O2 (recomendado) |
-| Personal de la empresa ve los borradores de la auditora | Medio | ADMIN solo ve hallazgos comunicados (D3); los demás roles, nada |
-| Archivo malicioso subido como soporte | Medio | Mismas validaciones de tipo que adjuntos, tope de tamaño `MAX_UPLOAD_MB`, clave generada por el servidor, descarga con `nosniff` |
-| Semáforo engañoso por cuentas sin clasificar o por umbrales que no aplican al sector | Medio | Aviso visible con enlace a Clasificación de cuentas; límites por empresa; contadoras validan los por defecto; razones dependientes del sector sin semáforo por defecto |
-| Rentabilidad de un mes comparada con límites anuales | Medio | Anualización explícita y rotulada (6.2) |
-| Punto de equilibrio con costos mal separados | Medio | Valores por defecto razonables + ajuste por cuenta + aviso de gastos sin categoría; la guía lo explica |
-| Tendencia lenta con muchos datos | Bajo-medio | Límite de 24 puntos, 4 cálculos a la vez, medición en Fase 1B, plan B en 7.3 |
-| Choques al unir con el socio | Medio | Módulos nuevos; archivos existentes con cambios mínimos y documentados (sección 11); aviso antes de empezar; paquete de entrega (5.3) |
-| Migraciones en paralelo con las del socio | Medio | Solo migraciones aditivas; revisión del orden al unir; prueba final aplicando todas desde una base vacía (5.1) |
-| Informe PDF con símbolos que salen como "?" | Bajo | Textos sin símbolos fuera del alfabeto latino; qa abre el PDF |
-| Un informe se confunde con un dictamen legal | Medio (reputación) | Título "Informe de revisión"; "BORRADOR" mientras no esté cerrado; decisión D8 |
-| Despliegue en pruebas rompe lo que usan las contadoras | Medio | Copia de la base antes de cada despliegue; suite completa en verde antes; migraciones aditivas |
-| Al extraer el formulario de clientes/proveedores cambia sin querer la pantalla `/partners` | Medio | Copia literal de campos y validaciones; lista de comprobación de qa "se comporta igual que antes"; revisor-critico compara antes/después |
-| Se pierde una factura a medio llenar al crear un cliente | Alto para la usuaria | El diálogo vive en la misma pantalla (sin navegar); "Ir a..." abre otra pestaña; prueba manual explícita |
-| Choque con el socio en `partners.ts` (su pantalla "de referencia") | Medio | Avisarle antes (D9); cambio concentrado y documentado; si él la está cambiando, hacer 1A.1 justo después de unir sus cambios |
-| Manual desactualizado respecto de las pantallas | Medio | El documentador actualiza la sección **en la misma fase** que cambia la pantalla; qa revisa los "?"; capturas repetibles con Playwright |
-| Capturas o archivos del manual viejos por la caché del navegador | Bajo | Bloque `/manual/` sin caché larga en nginx; capturas con fecha en el nombre |
-| Contenido del manual usado para inyectar código | Bajo | Archivos propios del mismo servidor; limpiador de Angular en `[innerHTML]`; CSP sin scripts en línea; guía de estilo prohíbe HTML incrustado |
-| Datos reales en capturas | Medio (privacidad) | Capturas solo del ambiente de pruebas con datos ficticios; regla en la guía de estilo |
-| Plan de cuentas base con errores contables o fiscales | Alto (todas las empresas nuevas lo heredan) | Validación escrita de las contadoras (D14); solo se carga en empresas sin cuentas; todo editable después |
-| La experiencia guiada se vuelve un rediseño sin fin | Alto (calendario) | Criterios cerrados E1–E6; componentes pequeños del kit; lista de pantallas cerrada en 6E.1; nuevas ideas pasan a la siguiente versión con decisión de Carlos |
-| Muchos archivos del socio tocados en G2 | Medio | Fase propia, acordada con él (D13); cambios de 1–6 líneas; lista exacta en la sección 11 |
-| "Siguiente paso" o ayudas que se desactualizan | Bajo-medio | Textos en archivos que mantiene el documentador; qa los revisa en cada fase |
-| Traductor de errores que no reconoce un mensaje | Bajo | Si no lo reconoce, muestra el original; qa provoca los errores típicos y amplía el diccionario |
+| Pérdida de datos (hoy no hay respaldos) | Gravísimo | Fase 0: respaldos diarios cifrados, copia externa, restauración ensayada por fase; regla de datos reales |
+| Se pierde la frase de cifrado | Gravísimo (respaldos inútiles) | Carlos la guarda en dos lugares fuera del servidor (D18); prueba de restauración la usa |
+| Datos reales antes de tiempo | Grave | Regla 11.1, verificada por seguridad en cada release |
+| El auditor modifica contabilidad | Grave | Prueba que recorre todas las rutas; nunca `Object.values(UserRole)` |
+| El ADMIN actúa como la auditora | Medio | 5.6: aviso visible e informe; alternativa fuerte propuesta al socio |
+| Fuga entre empresas | Grave | `companyId` del token, llaves compuestas, 404, pruebas por ruta |
+| Borrado de datos de ejemplo toca datos reales | Grave | Solo registros anotados; negativa si hay dependencias reales o períodos cerrados; pruebas y revisión de seguridad |
+| Plan de cuentas base con errores | Alto | Validación escrita de las contadoras (bloquea); solo en empresas sin cuentas; editable |
+| No se logra la primera factura en < 15 min | Medio | Prueba cronometrada como condición de cierre de la Fase 2; lista de dónde se va el tiempo |
+| Choques con el socio | Medio | Historial compartido (organización o forks); PR pequeño por fase; Fase 4 dividida por áreas; lista exacta (17) |
+| El socio tarda en revisar o aprobar | Medio (calendario) | La fase siguiente puede partir de nuestra rama; tablero visible para los dos; se dice en el PR |
+| La cuenta máquina o su token se filtran (Plan A) | Medio | Rol Write sin ser dueño, `main` protegida con aprobación humana, token con permisos mínimos y vencimiento de 90 días, 2FA en la cuenta; se retira en un clic |
+| La transferencia de repos sale mal | Bajo | GitHub conserva historial y redirecciones; se verifica clonando y comparando antes de seguir |
+| Los repos del socio cambiaron desde el 9-oct | Medio | Comparación archivo por archivo en la migración (12.3) |
+| La migración de repos rompe el ambiente de pruebas | Medio | Respaldo previo; reconstrucción verificada por qa antes de seguir |
+| Mensaje sin "cómo arreglarlo" o ruta sin ayuda | Bajo-medio | `verificar-ayuda` en cada fase; traductor muestra el original si no reconoce |
+| Exceso de guía molesta a expertos | Medio | "Ocultar ayudas", "Saltar", "Ocultar la lista" (9.5) |
+| La experiencia guiada se vuelve un rediseño sin fin | Alto (calendario) | Checklist cerrado de la Guía; lista de pantallas cerrada (9.1, 17); lo nuevo, a la siguiente versión con decisión de Carlos |
+| Comentarios con datos sensibles o abuso | Bajo | Límite por hora, longitud, texto escapado, solo dentro del servidor |
+| Semáforo engañoso | Medio | Aviso de cuentas sin clasificar, anualización rotulada, límites validados y ajustables |
+| Tendencia lenta | Bajo-medio | 24 puntos máx., medición, plan B |
+| Informe confundido con dictamen | Medio | "Informe de revisión", "BORRADOR" mientras esté abierto |
+| Despliegue rompe lo que usan las contadoras | Medio | Respaldo previo, suite en verde, migraciones aditivas |
 
 ---
 
-## 15. Lo que NO incluye la v0.2
+## 21. Fuera de la v0.2
 
-Visor general de la bitácora, revisión automática de errores, historial de accesos, dictamen
-formal, pruebas automáticas de pantallas, buscador por texto completo dentro del manual, videos,
-recorridos animados ("tours"), rediseño visual de pantallas existentes, un usuario en varias empresas, roles a medida, fotos de razones guardadas, plantillas de
-informe editables, firma electrónica del informe, y cambios en las 20 razones existentes.
+**A la v0.3** (Guía, sección 7): 2FA y exportación completa (condiciones para datos reales); paleta Ctrl+K y
+atajos; DuPont, punto de equilibrio, análisis vertical y horizontal (anexo 6.5); conciliación de 2 columnas;
+calendario fiscal e IT-1/IR-17; importadores de Excel; alertas de respaldo por correo; visor general de la
+bitácora.
+**Después**: portal del contador multiempresa, recibos por foto, IA, API pública y webhooks.
+**No se hace**: dictamen formal, rediseño visual de pantallas existentes, recorridos animados, librerías de UI.
