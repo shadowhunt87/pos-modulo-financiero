@@ -11,6 +11,8 @@ import { Shell } from './layout/shell';
  *  treasury  : bank-accounts, reconciliations
  *  reporting : reports, dgii, budgets
  *  admin     : users, company, profile
+ *  help      : help, help/:slug
+ *  feedback  : feedback/mine, feedback
  */
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/auth/login').then((m) => m.Login), title: 'Iniciar sesión' },
@@ -26,6 +28,8 @@ export const routes: Routes = [
       { path: '', loadChildren: () => import('./features/treasury/treasury.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/reporting/reporting.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/admin/admin.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/help/help.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/feedback/feedback.routes').then((m) => m.routes) },
       { path: '**', loadComponent: () => import('./features/not-found').then((m) => m.NotFound), title: 'No encontrado' },
     ],
   },

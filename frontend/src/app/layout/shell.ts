@@ -8,6 +8,11 @@ import { Lookups } from '../core/lookups';
 import { Company } from '../core/models';
 import { ROLE } from '../shared/labels';
 import { money, today, yearStart } from '../shared/format';
+import { FeedbackLauncher } from '../core/feedback-launcher';
+import { HelpPrefs } from '../core/help-prefs';
+import { Breadcrumbs, NextStep } from '../shared/ui';
+import { FeedbackDialog } from '../features/feedback/feedback-dialog';
+import { HelpDrawer } from '../features/help/help-drawer';
 import { NAV } from './nav';
 
 interface Ledger { totalDebit: string; totalCredit: string }
@@ -15,7 +20,7 @@ interface Ledger { totalDebit: string; totalCredit: string }
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })
@@ -24,11 +29,15 @@ export class Shell {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly lookups = inject(Lookups);
+  protected readonly helpPrefs = inject(HelpPrefs);
+  protected readonly feedback = inject(FeedbackLauncher);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly ROLE = ROLE;
   protected readonly menuOpen = signal(false);
   protected readonly userMenu = signal(false);
+  /** Panel lateral del botón "?" (ayuda de la pantalla actual). */
+  protected readonly helpOpen = signal(false);
   protected readonly company = signal<Company | null>(null);
   protected readonly dark = signal(document.documentElement.dataset['theme'] === 'dark');
   /** Diferencia débitos − créditos del año en curso; null mientras carga. */

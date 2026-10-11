@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, debounceTime } from 'rxjs';
 import { Api, Page } from '../../core/api';
 import { Auth } from '../../core/auth';
@@ -8,9 +7,9 @@ import { Confirm } from '../../core/confirm';
 import { errorMessage } from '../../core/errors';
 import { Lookups } from '../../core/lookups';
 import { Partner } from '../../core/models';
+import { PartnerDialog } from './partner-dialog';
 import { Notify } from '../../core/notify';
-import { clean } from '../../shared/format';
-import { opts, PARTNER_TYPE, TAX_ID_TYPE } from '../../shared/labels';
+import { opts, PARTNER_TYPE } from '../../shared/labels';
 import { UI } from '../../shared/ui';
 
 /**
@@ -20,12 +19,12 @@ import { UI } from '../../shared/ui';
 @Component({
   selector: 'app-partners',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ...UI],
+  imports: [PartnerDialog, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
-        <div><h1>Clientes y proveedores</h1><p class="sub">Terceros con los que facturas, cobras y pagas.</p></div>
-        @if (canEdit) { <button type="button" class="btn btn-primary" (click)="openNew()">Nuevo tercero</button> }
+        <div><h1>Clientes y proveedores</h1><p class="sub">Las personas y empresas a las que les vendes o les compras.</p></div>
+        @if (canEdit) { <button type="button" class="btn btn-primary" (click)="openNew()">Nuevo cliente / proveedor</button> }
       </div>
 
       <div class="toolbar">
@@ -63,7 +62,7 @@ import { UI } from '../../shared/ui';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay terceros con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay clientes ni proveedores con esos filtros.</td></tr> }
               }
             </tbody>
           </table>
@@ -72,40 +71,11 @@ import { UI } from '../../shared/ui';
       </section>
     </div>
 
-    <app-modal [open]="modalOpen()" [title]="editing() ? 'Editar tercero' : 'Nuevo tercero'" width="720px" (closed)="modalOpen.set(false)">
-      <form id="partner-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
-        <div class="form-grid">
-          <div class="field"><label for="f-type">Tipo</label>
-            <select id="f-type" class="select" formControlName="type">@for (o of typeOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
-          <div class="field span-2"><label for="f-name">Nombre o razón social</label><input id="f-name" class="input" formControlName="name" />
-            @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Escribe el nombre.</span> }</div>
-          <div class="field"><label for="f-trade">Nombre comercial</label><input id="f-trade" class="input" formControlName="tradeName" /></div>
-          <div class="field"><label for="f-idt">Tipo de documento</label>
-            <select id="f-idt" class="select" formControlName="taxIdType"><option value="">—</option>@for (o of idOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
-          <div class="field"><label for="f-tax">RNC o cédula</label><input id="f-tax" class="input mono" formControlName="taxId" placeholder="Solo números" />
-            <span class="hint">RNC de 9 dígitos o cédula de 11.</span></div>
-          <div class="field"><label for="f-mail">Correo</label><input id="f-mail" class="input" type="email" formControlName="email" />
-            @if (form.controls.email.touched && form.controls.email.invalid) { <span class="error-text">Correo no válido.</span> }</div>
-          <div class="field"><label for="f-phone">Teléfono</label><input id="f-phone" class="input" formControlName="phone" /></div>
-          <div class="field span-2"><label for="f-addr">Dirección</label><input id="f-addr" class="input" formControlName="address" /></div>
-          <div class="field"><label for="f-city">Ciudad</label><input id="f-city" class="input" formControlName="city" /></div>
-          <div class="field"><label for="f-credit">Límite de crédito</label><input id="f-credit" class="input num" type="number" min="0" step="0.01" formControlName="creditLimit" /></div>
-          <div class="field"><label for="f-days">Días de crédito</label><input id="f-days" class="input num" type="number" min="0" max="365" formControlName="paymentTermsDays" /></div>
-          <div class="field"><label for="f-ncf">NCF por defecto</label><input id="f-ncf" class="input mono" formControlName="defaultNcfType" placeholder="B01" maxlength="3" /></div>
-          <label class="check span-all"><input type="checkbox" formControlName="isWithholdingAgent" /> Es agente de retención</label>
-        </div>
-        @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }
-      </form>
-      <ng-container modal-actions>
-        <button type="button" class="btn" (click)="modalOpen.set(false)">Cancelar</button>
-        <button type="submit" form="partner-form" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</button>
-      </ng-container>
-    </app-modal>
+    <app-partner-dialog [open]="modalOpen()" [partner]="editing()" defaultType="CUSTOMER" (saved)="onSaved()" (closed)="modalOpen.set(false)" />
   `,
 })
 export class Partners {
   private readonly api = inject(Api);
-  private readonly fb = inject(FormBuilder);
   private readonly notify = inject(Notify);
   private readonly confirm = inject(Confirm);
   private readonly lookups = inject(Lookups);
@@ -113,7 +83,6 @@ export class Partners {
 
   protected readonly PARTNER_TYPE = PARTNER_TYPE;
   protected readonly typeOptions = opts.partnerType;
-  protected readonly idOptions = opts.taxIdType.filter((o) => o.value in TAX_ID_TYPE);
   protected readonly canEdit = inject(Auth).has('ADMIN', 'ACCOUNTANT');
   protected readonly limit = 25;
 
@@ -127,13 +96,6 @@ export class Partners {
 
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<Partner | null>(null);
-  protected readonly saving = signal(false);
-  protected readonly formError = signal('');
-  protected readonly form = this.fb.nonNullable.group({
-    type: ['CUSTOMER', Validators.required], name: ['', [Validators.required, Validators.maxLength(200)]], tradeName: [''],
-    taxIdType: [''], taxId: [''], email: ['', Validators.email], phone: [''], address: [''], city: [''],
-    creditLimit: [null as number | null], paymentTermsDays: [0], defaultNcfType: [''], isWithholdingAgent: [false],
-  });
 
   constructor() {
     this.search$.pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef)).subscribe((q) => this.setFilter('q', q));
@@ -154,44 +116,16 @@ export class Partners {
     this.loading.set(false);
   }
 
-  protected openNew(): void {
-    this.editing.set(null); this.formError.set('');
-    this.form.reset({ type: 'CUSTOMER', paymentTermsDays: 0, isWithholdingAgent: false });
-    this.modalOpen.set(true);
-  }
-  protected openEdit(p: Partner): void {
-    this.editing.set(p); this.formError.set('');
-    this.form.reset({
-      type: p.type, name: p.name, tradeName: p.tradeName ?? '', taxIdType: p.taxIdType ?? '', taxId: p.taxId ?? '', email: p.email ?? '',
-      phone: p.phone ?? '', address: p.address ?? '', city: p.city ?? '', creditLimit: p.creditLimit === null ? null : Number(p.creditLimit),
-      paymentTermsDays: p.paymentTermsDays, defaultNcfType: p.defaultNcfType ?? '', isWithholdingAgent: p.isWithholdingAgent,
-    });
-    this.modalOpen.set(true);
-  }
-
-  protected async save(): Promise<void> {
-    this.form.markAllAsTouched();
-    if (this.form.invalid || this.saving()) return;
-    this.saving.set(true); this.formError.set('');
-    const v = this.form.getRawValue();
-    const body = clean({ ...v, creditLimit: v.creditLimit === null ? '' : Number(v.creditLimit), paymentTermsDays: Number(v.paymentTermsDays ?? 0) });
-    try {
-      const cur = this.editing();
-      await new Promise<void>((ok, bad) => (cur ? this.api.patch(`/partners/${cur.id}`, body) : this.api.post('/partners', body)).subscribe({ next: () => ok(), error: bad }));
-      this.notify.ok(cur ? 'Tercero actualizado.' : 'Tercero creado.');
-      this.modalOpen.set(false);
-      void this.lookups.ensurePartners(true);
-      await this.load();
-    } catch (e) { this.formError.set(errorMessage(e)); }
-    this.saving.set(false);
-  }
+  protected openNew(): void { this.editing.set(null); this.modalOpen.set(true); }
+  protected openEdit(p: Partner): void { this.editing.set(p); this.modalOpen.set(true); }
+  protected onSaved(): void { this.modalOpen.set(false); void this.load(); }
 
   protected async toggle(p: Partner): Promise<void> {
     const to = !p.active;
-    if (!(await this.confirm.ask({ title: to ? 'Activar tercero' : 'Desactivar tercero', message: to ? `${p.name} volverá a aparecer en los selectores.` : `${p.name} dejará de aparecer en los selectores. Sus documentos no cambian.`, confirmText: to ? 'Activar' : 'Desactivar', danger: !to }))) return;
+    if (!(await this.confirm.ask({ title: to ? 'Activar cliente / proveedor' : 'Desactivar cliente / proveedor', message: to ? `${p.name} volverá a aparecer en los selectores.` : `${p.name} dejará de aparecer en los selectores. Sus documentos no cambian.`, confirmText: to ? 'Activar' : 'Desactivar', danger: !to }))) return;
     try {
       await new Promise<void>((ok, bad) => this.api.patch(`/partners/${p.id}`, { active: to }).subscribe({ next: () => ok(), error: bad }));
-      this.notify.ok(to ? 'Tercero activado.' : 'Tercero desactivado.');
+      this.notify.ok(to ? 'Cliente / proveedor activado.' : 'Cliente / proveedor desactivado.');
       void this.lookups.ensurePartners(true);
       await this.load();
     } catch (e) { this.notify.error(errorMessage(e)); }

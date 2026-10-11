@@ -356,9 +356,9 @@ describe('Seguridad (e2e)', () => {
       expect(open).toEqual(['PATCH /users/me', 'POST /auth/login', 'POST /users/me/change-password']);
     });
 
-    it('lecturas restringidas: el listado y detalle de usuarios son solo de ADMIN (el resto de lecturas es para cualquier rol)', () => {
+    it('lecturas restringidas: usuarios y comentarios recibidos son solo de ADMIN (el resto de lecturas es para cualquier rol)', () => {
       const restricted = routes(app).filter((r) => r.method === 'GET' && r.roles).map((r) => `${r.path} -> ${r.roles!.join(',')}`).sort();
-      expect(restricted).toEqual(['/users/ -> ADMIN', '/users/:id -> ADMIN']);
+      expect(restricted).toEqual(['/feedback/ -> ADMIN', '/users/ -> ADMIN', '/users/:id -> ADMIN']);
     });
 
     it('un VIEWER recibe 403 en cada ruta que exige un rol que no tiene (modificaciones y lecturas restringidas)', async () => {

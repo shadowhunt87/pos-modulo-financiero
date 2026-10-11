@@ -4,19 +4,20 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, startWith } from 'rxjs';
 import { Api } from '../../core/api';
-import { errorMessage } from '../../core/errors';
+import { Auth } from '../../core/auth';
 import { Lookups } from '../../core/lookups';
-import { Company } from '../../core/models';
+import { Company, Partner } from '../../core/models';
 import { Notify } from '../../core/notify';
 import { clean, dec, sumDec, today } from '../../shared/format';
 import { opts } from '../../shared/labels';
-import { ComboOption, UI } from '../../shared/ui';
+import { ComboOption, ErrorNotice, UI } from '../../shared/ui';
+import { PartnerDialog } from '../catalog/partner-dialog';
 import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './payment-shared';
 
 @Component({
   selector: 'app-payment-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, PartnerDialog, ErrorNotice, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -31,7 +32,15 @@ import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './
               <select id="p-dir" class="select" formControlName="direction">@for (o of dirOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
             <div class="field span-2"><span class="label">{{ received() ? 'Cliente' : 'Proveedor' }}</span>
               <app-combobox formControlName="partnerId" [options]="partnerOptions()" [clearable]="false" placeholder="Buscar por nombre o RNC" />
-              @if (form.controls.partnerId.touched && form.controls.partnerId.invalid) { <span class="error-text">Elige el tercero.</span> }</div>
+              @if (form.controls.partnerId.touched && form.controls.partnerId.invalid) { <span class="error-text">{{ received() ? 'Elige el cliente.' : 'Elige el proveedor.' }}</span> }
+              <div class="btn-row" style="margin-top:6px">
+                @if (canEdit) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="openCreatePartner()">Crear</button>
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="!selectedPartner()" (click)="openEditPartner()">Editar</button>
+                }
+                <a class="btn btn-ghost btn-sm" href="/partners" target="_blank" rel="noopener">Ir a clientes y proveedores</a>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="refreshPartners()">Actualizar lista</button>
+              </div></div>
             <div class="field"><label for="p-date">Fecha</label><input id="p-date" class="input" type="date" formControlName="date" />
               @if (form.controls.date.touched && form.controls.date.invalid) { <span class="error-text">Indica la fecha.</span> }</div>
             <div class="field"><label for="p-method">Método</label>
@@ -56,7 +65,7 @@ import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './
             <button type="button" class="btn btn-sm" [disabled]="!open().length || !(amountNum() > 0)" (click)="auto()">Aplicar automáticamente</button>
           </div>
           @if (!partnerId()) {
-            <p class="dim panel-pad">Elige un tercero para ver sus facturas pendientes.</p>
+            <p class="dim panel-pad">{{ received() ? 'Elige el cliente' : 'Elige el proveedor' }} para ver sus facturas pendientes.</p>
           } @else if (!source()) {
             <p class="dim panel-pad">Elige la cuenta bancaria o la caja: las facturas se muestran en su moneda.</p>
           } @else if (loadingOpen()) {
@@ -93,13 +102,15 @@ import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './
           }
         </section>
 
-        @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }
+        @if (formError()) { <app-error-notice style="display:block;margin-top:14px" [error]="formError()" /> }
         <div class="btn-row" style="margin-top:16px">
           <button type="submit" class="btn btn-primary" [disabled]="saving() || overApplied()">{{ saving() ? 'Guardando…' : (received() ? 'Registrar cobro' : 'Registrar pago') }}</button>
           <a routerLink="/payments" class="btn">Cancelar</a>
         </div>
       </form>
     </div>
+
+    <app-partner-dialog [open]="partnerDialog()" [partner]="editingPartner()" [defaultType]="received() ? 'CUSTOMER' : 'SUPPLIER'" (saved)="onPartnerSaved($event)" (closed)="partnerDialog.set(false)" />
   `,
 })
 export class PaymentForm {
@@ -109,11 +120,12 @@ export class PaymentForm {
   private readonly route = inject(ActivatedRoute);
   private readonly notify = inject(Notify);
   private readonly lookups = inject(Lookups);
+  protected readonly canEdit = inject(Auth).has('ADMIN', 'ACCOUNTANT');
 
   protected readonly dirOptions = opts.paymentDirection;
   protected readonly methodOptions = opts.paymentMethod;
   protected readonly saving = signal(false);
-  protected readonly formError = signal('');
+  protected readonly formError = signal<unknown>('');
   protected readonly loadingOpen = signal(false);
   protected readonly open = signal<OpenInvoice[]>([]);
   protected readonly alloc = signal<Record<string, string>>({});
@@ -156,7 +168,30 @@ export class PaymentForm {
     return (s.startsWith('bank:') ? this.lookups.bankAccounts().find((b) => b.id === id)?.currency : this.lookups.cashRegisters().find((c) => c.id === id)?.currency) ?? this.baseCurrency();
   });
   protected readonly foreign = computed(() => this.currency() !== this.baseCurrency());
-  protected readonly partnerName = computed(() => this.lookups.partnerName(this.partnerId()) || 'El tercero');
+  protected readonly partnerName = computed(() => this.lookups.partnerName(this.partnerId()) || (this.received() ? 'El cliente' : 'El proveedor'));
+
+  // Crear / editar cliente o proveedor sin salir del formulario (lo escrito no se toca).
+  protected readonly partnerDialog = signal(false);
+  protected readonly editingPartner = signal<Partner | null>(null);
+  protected readonly selectedPartner = computed(() => this.lookups.partners().find((x) => x.id === this.partnerId()) ?? null);
+  protected openCreatePartner(): void { this.editingPartner.set(null); this.partnerDialog.set(true); }
+  protected openEditPartner(): void {
+    const p = this.selectedPartner();
+    if (!p) return;
+    this.editingPartner.set(p);
+    this.partnerDialog.set(true);
+  }
+  protected onPartnerSaved(p: Partner): void {
+    this.partnerDialog.set(false);
+    const fits = this.received() ? p.type !== 'SUPPLIER' : p.type !== 'CUSTOMER';
+    if (!this.editingPartner()) {
+      if (fits) this.form.controls.partnerId.setValue(p.id);
+    } else if (!fits) {
+      this.form.controls.partnerId.setValue(null);
+      this.notify.info(`${p.name} ya no es ${this.received() ? 'cliente' : 'proveedor'}, así que se quitó. Elige otro.`);
+    }
+  }
+  protected refreshPartners(): void { void this.lookups.ensurePartners(true); }
 
   protected readonly allocated = computed(() => sumDec(Object.values(this.alloc())));
   protected readonly advance = computed(() => dec(this.amountRaw()).minus(this.allocated()));
@@ -168,10 +203,10 @@ export class PaymentForm {
     const qp = this.route.snapshot.queryParamMap;
     if (qp.get('direction') === 'MADE') this.form.controls.direction.setValue('MADE');
 
-    // Al cambiar de tipo, el tercero elegido puede no corresponder.
+    // Al cambiar de tipo, el cliente / proveedor elegido puede no corresponder.
     this.form.controls.direction.valueChanges.subscribe(() => { this.form.controls.partnerId.reset(null); });
 
-    // Recarga las facturas abiertas cuando cambian tercero, tipo o moneda.
+    // Recarga las facturas abiertas cuando cambian cliente / proveedor, tipo o moneda.
     effect(() => {
       const partner = this.partnerId(); const dir = this.direction() as 'RECEIVED' | 'MADE'; const cur = this.currency(); const hasSource = !!this.source();
       untracked(() => void this.loadOpen(partner, dir, cur, hasSource));
@@ -184,7 +219,7 @@ export class PaymentForm {
     if (!partner || !hasSource) return;
     this.loadingOpen.set(true);
     try { this.open.set(await loadOpenInvoices(this.api, partner, dir, cur)); }
-    catch (e) { this.formError.set(errorMessage(e)); }
+    catch (e) { this.formError.set(e); }
     this.loadingOpen.set(false);
   }
 
@@ -218,7 +253,7 @@ export class PaymentForm {
       const res = await firstValueFrom(this.api.post<{ id: string }>('/payments', body));
       this.notify.ok(v.direction === 'RECEIVED' ? 'Cobro registrado.' : 'Pago registrado.');
       await this.router.navigate(['/payments', res.id]);
-    } catch (e) { this.formError.set(errorMessage(e)); }
+    } catch (e) { this.formError.set(e); }
     this.saving.set(false);
   }
 }

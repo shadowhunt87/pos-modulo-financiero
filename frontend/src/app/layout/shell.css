@@ -27,9 +27,18 @@
 .menu { position: absolute; right: 0; top: 44px; min-width: 190px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 4px; display: flex; flex-direction: column; }
 .menu a, .menu button { padding: 8px 10px; border: 0; background: none; text-align: left; color: var(--text); border-radius: 4px; cursor: pointer; text-decoration: none; }
 .menu a:hover, .menu button:hover { background: var(--surface-2); text-decoration: none; }
+.guide { padding: 14px 28px 0; display: flex; flex-direction: column; gap: 4px; }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.switch { flex: none; position: relative; width: 30px; height: 16px; border-radius: 8px; background: var(--line-strong); transition: background .15s; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
+.switch.on { background: var(--primary); }
+.switch.on::after { transform: translateX(14px); }
 .content { flex: 1; min-width: 0; }
 .scrim { display: none; }
+/* Botón "?" (ayuda de la pantalla): círculo con ? y, en pantallas anchas, la palabra Ayuda. */
+.help-btn { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 @media (max-width: 900px) {
+  .help-lbl { display: none; }
   .layout { grid-template-columns: 1fr; }
   .sidebar { position: fixed; z-index: 40; width: 270px; transform: translateX(-100%); transition: transform .18s; }
   .menu-open .sidebar { transform: none; }
@@ -37,5 +46,7 @@
   .burger { display: inline-flex; }
   .who { display: none; }
   .topbar { padding: 0 12px; }
+  .guide { padding: 12px 16px 0; }
 }
-@media (prefers-reduced-motion: reduce) { .sidebar { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .sidebar, .switch, .switch::after { transition: none; } }
+@media print { .guide { display: none; } }

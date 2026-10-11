@@ -8,11 +8,12 @@ import { Api, Page } from '../../core/api';
 import { Auth } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { Lookups } from '../../core/lookups';
-import { Company } from '../../core/models';
+import { Company, Partner } from '../../core/models';
 import { Notify } from '../../core/notify';
 import { clean, dec, isoDate, money, today } from '../../shared/format';
 import { INVOICE_TYPE, opts } from '../../shared/labels';
-import { ComboOption, UI } from '../../shared/ui';
+import { ComboOption, ErrorNotice, FieldHelp, UI } from '../../shared/ui';
+import { PartnerDialog } from '../catalog/partner-dialog';
 import { DGII_EXPENSE_TYPE, DGII_INCOME_TYPE, InvoiceFull, InvoiceRow, NcfType } from './invoice-types';
 
 type Side = 'SALES' | 'PURCHASES';
@@ -28,7 +29,7 @@ const NOTE_TYPES = ['CREDIT_NOTE', 'DEBIT_NOTE'];
 @Component({
   selector: 'app-invoice-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, PartnerDialog, ErrorNotice, FieldHelp, ...UI],
   templateUrl: './invoice-form.html',
   styles: `
     .line { display: grid; gap: 10px 12px; grid-template-columns: minmax(180px, 3fr) 90px 120px 110px minmax(150px, 1.4fr) minmax(190px, 1.8fr) 120px 36px; align-items: end; padding: 12px 16px; border-bottom: 1px solid var(--line); }
@@ -63,7 +64,7 @@ export class InvoiceForm {
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly loadError = signal('');
-  protected readonly formError = signal('');
+  protected readonly formError = signal<unknown>('');
   protected readonly current = signal<InvoiceFull | null>(null);
   protected readonly baseCurrency = signal('DOP');
   protected readonly ncfTypes = signal<NcfType[]>([]);
@@ -162,7 +163,7 @@ export class InvoiceForm {
       const id = this.id(); const type = this.type(); const related = this.related();
       untracked(() => void this.init(id, type, related));
     });
-    // Al cambiar el tercero o el tipo, se vuelve a buscar qué facturas puede modificar una nota
+    // Al cambiar el cliente / proveedor o el tipo, se vuelve a buscar qué facturas puede modificar una nota
     this.form.controls.partnerId.valueChanges.subscribe((v) => { this.partnerSig.set(v); void this.loadRelated(); });
     this.form.controls.type.valueChanges.subscribe(() => {
       this.form.patchValue({ ncfType: '', ncf: '', relatedInvoiceId: '', dgiiExpenseType: '', dgiiIncomeType: '' });
@@ -275,7 +276,33 @@ export class InvoiceForm {
   }
 
   private readonly partnerSig = signal('');
-  /** Tipo de NCF por defecto del tercero elegido ('' si no tiene). */
+
+  // Crear / editar cliente o proveedor sin salir de la factura (lo escrito en el formulario no se toca).
+  protected readonly partnerDialog = signal(false);
+  protected readonly editingPartner = signal<Partner | null>(null);
+  /** Ventas ⇒ cliente, compras ⇒ proveedor, sin tipo ⇒ cliente. */
+  protected readonly partnerDefaultType = computed(() => (this.side() === 'PURCHASES' ? 'SUPPLIER' : 'CUSTOMER'));
+  protected readonly selectedPartner = computed(() => this.lookups.partners().find((x) => x.id === this.partnerSig()) ?? null);
+  protected openCreatePartner(): void { this.editingPartner.set(null); this.partnerDialog.set(true); }
+  protected openEditPartner(): void {
+    const p = this.selectedPartner();
+    if (!p) return;
+    this.editingPartner.set(p);
+    this.partnerDialog.set(true);
+  }
+  protected onPartnerSaved(p: Partner): void {
+    this.partnerDialog.set(false);
+    const side = this.side();
+    const fits = side === 'SALES' ? p.type !== 'SUPPLIER' : side === 'PURCHASES' ? p.type !== 'CUSTOMER' : true;
+    if (!this.editingPartner()) {
+      if (fits) this.form.controls.partnerId.setValue(p.id);
+    } else if (!fits) {
+      this.form.controls.partnerId.setValue('');
+      this.notify.info(`${p.name} ya no es ${side === 'SALES' ? 'cliente' : 'proveedor'}, así que se quitó de la factura. Elige otro.`);
+    }
+  }
+  protected refreshPartners(): void { void this.lookups.ensurePartners(true); }
+  /** Tipo de NCF por defecto del cliente / proveedor elegido ('' si no tiene). */
   protected partnerDefaultNcf(): string {
     const id = this.partnerSig();
     return this.lookups.partners().find((x) => x.id === id)?.defaultNcfType ?? '';
@@ -321,7 +348,7 @@ export class InvoiceForm {
       }
       this.notify.ok(issue ? `Factura ${saved.number} emitida.` : cur ? 'Borrador actualizado.' : 'Borrador guardado.');
       await this.router.navigate(['/invoices', saved.id]);
-    } catch (e) { this.formError.set(errorMessage(e)); }
+    } catch (e) { this.formError.set(e); }
     this.saving.set(false);
   }
 }

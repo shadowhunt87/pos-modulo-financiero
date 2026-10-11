@@ -31,6 +31,8 @@
       </div>
 
       <div class="spacer"></div>
+      <button type="button" class="btn btn-sm help-btn" aria-label="Ayuda de esta pantalla" title="Ayuda de esta pantalla" [attr.aria-expanded]="helpOpen()" (click)="helpOpen.set(!helpOpen())"><span aria-hidden="true">?</span><span class="help-lbl">Ayuda</span></button>
+      <button type="button" class="btn btn-sm help-btn" aria-label="Enviar comentario" title="Enviar comentario" (click)="feedback.open()"><span aria-hidden="true">✎</span><span class="help-lbl">Enviar comentario</span></button>
       <button type="button" class="btn btn-ghost btn-sm" (click)="toggleTheme()">{{ dark() ? 'Modo claro' : 'Modo oscuro' }}</button>
 
       <div class="user">
@@ -41,11 +43,20 @@
         @if (userMenu()) {
           <div class="menu" role="menu">
             <a routerLink="/profile" role="menuitem">Mi perfil y clave</a>
+            <button type="button" role="menuitemcheckbox" class="toggle" [attr.aria-checked]="helpPrefs.hidden()" (click)="helpPrefs.toggle()">
+              <span>Ocultar ayudas</span><span class="switch" [class.on]="helpPrefs.hidden()" aria-hidden="true"></span>
+            </button>
             <button type="button" role="menuitem" (click)="logout()">Cerrar sesión</button>
           </div>
         }
       </div>
     </header>
+    <div class="guide">
+      <app-breadcrumbs />
+      <app-next-step />
+    </div>
     <main class="content"><router-outlet /></main>
   </div>
+  <app-feedback-dialog [open]="feedback.isOpen()" (closed)="feedback.close()" />
+  <app-help-drawer [open]="helpOpen()" (closed)="helpOpen.set(false)" />
 </div>

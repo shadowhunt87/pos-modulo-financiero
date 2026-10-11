@@ -1,0 +1,484 @@
+{
+  "version": "v0.2 · Fase 1 · 2026-10-10",
+  "secciones": [
+    { "slug": "primeros-pasos", "archivo": "01-primeros-pasos.md", "titulo": "Primeros pasos" },
+    { "slug": "clientes-y-proveedores", "archivo": "03-clientes-y-proveedores.md", "titulo": "Clientes y proveedores" },
+    { "slug": "facturas", "archivo": "04-facturas.md", "titulo": "Facturas, notas de crédito y notas de débito" },
+    { "slug": "cobros-y-pagos", "archivo": "05-cobros-y-pagos.md", "titulo": "Cobros, pagos y lo que me deben y lo que debo" },
+    { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" }
+  ],
+
+  "pantallas": {
+    "/login": {
+      "seccion": "primeros-pasos", "ancla": "entrar-al-sistema",
+      "siguiente": { "texto": "Entra con tu correo y tu clave", "ruta": "/" }
+    },
+    "": {
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
+    "/": {
+      "seccion": "primeros-pasos", "ancla": "conocer-el-panel",
+      "siguiente": { "texto": "Crea tu primera factura", "ruta": "/invoices/new" }
+    },
+    "/profile": {
+      "seccion": "primeros-pasos", "ancla": "cambiar-tu-clave",
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
+
+    "/partners": {
+      "seccion": "clientes-y-proveedores", "ancla": "ver-tus-clientes-y-proveedores",
+      "siguiente": { "texto": "Crea una factura para uno de tus clientes", "ruta": "/invoices/new" }
+    },
+    "/invoices": {
+      "seccion": "facturas", "ancla": "buscar-facturas",
+      "siguiente": { "texto": "Registra el cobro de una factura", "ruta": "/payments/new" }
+    },
+    "/invoices/new": {
+      "seccion": "facturas", "ancla": "hacer-una-factura-de-venta",
+      "siguiente": { "texto": "Al guardarla, registra el cobro cuando tu cliente pague", "ruta": "/payments" }
+    },
+    "/invoices/:id/edit": {
+      "seccion": "facturas", "ancla": "guardar-como-borrador-o-emitir",
+      "siguiente": { "texto": "Cuando esté lista, emítela para que tenga número y comprobante", "ruta": "/invoices" }
+    },
+    "/invoices/:id": {
+      "seccion": "facturas", "ancla": "corregir-un-error-nota-de-credito-nota-de-debito-o-anulacion",
+      "siguiente": { "texto": "Registra el cobro de esta factura", "ruta": "/payments/new" }
+    },
+    "/payments": {
+      "seccion": "cobros-y-pagos", "ancla": "registrar-un-cobro",
+      "siguiente": { "texto": "Mira lo que todavía te deben o debes", "ruta": "/receivables" }
+    },
+    "/payments/new": {
+      "seccion": "cobros-y-pagos", "ancla": "registrar-un-cobro",
+      "siguiente": { "texto": "Mira lo que todavía te deben o debes", "ruta": "/receivables" }
+    },
+    "/payments/:id": {
+      "seccion": "cobros-y-pagos", "ancla": "ver-un-cobro-o-un-pago-y-anularlo",
+      "siguiente": { "texto": "Mira lo que todavía te deben o debes", "ruta": "/receivables" }
+    },
+    "/receivables": {
+      "seccion": "cobros-y-pagos", "ancla": "lo-que-me-deben-y-lo-que-debo",
+      "siguiente": { "texto": "Registra un cobro o un pago", "ruta": "/payments/new" }
+    },
+
+    "/bank-accounts": {
+      "siguiente": { "texto": "Compara tu banco con tus libros en la conciliación", "ruta": "/reconciliations" }
+    },
+    "/bank-accounts/:id": {
+      "siguiente": { "texto": "Compara esta cuenta con tu banco en la conciliación", "ruta": "/reconciliations" }
+    },
+    "/reconciliations": {
+      "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
+    },
+    "/reconciliations/:id": {
+      "siguiente": { "texto": "Cuando termines, revisa tus estados financieros", "ruta": "/reports" }
+    },
+
+    "/entries": {
+      "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
+    },
+    "/entries/new": {
+      "siguiente": { "texto": "Al guardarlo, revisa que quede en la lista de asientos", "ruta": "/entries" }
+    },
+    "/entries/:id/edit": {
+      "siguiente": { "texto": "Al guardarlo, vuelve a la lista de asientos", "ruta": "/entries" }
+    },
+    "/entries/:id": {
+      "siguiente": { "texto": "Vuelve a la lista de asientos", "ruta": "/entries" }
+    },
+    "/fiscal-periods": {
+      "siguiente": { "texto": "Revisa tus estados financieros antes de cerrar el mes", "ruta": "/reports" }
+    },
+    "/fiscal-years": {
+      "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
+    },
+    "/opening-balances": {
+      "siguiente": { "texto": "Revisa los asientos de apertura", "ruta": "/entries" }
+    },
+    "/accounts": {
+      "siguiente": { "texto": "Revisa los asientos que usan tus cuentas", "ruta": "/entries" }
+    },
+
+    "/reports": {
+      "siguiente": { "texto": "Prepara los reportes para la DGII", "ruta": "/dgii" }
+    },
+    "/dgii": {
+      "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
+    },
+    "/budgets": {
+      "siguiente": { "texto": "Compara lo presupuestado con lo real en Estados financieros", "ruta": "/reports" }
+    },
+    "/budgets/:id": {
+      "siguiente": { "texto": "Compara lo presupuestado con lo real en Estados financieros", "ruta": "/reports" }
+    },
+
+    "/company": {
+      "siguiente": { "texto": "Agrega a tus clientes y proveedores", "ruta": "/partners" }
+    },
+    "/users": {
+      "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
+    },
+    "/tax-rates": {
+      "siguiente": { "texto": "Crea una factura con tus impuestos", "ruta": "/invoices/new" }
+    },
+    "/ncf": {
+      "siguiente": { "texto": "Crea una factura con tu comprobante fiscal", "ruta": "/invoices/new" }
+    },
+    "/journals": {
+      "siguiente": { "texto": "Revisa los asientos", "ruta": "/entries" }
+    },
+    "/document-sequences": {
+      "siguiente": { "texto": "Crea una factura para ver la numeración en uso", "ruta": "/invoices/new" }
+    },
+    "/account-classification": {
+      "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
+    },
+    "/accounting-settings": {
+      "siguiente": { "texto": "Crea una factura para probar que las cuentas quedaron bien", "ruta": "/invoices/new" }
+    }
+  },
+
+  "campos": {
+    "factura.tipoNcf": {
+      "texto": "El NCF es el número de comprobante que exige la DGII en cada venta. Elige B01 (crédito fiscal) si tu cliente es una empresa que va a deducir el ITBIS; B02 (consumo) si le vendes a una persona final. El número se asigna solo al emitir.",
+      "seccion": "facturas", "ancla": "que-es-el-ncf"
+    },
+    "factura.retenciones": {
+      "texto": "Una retención es un impuesto que quien paga descuenta y entrega a la DGII. Agrégala solo si tu cliente o proveedor es agente de retención. Se resta del total y baja lo que te pagan o lo que pagas.",
+      "seccion": "facturas", "ancla": "retenciones"
+    },
+    "factura.terminos": {
+      "texto": "Es la fecha límite para pagar. Si la dejas vacía, el sistema suma los días de crédito del cliente o proveedor a la fecha de emisión.",
+      "seccion": "facturas", "ancla": "fecha-de-vencimiento-y-dias-de-credito"
+    },
+    "factura.ncfProveedor": {
+      "texto": "Es el NCF que aparece impreso en la factura de tu proveedor. Es obligatorio para emitir la compra, salvo que el comprobante lo emitas tú (B11 o B13).",
+      "seccion": "facturas", "ancla": "registrar-una-factura-de-compra"
+    },
+    "factura.comprobantePropio": {
+      "texto": "Úsalo cuando el proveedor no te da comprobante: B11 si es un proveedor informal, B13 si es un gasto menor. El sistema te asigna el número.",
+      "seccion": "facturas", "ancla": "que-es-el-ncf"
+    },
+    "factura.codigoAnulacion": {
+      "texto": "La DGII pide un código cuando anulas un comprobante que emitiste tú. Elige el que mejor explique el motivo; se reporta en el 608.",
+      "seccion": "facturas", "ancla": "corregir-un-error-nota-de-credito-nota-de-debito-o-anulacion"
+    },
+    "pago.metodo": {
+      "texto": "Es la forma en que se movió el dinero: efectivo, transferencia, cheque o tarjeta. Sirve para tus registros; el dinero entra o sale de la cuenta o caja que elijas.",
+      "seccion": "cobros-y-pagos", "ancla": "metodos-de-pago"
+    },
+    "pago.cuenta": {
+      "texto": "Elige la cuenta del banco o la caja donde entró o de donde salió el dinero. La moneda del cobro o pago es la de esa cuenta.",
+      "seccion": "cobros-y-pagos", "ancla": "registrar-un-cobro"
+    },
+    "pago.anticipo": {
+      "texto": "Un anticipo es dinero que recibiste o entregaste y todavía no está aplicado a ninguna factura. Lo puedes aplicar después desde el detalle del cobro o pago.",
+      "seccion": "cobros-y-pagos", "ancla": "aplicar-a-facturas-y-anticipos"
+    },
+    "cliente.ncfPorDefecto": {
+      "texto": "Es el tipo de comprobante que se propone cada vez que le facturas a este cliente. Por ejemplo B01 si es una empresa, B02 si es consumidor final. Puedes cambiarlo en cada factura.",
+      "seccion": "clientes-y-proveedores", "ancla": "que-significa-cada-campo"
+    },
+    "cliente.agenteRetencion": {
+      "texto": "Márcalo si este cliente o proveedor retiene impuestos cuando paga (por ejemplo, el Estado o una empresa grande). Así recordarás agregar la retención en la factura.",
+      "seccion": "clientes-y-proveedores", "ancla": "que-significa-cada-campo"
+    },
+    "cliente.diasCredito": {
+      "texto": "Cuántos días tiene para pagarte (o tú para pagarle). Con esto el sistema calcula la fecha de vencimiento de cada factura.",
+      "seccion": "clientes-y-proveedores", "ancla": "que-significa-cada-campo"
+    },
+    "cliente.limiteCredito": {
+      "texto": "Lo máximo que este cliente puede deberte a la vez. Si una factura nueva lo supera, el sistema no te deja emitirla. Déjalo vacío si no quieres límite.",
+      "seccion": "clientes-y-proveedores", "ancla": "que-significa-cada-campo"
+    },
+    "cliente.documento": {
+      "texto": "Escribe solo números, sin guiones: 9 dígitos si es RNC (empresa) u 11 si es cédula. Sin esto no podrás facturarle con crédito fiscal (B01).",
+      "seccion": "clientes-y-proveedores", "ancla": "que-significa-cada-campo"
+    }
+  },
+
+  "errores": [
+    {
+      "patron": "Credenciales inválidas",
+      "explicacion": "El correo o la clave no coinciden. Revisa que no haya espacios al principio o al final si los copiaste y pegaste, y que la clave esté en las mayúsculas correctas. Después de 5 intentos fallidos el acceso se bloquea 15 minutos."
+    },
+    {
+      "patron": "Demasiados intentos",
+      "explicacion": "Se bloqueó el acceso por seguridad. Espera el tiempo que indica el aviso (máximo 15 minutos) y vuelve a intentar escribiendo la clave con calma. Si no la recuerdas, pide a un administrador que la restablezca."
+    },
+    {
+      "patron": "La clave actual no es correcta",
+      "explicacion": "Escribe la clave con la que entras hoy. Si la copiaste, quita los espacios sobrantes. Si no la recuerdas, pide a un administrador que la restablezca.",
+      "enlace": { "texto": "Ir a Mi perfil", "ruta": "/profile" }
+    },
+    {
+      "patron": "La clave nueva debe ser distinta",
+      "explicacion": "Escribe una clave diferente a la que ya tienes. Usa entre 8 y 72 caracteres.",
+      "enlace": { "texto": "Ir a Mi perfil", "ruta": "/profile" }
+    },
+    {
+      "patron": "Ya existe un usuario con ese email",
+      "explicacion": "Ese correo ya tiene un usuario. Búscalo en la lista y edítalo en lugar de crear otro.",
+      "enlace": { "texto": "Ir a Usuarios", "ruta": "/users" }
+    },
+    {
+      "patron": "conservar al menos un ADMIN|desactivar tu propia cuenta",
+      "explicacion": "La empresa siempre necesita un administrador activo. Primero nombra a otra persona como administrador y luego haz este cambio.",
+      "enlace": { "texto": "Ir a Usuarios", "ruta": "/users" }
+    },
+    {
+      "patron": "Ya existe un tercero con ese RNC",
+      "explicacion": "Ese RNC o cédula ya está registrado. No lo crees de nuevo: búscalo por nombre o por número y úsalo.",
+      "enlace": { "texto": "Buscar en Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "El RNC debe tener 9|La cédula debe tener 11|Documento de identidad inválido|Indica taxIdType",
+      "explicacion": "Escribe el RNC (9 números) o la cédula (11 números) sin guiones ni espacios, y elige el tipo de documento que corresponde.",
+      "enlace": { "texto": "Ir a Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "El tercero está inactivo",
+      "explicacion": "Ese cliente o proveedor está desactivado. Actívalo de nuevo para usarlo, o elige otro.",
+      "enlace": { "texto": "Ir a Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "El tercero no es cliente|El tercero no es proveedor",
+      "explicacion": "Estás usando un cliente en una compra, o un proveedor en una venta. Elige otro, o edita el cliente o proveedor y cambia su tipo a «Cliente y proveedor».",
+      "enlace": { "texto": "Ir a Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "requieren relatedInvoiceId|Elige la factura que modifica",
+      "explicacion": "Una nota de crédito o de débito siempre corrige una factura. Elige en «Factura que modifica» la factura original (solo aparecen las emitidas del mismo cliente o proveedor).",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "factura relacionada debe estar emitida|La nota debe ser del mismo tercero|Una nota solo puede modificar",
+      "explicacion": "La nota debe corregir una factura de venta o compra ya emitida, no anulada, y del mismo cliente o proveedor. Abre la factura original y crea la nota desde sus botones.",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "Las notas de crédito exceden el total",
+      "explicacion": "Entre todas las notas de crédito no puedes devolver más que el total de la factura original. Baja el monto de esta nota.",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "Falta la tasa de cambio",
+      "explicacion": "La factura o el pago está en otra moneda y no hay una tasa de cambio registrada para esa fecha. Escribe la tasa a mano en el campo «Tasa de cambio» y guarda de nuevo."
+    },
+    {
+      "patron": "Formato de NCF inválido",
+      "explicacion": "El NCF debe copiarse tal como aparece en la factura del proveedor, por ejemplo B0100000001: una letra, números y sin espacios ni guiones."
+    },
+    {
+      "patron": "El impuesto .* está inactivo|no aplica a (ventas|compras)",
+      "explicacion": "El impuesto elegido está desactivado o no corresponde a este tipo de documento (ventas o compras). Elige otro en la línea, o revisa su configuración.",
+      "enlace": { "texto": "Ir a Impuestos", "ruta": "/tax-rates" }
+    },
+    {
+      "patron": "excede el monto de la línea",
+      "explicacion": "El descuento es un monto en pesos, no un porcentaje, y no puede ser mayor que cantidad por precio. Corrige el descuento de esa línea."
+    },
+    {
+      "patron": "retenciones exceden el total|Las retenciones no pueden superar",
+      "explicacion": "Lo retenido no puede ser mayor que el total de la factura. Revisa la retención elegida y su base."
+    },
+    {
+      "patron": "total del documento debe ser mayor a cero|El total debe ser mayor a cero",
+      "explicacion": "Pon al menos una línea con cantidad y precio mayores a cero."
+    },
+    {
+      "patron": "Solo se pueden editar borradores|Solo se pueden editar facturas en borrador",
+      "explicacion": "Una factura emitida ya no se edita porque tiene número, comprobante y asiento. Para corregirla, haz una nota de crédito o anúlala desde su detalle.",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "Solo se eliminan borradores|Un borrador se elimina, no se anula",
+      "explicacion": "Los borradores se eliminan; las facturas emitidas se anulan. Abre la factura y usa el botón que corresponde.",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "La factura ya está",
+      "explicacion": "Alguien (o tú en otra pestaña) ya cambió esta factura. Recarga la página para ver su estado actual antes de intentar de nuevo."
+    },
+    {
+      "patron": "Indica el tipo de comprobante|Elige el tipo de comprobante",
+      "explicacion": "Toda venta necesita un tipo de comprobante (NCF): B01 si el cliente es empresa, B02 si es consumidor final. Elígelo en la factura, o déjalo fijo en el cliente para que se proponga solo.",
+      "enlace": { "texto": "Ir a Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "crédito fiscal requiere que el cliente tenga",
+      "explicacion": "El comprobante B01 solo se puede dar a un cliente con RNC o cédula. Agrégaselo al cliente o cambia el comprobante a B02 (consumo).",
+      "enlace": { "texto": "Ir a Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "ya está registrado para este proveedor",
+      "explicacion": "Ese NCF ya está en otra compra de este mismo proveedor. Revisa que no estés registrando la misma factura dos veces, o que hayas copiado bien el número.",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "compras requieren el NCF del proveedor",
+      "explicacion": "Escribe el NCF que trae la factura de tu proveedor. Si el proveedor no te dio comprobante, elige «B11» (proveedor informal) o «B13» (gastos menores) en «Comprobante propio»."
+    },
+    {
+      "patron": "Excede el límite de crédito",
+      "explicacion": "Con esta factura el cliente pasaría el máximo que le permites deber. Pídele que pague algo primero, o sube su límite de crédito si decides confiar más.",
+      "enlace": { "texto": "Ir a Clientes y proveedores", "ruta": "/partners" }
+    },
+    {
+      "patron": "Configura la cuenta contable del impuesto|Configura la cuenta contable de la retención",
+      "explicacion": "A este impuesto o retención le falta la cuenta contable donde se registra. Pídele a tu contadora que la elija en la pantalla de Impuestos.",
+      "enlace": { "texto": "Ir a Impuestos", "ruta": "/tax-rates" }
+    },
+    {
+      "patron": "Configura las cuentas de CxC/CxP",
+      "explicacion": "Faltan las cuentas automáticas de lo que te deben y lo que debes. Pídele a tu contadora que las elija en Cuentas automáticas.",
+      "enlace": { "texto": "Ir a Cuentas automáticas", "ruta": "/accounting-settings" }
+    },
+    {
+      "patron": "Falta configurar en Configuración contable|Falta configurar la cuenta de Utilidades",
+      "explicacion": "Al sistema le falta una cuenta automática (el mensaje dice cuál: por ejemplo ingresos por ventas, ITBIS por pagar o utilidades acumuladas). Pídele a tu contadora que la elija en Cuentas automáticas y vuelve a intentar.",
+      "enlace": { "texto": "Ir a Cuentas automáticas", "ruta": "/accounting-settings" }
+    },
+    {
+      "patron": "No hay diario .*crea los diarios por defecto",
+      "explicacion": "Falta el libro diario que usa esta operación (ventas, compras, banco, cierre...). Pídele a tu contadora que cree los libros diarios por defecto en la pantalla Libros diarios.",
+      "enlace": { "texto": "Ir a Libros diarios", "ruta": "/journals" }
+    },
+    {
+      "patron": "asiento\\(s\\) pendientes de aprobación",
+      "explicacion": "No se puede cerrar el mes mientras haya asientos esperando aprobación. Ábrelos y apruébalos o recházalos; luego vuelve a cerrar.",
+      "enlace": { "texto": "Ver asientos pendientes", "ruta": "/entries" }
+    },
+    {
+      "patron": "Tipo de archivo no permitido",
+      "explicacion": "Solo se pueden adjuntar PDF, imágenes (PNG, JPG, WEBP), Excel (XLSX), Word (DOCX), CSV y TXT. Además la extensión debe corresponder al contenido: no cambies el nombre de un archivo para disfrazarlo. Si es otro tipo, conviértelo a PDF."
+    },
+    {
+      "patron": "Ya enviaste \\d+ comentarios",
+      "explicacion": "Llegaste al máximo de comentarios por hora. Espera un rato y envía el siguiente; si es urgente, avísale directamente a tu administrador."
+    },
+    {
+      "patron": "Tiene pagos aplicados",
+      "explicacion": "No puedes anular una factura que ya tiene cobros o pagos aplicados. Primero anula esos cobros o pagos desde su detalle y luego anula la factura.",
+      "enlace": { "texto": "Ir a Cobros y pagos", "ruta": "/payments" }
+    },
+    {
+      "patron": "reasonCode|código de anulación",
+      "explicacion": "Como el comprobante lo emitiste tú, la DGII exige un código de anulación. Elígelo de la lista en «Código de anulación DGII» y escribe también el motivo."
+    },
+    {
+      "patron": "factura ya está anulada|asiento ya está anulado|pago ya está anulado|El pago está anulado",
+      "explicacion": "Esto ya estaba anulado. Recarga la página para ver su estado actual; no hace falta hacer nada más."
+    },
+    {
+      "patron": "No hay secuencia configurada",
+      "explicacion": "Todavía no has registrado los números de comprobante (NCF) que te autorizó la DGII para ese tipo. Pídele a tu contadora que cree la secuencia.",
+      "enlace": { "texto": "Ir a Comprobantes fiscales (NCF)", "ruta": "/ncf" }
+    },
+    {
+      "patron": "secuencia .* está inactiva",
+      "explicacion": "La secuencia de ese comprobante está desactivada. Actívala, o elige otro tipo de comprobante.",
+      "enlace": { "texto": "Ir a Comprobantes fiscales (NCF)", "ruta": "/ncf" }
+    },
+    {
+      "patron": "secuencia .* venció",
+      "explicacion": "La autorización de esos comprobantes venció. Solicita una nueva a la DGII y renueva la secuencia con las fechas y el rango nuevos.",
+      "enlace": { "texto": "Ir a Comprobantes fiscales (NCF)", "ruta": "/ncf" }
+    },
+    {
+      "patron": "Se agotó el rango autorizado",
+      "explicacion": "Ya usaste todos los números de comprobante que te autorizó la DGII para ese tipo. Solicita un nuevo rango a la DGII y renueva la secuencia.",
+      "enlace": { "texto": "Ir a Comprobantes fiscales (NCF)", "ruta": "/ncf" }
+    },
+    {
+      "patron": "Solo se renueva una secuencia|Solo se puede ampliar el rango|Ya existe una secuencia|lastUsedNumber fuera del rango|rangeEnd no puede ser menor",
+      "explicacion": "Estas reglas protegen tu numeración fiscal: un rango solo puede crecer, y solo se renueva uno vencido o agotado. Revisa los números y pídele ayuda a tu contadora.",
+      "enlace": { "texto": "Ir a Comprobantes fiscales (NCF)", "ruta": "/ncf" }
+    },
+    {
+      "patron": "período fiscal .* está cerrado",
+      "explicacion": "Ese mes ya fue cerrado y no admite cambios. Usa una fecha de un mes abierto, o pide a tu contadora que lo reabra si de verdad hay que corregirlo.",
+      "enlace": { "texto": "Ir a Períodos fiscales", "ruta": "/fiscal-periods" }
+    },
+    {
+      "patron": "año fiscal .* está cerrado",
+      "explicacion": "Ese año ya fue cerrado y no admite cambios. Usa una fecha del año en curso, o pide a tu contadora que lo reabra si de verdad hay que corregirlo.",
+      "enlace": { "texto": "Ir a Años fiscales y cierre", "ruta": "/fiscal-years" }
+    },
+    {
+      "patron": "El asiento no cuadra",
+      "explicacion": "Los débitos y los créditos deben sumar lo mismo. Revisa los montos de cada línea hasta que la diferencia sea cero.",
+      "enlace": { "texto": "Ir a Asientos", "ruta": "/entries" }
+    },
+    {
+      "patron": "Cuentas inactivas o que no admiten movimientos|No se puede postear en cuentas con subcuentas",
+      "explicacion": "Elegiste una cuenta desactivada o una cuenta «madre» que agrupa otras. Usa una cuenta que admita movimientos, normalmente una subcuenta.",
+      "enlace": { "texto": "Ir a Plan de cuentas", "ruta": "/accounts" }
+    },
+    {
+      "patron": "No puedes aprobar un asiento que creaste|Solo puedes rechazar tus propios",
+      "explicacion": "Por control interno, otra persona debe aprobar los asientos que tú creas. Avísale a un administrador o aprobador.",
+      "enlace": { "texto": "Ir a Asientos", "ruta": "/entries" }
+    },
+    {
+      "patron": "Lo aplicado a facturas excede el monto|Lo aplicado a facturas supera",
+      "explicacion": "Estás aplicando a las facturas más dinero del que tiene el cobro o pago. Baja los montos aplicados o sube el monto total.",
+      "enlace": { "texto": "Volver al cobro o pago", "ruta": "/payments/new" }
+    },
+    {
+      "patron": "excede su saldo|La factura solo tiene saldo",
+      "explicacion": "Esa factura debe menos de lo que intentas aplicar. Aplica como máximo su saldo pendiente; lo que sobre queda como anticipo."
+    },
+    {
+      "patron": "no está pendiente|es de otro tercero|no corresponde a (un cobro|un pago)",
+      "explicacion": "Esa factura no se puede cobrar o pagar aquí: ya está pagada o anulada, es de otro cliente o proveedor, o es de compra en un cobro (o al revés). Elige otra de la lista.",
+      "enlace": { "texto": "Ir a Lo que me deben y lo que debo", "ruta": "/receivables" }
+    },
+    {
+      "patron": "el pago es en|monedas distintas",
+      "explicacion": "Las monedas no coinciden. La moneda del cobro o pago es la de la cuenta de banco o caja que elegiste, y solo puede aplicarse a facturas en esa misma moneda. Elige la cuenta correcta.",
+      "enlace": { "texto": "Ir a Bancos y cajas", "ruta": "/bank-accounts" }
+    },
+    {
+      "patron": "aparece más de una vez",
+      "explicacion": "Una misma factura se puso dos veces en el reparto. Deja una sola fila por factura con el monto total."
+    },
+    {
+      "patron": "Indica bankAccountId|Cuenta de banco o caja no encontrada|La cuenta de banco/caja está inactiva",
+      "explicacion": "Elige una cuenta de banco o una caja activa en «Depositar en» o «Pagar desde». Si no aparece ninguna, créala primero.",
+      "enlace": { "texto": "Ir a Bancos y cajas", "ruta": "/bank-accounts" }
+    },
+    {
+      "patron": "sin cuenta contable asociada|no tiene cuenta contable asociada",
+      "explicacion": "A esa cuenta de banco o caja le falta su cuenta contable. Pídele a tu contadora que se la asigne.",
+      "enlace": { "texto": "Ir a Bancos y cajas", "ruta": "/bank-accounts" }
+    },
+    {
+      "patron": "Solo quedan .* sin aplicar",
+      "explicacion": "Estás aplicando más de lo que queda de anticipo en este cobro o pago. Baja los montos."
+    },
+    {
+      "patron": "La nota y la factura son de|La nota solo tiene|no es una nota de crédito|No se aplica una nota de crédito contra otra",
+      "explicacion": "Una nota de crédito solo se aplica a una factura del mismo cliente o proveedor, del mismo lado (cobrar o pagar) y en la misma moneda, y por un monto que no pase ni lo disponible de la nota ni el saldo de la factura.",
+      "enlace": { "texto": "Ir a Lo que me deben y lo que debo", "ruta": "/receivables" }
+    },
+    {
+      "patron": "No se pudo conectar con el servidor",
+      "explicacion": "No hay conexión con el sistema. Revisa tu internet y vuelve a intentar. Lo que escribiste en la pantalla sigue ahí; no cierres la página."
+    },
+    {
+      "patron": "Tu sesión venció",
+      "explicacion": "Por seguridad la sesión se cierra tras un tiempo. Entra otra vez con tu correo y tu clave.",
+      "enlace": { "texto": "Entrar de nuevo", "ruta": "/login" }
+    },
+    {
+      "patron": "No tienes permiso",
+      "explicacion": "Tu usuario no puede hacer esto. Por ejemplo, solo el administrador y el contador crean facturas, y solo el administrador y el aprobador anulan. Pide a un administrador que revise tu rol."
+    },
+    {
+      "patron": "Error del servidor",
+      "explicacion": "Algo falló de nuestro lado. Espera un minuto y vuelve a intentar. Si se repite, avisa a soporte diciendo qué pantalla estabas usando y a qué hora."
+    }
+  ]
+}

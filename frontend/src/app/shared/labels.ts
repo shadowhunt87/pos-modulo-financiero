@@ -73,3 +73,20 @@ export const NCF_TYPE: Record<string, string> = {
 export const optsExtra = { subledger: mk(SUBLEDGER_TYPE), ncfType: mk(NCF_TYPE) };
 
 export const BANK_TX_SOURCE: Record<string, string> = { MANUAL: 'Manual', FILE_IMPORT: 'Archivo importado', API_SYNC: 'Sincronización' };
+
+// ---- Comentarios (Enviar comentario, Mis comentarios, Comentarios recibidos) ----
+export const FEEDBACK_KIND: Record<string, string> = { BROKEN: 'Algo no funciona', CONFUSING: 'No entiendo cómo hacer algo', IDEA: 'Sugerencia' };
+export const FEEDBACK_KIND_HINT: Record<string, string> = {
+  BROKEN: 'Un botón no responde, sale un error o un número no cuadra.',
+  CONFUSING: 'No encuentras dónde hacer algo o no se entiende una pantalla.',
+  IDEA: 'Algo que te haría el trabajo más fácil.',
+};
+export const FEEDBACK_STATUS: Record<string, string> = {
+  NEW: 'Recibido', PLANNED: 'Lo vamos a hacer', DONE: 'Resuelto', WONT_DO: 'No se hará', DUPLICATE: 'Ya lo teníamos',
+};
+/** Icono (además del color y del texto, para que el estado no dependa solo del color), y color de cada estado de un comentario. */
+export const FEEDBACK_STATUS_LOOK: Record<string, { icon: string; tone: Tone }> = {
+  NEW: { icon: '●', tone: 'info' }, PLANNED: { icon: '◔', tone: 'warn' }, DONE: { icon: '✓', tone: 'pos' },
+  WONT_DO: { icon: '⊘', tone: '' }, DUPLICATE: { icon: '≡', tone: '' },
+};
+export const optsFeedback = { kind: mk(FEEDBACK_KIND), status: mk(FEEDBACK_STATUS) };

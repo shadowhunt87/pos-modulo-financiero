@@ -49,6 +49,7 @@ model Company {
   attachments         Attachment[]
   financialSnapshots  FinancialRatioSnapshot[]
   accountingSettings  AccountingSettings?
+  feedbacks           Feedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1096,4 +1097,44 @@ enum AuditAction {
   RECONCILE
   LOGIN
   REJECT
+}
+
+// ============================================================
+// COMENTARIOS DE LOS USUARIOS ("Enviar comentario")
+// ============================================================
+
+// Lo que un usuario cuenta desde cualquier pantalla: algo que no entendió,
+// algo que no funciona o una idea. El ADMIN de la empresa lo revisa y responde.
+// userId sin relación (como FiscalYear.closedById) para no tocar el modelo User.
+model Feedback {
+  id        String         @id @default(uuid())
+  companyId String
+  company   Company        @relation(fields: [companyId], references: [id])
+  userId    String
+  kind      FeedbackKind
+  message   String // hasta 2.000; se guarda tal cual, el escape se hace al mostrarlo
+  route     String // pantalla desde la que se envió (hasta 200)
+  userAgent String? // navegador, tomado de la cabecera
+  status    FeedbackStatus @default(NEW)
+  response  String? // respuesta del ADMIN (hasta 1.000)
+  taskRef   String? // referencia de la tarea, ej. número del issue (hasta 100)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+}
+
+enum FeedbackKind {
+  CONFUSING // "No entendí algo"
+  BROKEN // "Algo no funciona"
+  IDEA // "Tengo una idea"
+}
+
+enum FeedbackStatus {
+  NEW
+  PLANNED
+  DONE
+  WONT_DO
+  DUPLICATE
 }

@@ -19,18 +19,27 @@
         <div class="form-grid">
           <div class="field"><label for="f-type">Tipo de documento</label>
             <select id="f-type" class="select" formControlName="type">@for (o of typeOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
-          <div class="field span-2"><label for="f-partner">{{ side() === 'PURCHASES' ? 'Proveedor' : side() === 'SALES' ? 'Cliente' : 'Tercero' }}</label>
+          <div class="field span-2"><label for="f-partner">{{ side() === 'PURCHASES' ? 'Proveedor' : side() === 'SALES' ? 'Cliente' : 'Cliente / proveedor' }}</label>
             <app-combobox id="f-partner" formControlName="partnerId" [options]="partnerOptions()" placeholder="Buscar por nombre o RNC" [clearable]="false" />
-            @if (form.controls.partnerId.touched && form.controls.partnerId.invalid) { <span class="error-text">Elige el tercero.</span> }</div>
+            @if (form.controls.partnerId.touched && form.controls.partnerId.invalid) { <span class="error-text">{{ side() === 'PURCHASES' ? 'Elige el proveedor.' : side() === 'SALES' ? 'Elige el cliente.' : 'Elige el cliente / proveedor.' }}</span> }
+            <div class="btn-row" style="margin-top:6px">
+              @if (canEdit) {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="openCreatePartner()">Crear</button>
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="!selectedPartner()" (click)="openEditPartner()">Editar</button>
+              }
+              <a class="btn btn-ghost btn-sm" href="/partners" target="_blank" rel="noopener">Ir a clientes y proveedores</a>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="refreshPartners()">Actualizar lista</button>
+            </div>
+          </div>
           @if (isNote()) {
             <div class="field span-2"><label for="f-rel">Factura que modifica</label>
-              <app-combobox id="f-rel" formControlName="relatedInvoiceId" [options]="relatedOptions()" placeholder="Elige una factura emitida del mismo tercero" [clearable]="false" />
-              <span class="hint">{{ form.controls.partnerId.value ? 'Solo aparecen facturas emitidas y no anuladas de este tercero.' : 'Primero elige el tercero.' }}</span></div>
+              <app-combobox id="f-rel" formControlName="relatedInvoiceId" [options]="relatedOptions()" placeholder="Elige una factura emitida del mismo cliente / proveedor" [clearable]="false" />
+              <span class="hint">{{ form.controls.partnerId.value ? 'Solo aparecen facturas emitidas y no anuladas de este cliente / proveedor.' : 'Primero elige el cliente / proveedor.' }}</span></div>
           }
           <div class="field"><label for="f-issue">Fecha de emisión</label><input id="f-issue" class="input" type="date" formControlName="issueDate" />
             @if (form.controls.issueDate.touched && form.controls.issueDate.invalid) { <span class="error-text">Indica la fecha.</span> }</div>
-          <div class="field"><label for="f-due">Vencimiento</label><input id="f-due" class="input" type="date" formControlName="dueDate" />
-            <span class="hint">Si lo dejas vacío se calcula con los días de crédito del tercero.</span></div>
+          <div class="field"><label for="f-due">Vencimiento <app-field-help key="factura.terminos" text="Fecha límite de pago. Si la dejas vacía se calcula sumando los días de crédito del cliente o proveedor a la fecha de emisión." /></label><input id="f-due" class="input" type="date" formControlName="dueDate" />
+            <span class="hint">Si lo dejas vacío se calcula con los días de crédito del cliente / proveedor.</span></div>
           <div class="field"><label for="f-cur">Moneda</label>
             <select id="f-cur" class="select" formControlName="currency">@for (c of currencyOptions(); track c) { <option [value]="c">{{ c }}</option> }</select></div>
           @if (foreign()) {
@@ -39,7 +48,7 @@
               <span class="hint">Vacía usa la tasa registrada para la fecha.</span></div>
           }
           @if (side() === 'SALES') {
-            <div class="field"><label for="f-ncft">Tipo de comprobante (NCF)</label>
+            <div class="field"><label for="f-ncft">Tipo de comprobante (NCF) <app-field-help key="factura.tipoNcf" text="Es el tipo de comprobante fiscal que exige la DGII. B01 da crédito fiscal al cliente (empresas); B02 es para consumidor final. Si no sabes cuál, elige el del cliente o consulta a tu contador." /></label>
               <select id="f-ncft" class="select" formControlName="ncfType">
                 <option value="">{{ isNote() ? 'Automático (nota)' : partnerDefaultNcf() ? 'Según el cliente (' + partnerDefaultNcf() + ')' : 'Elige un tipo' }}</option>
                 @for (n of salesNcf(); track n.code) { <option [value]="n.code">{{ n.code }} · {{ n.name }}</option> }
@@ -90,7 +99,7 @@
       </section>
 
       <section class="panel" style="margin-top:16px">
-        <div class="panel-head"><h2>Retenciones</h2><button type="button" class="btn btn-sm" (click)="addWithholding()">Agregar retención</button></div>
+        <div class="panel-head"><h2>Retenciones <app-field-help key="factura.retenciones" text="Parte del impuesto o del pago que el cliente guarda para entregarla a la DGII en tu nombre. Reduce lo que te pagan, pero cuenta como impuesto ya pagado. Solo aplica si el cliente es agente de retención." /></h2><button type="button" class="btn btn-sm" (click)="addWithholding()">Agregar retención</button></div>
         <div formArrayName="withholdings">
           @for (w of withholdings.controls; track w; let i = $index) {
             <div class="wh" [formGroupName]="i">
@@ -119,7 +128,7 @@
       </section>
 
       @for (p of calc().problems; track p) { <div class="notice warn" style="margin-top:14px" role="alert">{{ p }}</div> }
-      @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }
+      @if (formError()) { <app-error-notice style="display:block;margin-top:14px" [error]="formError()" /> }
 
       <div class="btn-row" style="margin-top:18px">
         <button type="submit" class="btn" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar borrador' }}</button>
@@ -127,4 +136,6 @@
       </div>
     </form>
   }
+
+  <app-partner-dialog [open]="partnerDialog()" [partner]="editingPartner()" [defaultType]="partnerDefaultType()" (saved)="onPartnerSaved($event)" (closed)="partnerDialog.set(false)" />
 </div>

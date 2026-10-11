@@ -14,3 +14,7 @@ export const UI = [Modal, Pagination, StatusBadge, Combobox, ChartView, ...PIPES
 export { AttachmentsPanel } from './attachments';
 export type { AttachmentParent } from './attachments';
 export { ExportButtons } from './export-buttons';
+export { Breadcrumbs } from './breadcrumbs';
+export { NextStep } from './next-step';
+export { ErrorNotice } from './error-notice';
+export { FieldHelp } from './field-help';

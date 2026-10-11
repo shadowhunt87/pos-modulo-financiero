@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { translateValidation } from './error-text';
 
 const SETTING_NAMES: Record<string, string> = {
   receivableAccountId: 'Cuentas por cobrar', payableAccountId: 'Cuentas por pagar', salesIncomeAccountId: 'Ingresos por ventas',
@@ -9,7 +10,7 @@ const SETTING_NAMES: Record<string, string> = {
 };
 /** Cambia nombres técnicos de configuración (customerAdvanceAccountId) por su nombre en pantalla. */
 function friendly(msg: string): string {
-  return msg.replace(/\b[a-zA-Z]+AccountId\b/g, (k) => SETTING_NAMES[k] ?? k);
+  return translateValidation(msg).replace(/\b[a-zA-Z]+AccountId\b/g, (k) => SETTING_NAMES[k] ?? k);
 }
 
 /** Convierte cualquier error en un mensaje que el usuario pueda entender y accionar. */
@@ -24,7 +25,7 @@ export function errorMessage(err: unknown): string {
     }
     const body = err.error as { message?: string | string[] } | string | null;
     const msg = typeof body === 'string' ? body : body?.message;
-    if (Array.isArray(msg)) return friendly(msg.join('. '));
+    if (Array.isArray(msg)) return msg.map((m) => friendly(m).replace(/([^.!?])$/, '$1.')).join(' ');
     if (msg) return friendly(msg);
     if (err.status === 401) return 'Tu sesión venció. Inicia sesión de nuevo.';
     if (err.status === 403) return 'No tienes permiso para hacer esto.';
@@ -39,7 +40,17 @@ export function errorMessage(err: unknown): string {
 export function errorList(err: unknown): string[] {
   if (err instanceof HttpErrorResponse) {
     const msg = (err.error as { message?: string | string[] } | null)?.message;
-    if (Array.isArray(msg)) return msg;
+    if (Array.isArray(msg)) return msg.map(friendly);
   }
   return [errorMessage(err)];
+}
+
+/** Igual que errorList, pero conserva el mensaje original (en inglés) para buscar su "Cómo arreglarlo". */
+export function errorPairs(err: unknown): { text: string; raw: string }[] {
+  if (err instanceof HttpErrorResponse) {
+    const msg = (err.error as { message?: string | string[] } | null)?.message;
+    if (Array.isArray(msg)) return msg.map((m) => ({ text: friendly(m), raw: m }));
+  }
+  const text = errorMessage(err);
+  return [{ text, raw: text }];
 }
