@@ -1,0 +1,19 @@
+# Entorno de pruebas para las contadoras (datos ficticios).
+# Uso: docker compose -p financiero-pruebas -f docker-compose.prod.yml -f docker-compose.pruebas.yml --env-file .env.production up -d --build
+# Agrega las pantallas (frontend/) delante del API. Solo escucha en 127.0.0.1;
+# el proxy HTTPS del servidor es quien da la cara a internet.
+services:
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8040}:80"
+    networks: [default, edge]
+
+networks:
+  # Red propia que comparte SOLO con Nginx Proxy Manager (el API y la base no entran aquí).
+  edge:
+    name: financiero_edge_net

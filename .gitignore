@@ -70,3 +70,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Archivos ZIP recibidos
 *.zip
+
+# Secretos del servidor de pruebas
+.env.production
+.credenciales-pruebas.txt
