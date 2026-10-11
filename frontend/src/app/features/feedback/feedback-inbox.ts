@@ -113,7 +113,7 @@ export class FeedbackInbox {
   private readonly api = inject(Api);
   private readonly notify = inject(Notify);
 
-  protected readonly ROLE = ROLE;
+  protected readonly ROLE: Record<string, string> = ROLE;
   protected readonly KIND = FEEDBACK_KIND;
   protected readonly statusOptions = optsFeedback.status;
   protected readonly kindOptions = optsFeedback.kind;

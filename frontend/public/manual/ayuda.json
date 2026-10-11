@@ -2,9 +2,14 @@
   "version": "v0.2 · Fase 1 · 2026-10-10",
   "secciones": [
     { "slug": "primeros-pasos", "archivo": "01-primeros-pasos.md", "titulo": "Primeros pasos" },
+    { "slug": "configuracion", "archivo": "02-configuracion.md", "titulo": "Configuración de la empresa" },
     { "slug": "clientes-y-proveedores", "archivo": "03-clientes-y-proveedores.md", "titulo": "Clientes y proveedores" },
     { "slug": "facturas", "archivo": "04-facturas.md", "titulo": "Facturas, notas de crédito y notas de débito" },
     { "slug": "cobros-y-pagos", "archivo": "05-cobros-y-pagos.md", "titulo": "Cobros, pagos y lo que me deben y lo que debo" },
+    { "slug": "asientos-y-cierre", "archivo": "06-asientos-y-cierre.md", "titulo": "Asientos, plan de cuentas y cierre" },
+    { "slug": "bancos-y-conciliacion", "archivo": "07-bancos-y-conciliacion.md", "titulo": "Bancos, cajas y conciliación" },
+    { "slug": "reportes-dgii-presupuestos", "archivo": "08-reportes-dgii-presupuestos.md", "titulo": "Reportes, DGII y presupuestos" },
+    { "slug": "usuarios-y-permisos", "archivo": "09-usuarios-y-permisos.md", "titulo": "Usuarios y permisos" },
     { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" }
   ],
 
@@ -22,6 +27,23 @@
     },
     "/profile": {
       "seccion": "primeros-pasos", "ancla": "cambiar-tu-clave",
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
+    "/feedback/mine": {
+      "seccion": "preguntas-frecuentes",
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
+    "/feedback": {
+      "seccion": "preguntas-frecuentes",
+      "siguiente": { "texto": "Mira lo que enviaste tú", "ruta": "/feedback/mine" }
+    },
+
+    "/help": {
+      "seccion": "primeros-pasos", "ancla": "pedir-ayuda-y-enviar-un-comentario",
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
+    "/help/:slug": {
+      "seccion": "primeros-pasos", "ancla": "pedir-ayuda-y-enviar-un-comentario",
       "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
     },
 
@@ -63,78 +85,102 @@
     },
 
     "/bank-accounts": {
+      "seccion": "bancos-y-conciliacion", "ancla": "crear-una-cuenta-bancaria-o-una-caja",
       "siguiente": { "texto": "Compara tu banco con tus libros en la conciliación", "ruta": "/reconciliations" }
     },
     "/bank-accounts/:id": {
+      "seccion": "bancos-y-conciliacion", "ancla": "movimientos-del-banco",
       "siguiente": { "texto": "Compara esta cuenta con tu banco en la conciliación", "ruta": "/reconciliations" }
     },
     "/reconciliations": {
+      "seccion": "bancos-y-conciliacion", "ancla": "conciliar-el-banco",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
     "/reconciliations/:id": {
+      "seccion": "bancos-y-conciliacion", "ancla": "conciliar-el-banco",
       "siguiente": { "texto": "Cuando termines, revisa tus estados financieros", "ruta": "/reports" }
     },
 
     "/entries": {
+      "seccion": "asientos-y-cierre", "ancla": "ver-los-asientos",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
     "/entries/new": {
+      "seccion": "asientos-y-cierre", "ancla": "hacer-un-asiento-manual",
       "siguiente": { "texto": "Al guardarlo, revisa que quede en la lista de asientos", "ruta": "/entries" }
     },
     "/entries/:id/edit": {
+      "seccion": "asientos-y-cierre", "ancla": "hacer-un-asiento-manual",
       "siguiente": { "texto": "Al guardarlo, vuelve a la lista de asientos", "ruta": "/entries" }
     },
     "/entries/:id": {
+      "seccion": "asientos-y-cierre", "ancla": "aprobar-rechazar-corregir-o-anular",
       "siguiente": { "texto": "Vuelve a la lista de asientos", "ruta": "/entries" }
     },
     "/fiscal-periods": {
+      "seccion": "asientos-y-cierre", "ancla": "periodos-fiscales-cerrar-un-mes",
       "siguiente": { "texto": "Revisa tus estados financieros antes de cerrar el mes", "ruta": "/reports" }
     },
     "/fiscal-years": {
+      "seccion": "asientos-y-cierre", "ancla": "anos-fiscales-y-cierre-de-ano",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
     "/opening-balances": {
+      "seccion": "asientos-y-cierre", "ancla": "saldos-iniciales",
       "siguiente": { "texto": "Revisa los asientos de apertura", "ruta": "/entries" }
     },
     "/accounts": {
+      "seccion": "asientos-y-cierre", "ancla": "plan-de-cuentas",
       "siguiente": { "texto": "Revisa los asientos que usan tus cuentas", "ruta": "/entries" }
     },
 
     "/reports": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "estados-financieros",
       "siguiente": { "texto": "Prepara los reportes para la DGII", "ruta": "/dgii" }
     },
     "/dgii": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "dgii-606-607-y-608",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
     "/budgets": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "presupuestos",
       "siguiente": { "texto": "Compara lo presupuestado con lo real en Estados financieros", "ruta": "/reports" }
     },
     "/budgets/:id": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "presupuestos",
       "siguiente": { "texto": "Compara lo presupuestado con lo real en Estados financieros", "ruta": "/reports" }
     },
 
     "/company": {
+      "seccion": "configuracion", "ancla": "datos-de-la-empresa",
       "siguiente": { "texto": "Agrega a tus clientes y proveedores", "ruta": "/partners" }
     },
     "/users": {
+      "seccion": "usuarios-y-permisos", "ancla": "crear-un-usuario",
       "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
     },
     "/tax-rates": {
+      "seccion": "configuracion", "ancla": "impuestos",
       "siguiente": { "texto": "Crea una factura con tus impuestos", "ruta": "/invoices/new" }
     },
     "/ncf": {
+      "seccion": "configuracion", "ancla": "comprobantes-fiscales-ncf",
       "siguiente": { "texto": "Crea una factura con tu comprobante fiscal", "ruta": "/invoices/new" }
     },
     "/journals": {
+      "seccion": "configuracion", "ancla": "libros-diarios",
       "siguiente": { "texto": "Revisa los asientos", "ruta": "/entries" }
     },
     "/document-sequences": {
+      "seccion": "configuracion", "ancla": "numeracion-de-facturas-y-pagos",
       "siguiente": { "texto": "Crea una factura para ver la numeración en uso", "ruta": "/invoices/new" }
     },
     "/account-classification": {
+      "seccion": "configuracion", "ancla": "clasificacion-de-cuentas-para-reportes",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
     "/accounting-settings": {
+      "seccion": "configuracion", "ancla": "cuentas-automaticas",
       "siguiente": { "texto": "Crea una factura para probar que las cuentas quedaron bien", "ruta": "/invoices/new" }
     }
   },

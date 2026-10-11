@@ -32,7 +32,7 @@ const MAX = 2000;
       </fieldset>
       <div class="field" style="margin-top:14px">
         <label for="fb-msg">Cuéntanos</label>
-        <textarea id="fb-msg" class="textarea" rows="6" [maxlength]="max" [value]="message()" (input)="message.set($any($event.target).value)"
+        <textarea id="fb-msg" class="textarea" rows="6" [attr.maxlength]="max" [value]="message()" (input)="message.set($any($event.target).value)"
           placeholder="Por ejemplo: Quería crear un cliente y no encontré dónde"></textarea>
         <span class="count" [class.near]="message().length > max - 100" aria-live="polite">{{ message().length }} de {{ max }} caracteres</span>
       </div>
@@ -91,7 +91,7 @@ export class FeedbackDialog {
     this.error.set('');
     try {
       await firstValueFrom(this.api.post('/feedback', { kind: this.kind(), message: this.message(), route: this.route() }));
-      this.notify.ok('Gracias. Tu comentario llegó al equipo. Puedes ver la respuesta en Ayuda › Mis comentarios.');
+      this.notify.ok('Gracias. Tu comentario llegó al equipo');
       this.launcher.sent.update((n) => n + 1);
       this.closed.emit();
     } catch (e) {
