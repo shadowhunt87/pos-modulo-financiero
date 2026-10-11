@@ -1,0 +1,212 @@
+<title>Guía de producto Finanzas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: columna de lectura de ~760px; los principios son fichas de libro mayor (regla · verificación) */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#10222b; --dim:#55666e; --line:#d9e1e3;
+  --accent:#0c6b5e; --accent-soft:#e0f0ec;
+  --ok:#1d7a4b; --warn:#9a6a0c; --bad:#b4332a; --ok-bg:#def1e6; --warn-bg:#faefd2; --bad-bg:#f8e3e0;
+  --f-display:"Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1a1f; --surface:#15252c; --ink:#e3ecef; --dim:#93a7af; --line:#26404a;
+  --accent:#4fc2ad; --accent-soft:#163a35;
+  --ok:#6fd39c; --warn:#e8bb5a; --bad:#f08a80; --ok-bg:#16352a; --warn-bg:#3a2f14; --bad-bg:#3d1f1c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1a1f; --surface:#15252c; --ink:#e3ecef; --dim:#93a7af; --line:#26404a;
+  --accent:#4fc2ad; --accent-soft:#163a35;
+  --ok:#6fd39c; --warn:#e8bb5a; --bad:#f08a80; --ok-bg:#16352a; --warn-bg:#3a2f14; --bad-bg:#3d1f1c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);padding-inline:16px;padding-block:32px 64px}
+main{max-width:780px;margin:0 auto;display:grid;gap:48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(2rem,5vw,2.8rem)}
+h2{font-size:1.6rem}
+h3{font-size:1.15rem}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font:500 .75rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:1.15rem;color:var(--dim);max-width:62ch}
+header{display:grid;gap:14px}
+.meta{font-size:.85rem;color:var(--dim)}
+section{display:grid;gap:18px}
+.callout{background:var(--accent-soft);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 6px 6px 0}
+.promise{font-family:var(--f-display);font-size:1.3rem;line-height:1.4}
+ol.findings{margin:0;padding-left:1.4em;display:grid;gap:10px}
+ol.findings b{color:var(--ink)}
+.principles{display:grid;gap:14px}
+.p{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px 20px;display:grid;gap:10px}
+.p header{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.code{font:500 .8rem var(--f-mono);color:var(--accent);min-width:2.6em}
+.row{display:grid;grid-template-columns:7.5em 1fr;gap:4px 14px;font-size:.95rem}
+.row dt{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding-top:3px}
+.row dd{margin:0;min-width:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:600}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.ok{color:var(--ok);background:var(--ok-bg)} .warn{color:var(--warn);background:var(--warn-bg)} .bad{color:var(--bad);background:var(--bad-bg)}
+.summary{display:flex;gap:10px;flex-wrap:wrap}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{display:grid;grid-template-columns:22px 1fr;gap:8px}
+ul.check li::before{content:"";width:16px;height:16px;border:1.5px solid var(--accent);border-radius:4px;margin-top:4px}
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.phase{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:grid;gap:8px;align-content:start}
+.phase ul{margin:0;padding-left:1.1em;font-size:.93rem;display:grid;gap:4px}
+.approve{border:2px solid var(--accent);border-radius:10px;padding:22px;display:grid;gap:12px;background:var(--surface)}
+.sources{font-size:.85rem;color:var(--dim);display:grid;gap:6px}
+.sources a{overflow-wrap:anywhere}
+.note{font-size:.88rem;color:var(--dim)}
+@media (max-width:520px){.row{grid-template-columns:1fr}.row dt{padding-top:6px}}
+</style>
+
+<main>
+<header>
+  <span class="eyebrow">Módulo Financiero · Guía de producto v1</span>
+  <h1>Lo que hacen los mejores software de negocios, convertido en reglas para el nuestro</h1>
+  <p class="lede">Investigación de los líderes mundiales (QuickBooks, Xero, Zoho, FreshBooks, Odoo, NetSuite, SAP, Alegra, Stripe, Linear, Notion y otros) y de estudios de compradores. Esta guía será la referencia que sigan todos los agentes del equipo.</p>
+  <p class="meta">Aprobada por Carlos · 10 de octubre de 2026 · Archivo en el repositorio: docs/GUIA-PRODUCTO.md</p>
+</header>
+
+<section>
+  <span class="eyebrow">Nuestra promesa</span>
+  <div class="callout"><p class="promise">"La contabilidad de tu empresa en orden y al día con la DGII, sin tener que ser contador, y con tu contador trabajando en el mismo lugar."</p></div>
+  <p class="note">Los productos que más venden hacen una cosa muy bien y lo dicen claro: Stripe son pagos y FreshBooks es facturar fácil. Toda función nueva tiene que servir a esta promesa.</p>
+</section>
+
+<section>
+  <h2>12 hallazgos de la investigación</h2>
+  <ol class="findings">
+    <li><b>La confianza es lo primero que mira un comprador</b> (Gartner): pesa más que el precio y que las funciones. En software de dinero, todavía más.</li>
+    <li><b>Las integraciones son el factor n.º 2 para elegir software contable</b> (G2). 86 de las 100 mayores empresas SaaS tienen un catálogo de conexiones.</li>
+    <li><b>Por qué la gente abandona su software contable:</b> el precio sube (25 %), le faltan funciones (24 %) o era muy básico o muy complejo (28 %). Es la categoría con más arrepentimiento después de comprar (36 %).</li>
+    <li><b>Xero se ganó a la gente con la conciliación bancaria:</b> el sistema propone, la persona confirma con un clic y el sistema aprende.</li>
+    <li><b>FreshBooks creció diseñando para los que no son contadores:</b> lenguaje sencillo y facturar en minutos.</li>
+    <li><b>QuickBooks domina por su ecosistema:</b> todos los contadores lo conocen. Tiene herramientas para el contador y recibos por foto.</li>
+    <li><b>Odoo gana por ser modular:</b> empiezas con contabilidad y agregas lo que necesitas sin cambiar de sistema, igual que nuestra idea de "Finanzas + nichos".</li>
+    <li><b>Stripe enseña a mostrar el dinero con calma:</b> montos alineados, fechas rápidas y estados claros, para gente que está nerviosa por su dinero.</li>
+    <li><b>Linear trata la velocidad como una función más:</b> todo a 1 o 2 teclas y un buscador de acciones (Ctrl+K).</li>
+    <li><b>En 2026 la inteligencia artificial empieza a hacer el trabajo</b> (conciliar, cerrar, detectar errores), pero debe mostrar pruebas y nunca contabilizar sola.</li>
+    <li><b>Los primeros minutos deciden si el cliente se queda:</b> de 3 a 5 pasos para empezar y pantallas vacías que enseñan. Toda la guía se debe poder saltar.</li>
+    <li><b>En Latinoamérica ganaron los que resolvieron los impuestos del país</b> (Alegra, Siigo) dentro del producto.</li>
+  </ol>
+  <p class="note">Mucha de la evidencia pública viene de los propios fabricantes o de blogs. Los porcentajes son orientativos; lo valioso es el patrón que se repite entre los productos exitosos.</p>
+</section>
+
+<section>
+  <h2>Los 14 principios</h2>
+  <p class="note">Cada principio dice qué hacen los líderes, qué regla seguimos nosotros y cómo comprobamos que se cumple.</p>
+  <div class="principles">
+    <article class="p"><header><span class="code">P1</span><h3>Promesa clara</h3></header><dl class="row"><dt>Líderes</dt><dd>Stripe, Linear y FreshBooks: una sola promesa que el producto cumple.</dd><dt>Regla</dt><dd>Toda función nueva debe servir a la promesa de arriba o se cuestiona.</dd><dt>Verificación</dt><dd>El revisor crítico pregunta en cada plan qué parte de la promesa mejora.</dd></dl></article>
+    <article class="p"><header><span class="code">P2</span><h3>Primera factura en menos de 15 minutos</h3></header><dl class="row"><dt>Líderes</dt><dd>Se mide el tiempo hasta el primer resultado; Stripe arrancaba con 7 líneas.</dd><dt>Regla</dt><dd>Asistente de configuración con plan de cuentas dominicano, ITBIS, retenciones y NCF ya cargados. Una lista de pendientes de 3 a 5 pasos en el panel. Datos de ejemplo que se borran con un clic.</dd><dt>Verificación</dt><dd>QA cronometra a un usuario nuevo desde que entra hasta su primera factura.</dd></dl></article>
+    <article class="p"><header><span class="code">P3</span><h3>Dos públicos, una herramienta</h3></header><dl class="row"><dt>Líderes</dt><dd>FreshBooks conquista al dueño y QuickBooks y Xero a la contadora. Quien sirve a los dos se queda con el cliente cuando crece.</dd><dt>Regla</dt><dd>El dueño ve lenguaje de negocio ("Lo que me deben", "¿Cuánto gané?"). La contadora tiene toda la profundidad, guardada detrás de opciones avanzadas. Nunca se le quitan funciones a la contadora para "simplificar".</dd><dt>Verificación</dt><dd>Cada pantalla tiene que pasar dos preguntas: ¿la entiende un dueño? ¿le sirve a una contadora?</dd></dl></article>
+    <article class="p"><header><span class="code">P4</span><h3>El sistema propone, la persona confirma</h3></header><dl class="row"><dt>Líderes</dt><dd>La conciliación de Xero y los agentes de QuickBooks: sugieren, la persona aprueba y el sistema aprende.</dd><dt>Regla</dt><dd>Los asientos se generan solos desde cada documento. Las sugerencias se aprueban en grupo y se crean reglas a partir de las correcciones. Nada se contabiliza en silencio y todo se puede deshacer.</dd><dt>Verificación</dt><dd>Cada automatización deja rastro y tiene botón de deshacer.</dd></dl></article>
+    <article class="p"><header><span class="code">P5</span><h3>La conciliación bancaria es el corazón</h3></header><dl class="row"><dt>Líderes</dt><dd>Es lo más elogiado de Xero; QuickBooks ya lee estados de cuenta en PDF.</dd><dt>Regla</dt><dd>Importar extractos (Excel y CSV hoy; PDF y bancos dominicanos después). Pantalla en 2 columnas: banco y sistema. Crear lo que falta desde la línea del banco y mostrar el avance ("faltan 12 de 140").</dd><dt>Verificación</dt><dd>Conciliar un mes de 100 movimientos en menos de 20 minutos.</dd></dl></article>
+    <article class="p"><header><span class="code">P6</span><h3>Claridad y calma con el dinero</h3></header><dl class="row"><dt>Líderes</dt><dd>Stripe diseña para gente nerviosa por su dinero.</dd><dt>Regla</dt><dd>Montos a la derecha con miles y moneda. Fechas rápidas: este mes, mes pasado, este año. Estados con ícono, color y texto, nunca solo color. Mensajes que tranquilizan.</dd><dt>Verificación</dt><dd>Lista de revisión por pantalla (más abajo).</dd></dl></article>
+    <article class="p"><header><span class="code">P7</span><h3>Guiar en cada pantalla</h3></header><dl class="row"><dt>Origen</dt><dd>Tu regla: que cualquier persona lo pueda usar sin capacitación.</dd><dt>Regla</dt><dd>Cada pantalla dice dónde estás, para qué sirve y cuál es el siguiente paso. Los procesos muestran pasos numerados. Las pantallas vacías enseñan qué hacer. Los errores dicen cómo arreglarlo. Hay un botón "?" en cada pantalla. Los expertos pueden saltarse la guía.</dd><dt>Verificación</dt><dd>Prueba con un usuario nuevo, sin capacitación, en cada proceso.</dd></dl></article>
+    <article class="p"><header><span class="code">P8</span><h3>Rápido para quien lo usa todo el día</h3></header><dl class="row"><dt>Líderes</dt><dd>Linear: atajos de teclado y buscador de acciones con Ctrl+K.</dd><dt>Regla</dt><dd>Buscador de acciones ("nueva factura", "cliente Pérez"). Atajos visibles. Formularios que recuerdan lo último que usaste.</dd><dt>Verificación</dt><dd>Contar los clics de las tareas frecuentes; cada versión tiene que bajarlos o mantenerlos.</dd></dl></article>
+    <article class="p"><header><span class="code">P9</span><h3>El contador como aliado y vendedor</h3></header><dl class="row"><dt>Líderes</dt><dd>Xero HQ y QuickBooks Accountant: el contador ve a todos sus clientes y recomienda el software.</dd><dt>Regla</dt><dd>Portal del contador con todas sus empresas y el estado de cada una. Herramientas de auditoría (v0.2). Pedidos de documentos al cliente. Programa de contadores aliados.</dd><dt>Verificación</dt><dd>Las contadoras de prueba validan el portal antes de lanzarlo.</dd></dl></article>
+    <article class="p"><header><span class="code">P10</span><h3>La confianza se diseña</h3></header><dl class="row"><dt>Líderes</dt><dd>Lo esperado hoy: verificación en dos pasos, roles, historial de cambios, respaldos y seguridad explicada.</dd><dt>Regla</dt><dd>Verificación en dos pasos para todos. Respaldos automáticos y probados. Página de seguridad en lenguaje simple. <b>Los datos son del cliente</b>: puede exportarlo todo siempre, también si cancela. Nunca quitar funciones sin avisar.</dd><dt>Verificación</dt><dd>Seguridad revisa cada versión. Antes de usar datos reales son obligatorios los respaldos, la verificación en dos pasos y la exportación completa.</dd></dl></article>
+    <article class="p"><header><span class="code">P11</span><h3>Los impuestos como ventaja, no como carga</h3></header><dl class="row"><dt>Líderes</dt><dd>Alegra y Siigo ganaron resolviendo los impuestos de cada país dentro del producto.</dd><dt>Regla</dt><dd>NCF y e-CF (con proveedor). 606, 607 y 608 en un clic. Ayuda para el IT-1 y el IR-17. Retenciones automáticas. Calendario fiscal con recordatorios. Los cambios de la DGII se incorporan rápido.</dd><dt>Verificación</dt><dd>Prueba automática por cada regla fiscal; una contadora lo valida con el validador oficial de la DGII.</dd></dl></article>
+    <article class="p"><header><span class="code">P12</span><h3>Abierto y fácil de conectar</h3></header><dl class="row"><dt>Líderes</dt><dd>Con 5 integraciones, el cliente paga hasta un 20 % más por el mismo producto.</dd><dt>Regla</dt><dd>Conexión documentada para otros sistemas (API). Importar y exportar con Excel en todo. Migración desde QuickBooks o Excel para cambiarse fácil. Conexión con la plataforma de nichos, bancos y pasarelas de pago.</dd><dt>Verificación</dt><dd>Ninguna función nueva sale sin su conexión pública documentada.</dd></dl></article>
+    <article class="p"><header><span class="code">P13</span><h3>El celular para lo que se hace en la calle</h3></header><dl class="row"><dt>Líderes</dt><dd>QuickBooks: foto del recibo y el gasto queda listo para revisar.</dd><dt>Regla</dt><dd>Desde el celular: foto del recibo, aprobar, ver el panel, enviar facturas y registrar cobros. La contabilidad completa se queda en la computadora.</dd><dt>Verificación</dt><dd>QA prueba los procesos clave en un celular real.</dd></dl></article>
+    <article class="p"><header><span class="code">P14</span><h3>Inteligencia artificial útil y bajo control</h3></header><dl class="row"><dt>Líderes</dt><dd>En 2026, agentes que concilian y detectan errores; los expertos advierten que no deben inventar.</dd><dt>Regla</dt><dd>Por etapas: 1) detectar errores (duplicados, montos raros, NCF saltados); 2) responder preguntas ("¿por qué bajó la ganancia?") citando las cifras; 3) sugerir. <b>Nunca contabiliza sola.</b> Los datos del cliente no se usan para entrenar a terceros.</dd><dt>Verificación</dt><dd>Seguridad y el revisor crítico aprueban cada función de IA.</dd></dl></article>
+  </div>
+  <div class="callout"><p><b>Precio sin castigo.</b> Xero incluye usuarios ilimitados y la gente abandona por precios que suben y por subir de plan a la fuerza. Regla: planes que crecen con la empresa, el contador y el auditor entran gratis, precio predecible y prueba gratis.</p></div>
+</section>
+
+<section>
+  <h2>Errores de los líderes que no vamos a repetir</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Error</th><th>Quién lo sufre</th><th>Cómo lo evitamos</th></tr></thead>
+    <tbody>
+      <tr><td>Funciones escondidas que nadie encuentra</td><td>Xero</td><td>Buscador de acciones y menú con nombres de negocio</td></tr>
+      <tr><td>Llevar de la mano incluso al experto</td><td>Problema general de las guías de inicio</td><td>Toda la guía se puede saltar o apagar</td></tr>
+      <tr><td>Cambiar o quitar funciones sin avisar</td><td>FreshBooks</td><td>Notas de cada versión dentro del sistema y aviso previo</td></tr>
+      <tr><td>Perder los datos al cancelar</td><td>FreshBooks</td><td>Exportación completa siempre disponible</td></tr>
+      <tr><td>Precio que sube y obliga a subir de plan</td><td>QuickBooks</td><td>Precio predecible; contador y auditor gratis</td></tr>
+      <tr><td>Muy básico o muy complejo</td><td>28 % de los arrepentidos</td><td>Dos niveles: simple a la vista, avanzado detrás (P3)</td></tr>
+      <tr><td>Inteligencia artificial que inventa y contabiliza</td><td>Advertencia de 2026</td><td>Siempre con pruebas y aprobación humana (P14)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Dónde estamos hoy (versión actual)</h2>
+  <div class="summary"><span class="pill ok">1 bien</span><span class="pill warn">8 a medias</span><span class="pill bad">5 por hacer</span></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Principio</th><th>Estado</th><th>Qué falta</th></tr></thead>
+    <tbody>
+      <tr><td>P1 Promesa clara</td><td><span class="pill warn">A medias</span></td><td>No está escrita en el producto ni en una web</td></tr>
+      <tr><td>P2 Primera factura en 15 min</td><td><span class="pill bad">Por hacer</span></td><td>La empresa nueva arranca vacía y no hay asistente</td></tr>
+      <tr><td>P3 Dos públicos</td><td><span class="pill warn">A medias</span></td><td>Muy completo para la contadora; lenguaje técnico para el dueño ("tercero")</td></tr>
+      <tr><td>P4 Propone y confirma</td><td><span class="pill warn">A medias</span></td><td>Ya hay asientos automáticos y reglas de banco; falta que sugiera y aprenda</td></tr>
+      <tr><td>P5 Conciliación</td><td><span class="pill warn">A medias</span></td><td>Existe con CSV; faltan las 2 columnas y la lectura de PDF</td></tr>
+      <tr><td>P6 Claridad con el dinero</td><td><span class="pill warn">A medias</span></td><td>Buena base; falta revisarlo con la lista de revisión</td></tr>
+      <tr><td>P7 Guiar en cada pantalla</td><td><span class="pill bad">Por hacer</span></td><td>Sin ubicación, sin ayuda, pantallas vacías mudas</td></tr>
+      <tr><td>P8 Velocidad</td><td><span class="pill bad">Por hacer</span></td><td>Sin buscador de acciones ni atajos</td></tr>
+      <tr><td>P9 Contador aliado</td><td><span class="pill bad">Por hacer</span></td><td>Sin portal del contador; la auditoría viene en la v0.2</td></tr>
+      <tr><td>P10 Confianza</td><td><span class="pill warn">A medias</span></td><td>Faltan la verificación en dos pasos, los respaldos automáticos y la exportación completa</td></tr>
+      <tr><td>P11 Impuestos DGII</td><td><span class="pill ok">Bien</span></td><td>Faltan el calendario fiscal, el IT-1 y el IR-17, y conectar el proveedor de e-CF</td></tr>
+      <tr><td>P12 Fácil de conectar</td><td><span class="pill warn">A medias</span></td><td>La conexión existe pero sin documentar; faltan los importadores</td></tr>
+      <tr><td>P13 Celular</td><td><span class="pill warn">A medias</span></td><td>Se adapta a la pantalla; falta la foto del recibo</td></tr>
+      <tr><td>P14 Inteligencia artificial</td><td><span class="pill bad">Por hacer</span></td><td>No hay</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Orden recomendado</h2>
+  <div class="phases">
+    <div class="phase"><span class="eyebrow">Ahora · v0.2</span><ul><li>Guía en cada pantalla y ayuda integrada (P7)</li><li>Asistente de configuración con plan de cuentas dominicano (P2)</li><li>Crear el cliente desde la factura</li><li>Herramientas de auditoría (P9)</li><li>Razones financieras mejoradas</li><li>Respaldos automáticos (P10)</li></ul></div>
+    <div class="phase"><span class="eyebrow">Siguiente · v0.3</span><ul><li>Verificación en dos pasos y exportación completa (P10)</li><li>Buscador de acciones Ctrl+K (P8)</li><li>Conciliación en 2 columnas (P5)</li><li>Calendario fiscal, IT-1 e IR-17 (P11)</li><li>Importar desde Excel y QuickBooks (P12)</li><li>e-CF con el proveedor</li></ul></div>
+    <div class="phase"><span class="eyebrow">Después</span><ul><li>Portal del contador (P9)</li><li>Foto del recibo desde el celular (P13)</li><li>Inteligencia artificial por etapas (P14)</li><li>Conexión pública documentada (P12)</li><li>Conexión directa con bancos</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Lista de revisión de cada pantalla</h2>
+  <p class="note">Una pantalla nueva o modificada no se aprueba si falla alguno de estos puntos.</p>
+  <ul class="check">
+    <li>Dice dónde estás y para qué sirve la pantalla.</li>
+    <li>El botón principal está siempre en el mismo lugar y se ve.</li>
+    <li>Si está vacía, explica qué es y ofrece crear el primero.</li>
+    <li>Los errores dicen qué pasó y cómo arreglarlo, en español sencillo.</li>
+    <li>Tiene botón "?" con la ayuda de esa pantalla.</li>
+    <li>Los términos contables difíciles se explican al pasar el mouse.</li>
+    <li>Montos a la derecha con miles y moneda; estados con ícono, color y texto.</li>
+    <li>Se puede crear lo que falta sin salir (como el cliente desde la factura).</li>
+    <li>Funciona en el celular.</li>
+    <li>Se usa con el teclado: Tab avanza, Enter guarda, Esc cierra.</li>
+    <li>Una persona sin capacitación completa la tarea sin ayuda.</li>
+    <li>Respeta la forma de trabajar del socio.</li>
+  </ul>
+</section>
+
+<section class="approve">
+  <h2>Para aprobar</h2>
+  <p>Responde en el chat <b>"Apruebo la guía"</b>, o dime qué cambiar: la promesa, algún principio, el orden de prioridades, etc.</p>
+  <p class="note">Cuando la apruebes, queda como regla obligatoria para todos los agentes y se usa para revisar el plan de la v0.2, que ya está listo.</p>
+</section>
+
+<section>
+  <h2>Fuentes</h2>
+  <div class="sources">
+    <p>Comparativas: <a href="https://www.business.com/categories/accounting-software/">business.com</a> · <a href="https://acculinkcpa.com/blog/quickbooks-online-vs-xero-vs-sage-vs-freshbooks-vs-zoho-books-complete-comparison">Acculink CPA</a> · <a href="https://sonary.com/content/zoho-books-vs-quickbooks-which-accounting-software-is-better-for-small-business/">Sonary</a> · <a href="https://www.certumsolutions.com/library/best-accounting-software-for-small-business-guide">Certum</a></p>
+    <p>Xero: <a href="https://www.xero.com/us/small-businesses/">Xero</a> · <a href="https://www.g2.com/products/xero/reviews?qs=pros-and-cons">G2</a> · <a href="https://theretailexec.com/tools/xero-review/">The Retail Exec</a> · <a href="https://www.xero.com/nz/xero-hq/">Xero HQ</a></p>
+    <p>QuickBooks: <a href="https://quickbooks.intuit.com/r/product-update/whats-new-quickbooks-online-august-2026/">Novedades 2026</a> · <a href="https://quickbooks.intuit.com/r/product-update/ai-agents-innovation/">Agentes IA</a> · <a href="https://quickbooks.intuit.com/learn-support/en-us/help-article/import-transactions/upload-receipts-bills-quickbooks-online/L862MmZHn_US_en_US">Recibos</a> · <a href="https://invoicedataextraction.com/blog/quickbooks-online-receipt-capture-reviews">Reseña de recibos</a></p>
+    <p>FreshBooks: <a href="https://us.fitgap.com/products/freshbooks">FitGap</a> · <a href="https://www.airframe.ai/product/freshbooks-com/analysis">Airframe</a> · <a href="https://www.capterra.com/p/142390/FreshBooks/reviews/?page=13">Capterra</a></p>
+    <p>ERP: <a href="https://www.erpresearch.com/en-us/erp-for-small-business-smb-sme">ERP Research</a> · <a href="https://www.houseblend.io/articles/erp-comparison-netsuite-odoo-sap-quickbooks">Houseblend</a> · <a href="https://www.erpimplementation.eu/en/odoo-vs-sap-vs-netsuite-honest-comparison-sme-2026/">ERP Implementation</a></p>
+    <p>Latinoamérica: <a href="https://www.softwareadvice.com.au/software/315483/alegra">Alegra</a> · <a href="https://www.capterra.co.uk/software/209269/siigo">Siigo</a> · <a href="https://wmp.mx/en/?p=3716">WMP</a></p>
+    <p>Compradores y abandono: <a href="https://www.capterra.com/resources/switching-accounting-software-problems-risks/">Capterra: cambiar de software</a> · <a href="https://www.capterra.com/resources/how-to-choose-accounting-software-when-you-have-500-options/">Capterra: cómo elegir</a> · <a href="https://partnerfleet.io/blog/valuable-integration-statistics-to-know">Estadísticas de integraciones</a> · <a href="https://www.pipedrive.com/en/newsroom/pipedrive-marketplace-survey-businesses-leveraging-integrations-win-about-1-5-times-more-deals">Pipedrive</a></p>
+    <p>Crecimiento y diseño: <a href="https://www.eleken.co/blog-posts/product-led-growth-strategies">Eleken</a> · <a href="https://www.howtheygrow.co/p/how-notion-grows">How Notion Grows</a> · <a href="https://www.appcues.com/blog/user-onboarding-best-practices">Appcues</a> · <a href="https://uxcam.com/blog/saas-onboarding-best-practices/">UXCam</a> · <a href="https://www.925studios.co/blog/stripe-dashboard-design-breakdown">Stripe</a> · <a href="https://www.925studios.co/blog/linear-design-breakdown-saas-ui-2026">Linear</a> · <a href="https://www.saashero.net/design/nielsen-10-usability-heuristics-explained/">Heurísticas de Nielsen</a></p>
+    <p>Seguridad y tendencias: <a href="https://airtable.com/company/trust-and-security">Airtable Trust</a> · <a href="https://www.tcsa.in/frameworks/soc-2/for-saas">SOC 2</a> · <a href="https://www.grfcpa.com/resource/2026-finance-tech-trends-ai-updates-cfos-should-watch/">GRF CPAs</a> · <a href="https://www.numeric.io/blog/financial-close-software">Numeric</a> · <a href="https://technologyadvice.com/blog/accounting/erp-industry-trends/">TechnologyAdvice</a></p>
+  </div>
+</section>
+</main>
