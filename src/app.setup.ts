@@ -1,6 +1,7 @@
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 
@@ -32,6 +33,10 @@ export async function createApp(options: { silent?: boolean } = {}): Promise<INe
 
   // Cabeceras de seguridad (nosniff, HSTS, sin X-Powered-By, etc.)
   app.use(helmet());
+
+  // El body-parser de Express acepta 100 KB por defecto, pero el CSV de un extracto
+  // bancario (ImportStatementDto) puede llegar a 5 MB: sin esto daría 413.
+  (app as NestExpressApplication).useBodyParser('json', { limit: '6mb' });
 
   // Detrás de nginx/Cloudflare/load balancer hay que decir cuántos proxies son; si no, todos los
   // clientes parecen tener la IP del proxy y el límite de intentos de login castigaría a todos juntos.
