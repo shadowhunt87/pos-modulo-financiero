@@ -11,7 +11,7 @@ N2b,Cargador del catálogo fiscal,N,N1,IA-N,L,1,N2a,wp/N2b-cargador,Valores de l
 N2c,build() con tasa y base del parámetro y trazabilidad,N,N1,IA-N,M,2,N2a,wp/N2c-calculo,D37,v0.3 2.4
 N2d,Enlace de impuestos y pantallas fiscales,N,N2,IA-N,L,2,N2c,wp/N2d-enlace,,v0.3 2.5 y 2.7
 N3,e-CF mínimo e importación de XML,N,N1,Claude,L,3,N1;N2a,wp/N3-ecf-importacion,D36 y D40,v0.3 Fase 4
-N4,Ajustes 606/607/608 y cuadres,N,N1,IA-N,L,3,N2c,wp/N4-cuadres,D35,v0.3 4.3
+N4,"Ajustes 606/607/608, cuadres y pantalla Revisión del mes",N,N1,IA-N,L,3,N2c,wp/N4-cuadres,D35,v0.3 4.3
 N5,Calendario fiscal y bloqueo de comprobantes B,N,N1,IA-N,L,3,N1;N2a,wp/N5-calendario,Feriados de Carlos,v0.3 Fase 5
 N6,609 IT-1 e IR-17 asistidos,N,N1,IA-N,L,4,N4;N5,wp/N6-declaraciones,Casillas validadas,v0.3 Fase 6
 N7,e-CF con el proveedor,N,N1,Claude,L,5,Documentación del proveedor,wp/N7-ecf-proveedor,BLOQUEADO,v0.3 Fase 7
@@ -22,9 +22,9 @@ E2,Asistente de arranque y cierre guiado (pantallas),E,N2,IA-E,L,3,E1a;E1b,wp/E2
 E3-back,Semáforo financiero (backend),E,N2,IA-E,L,0,,wp/E3-semaforo-back,Contadoras D5,v0.2 3.1-3.4
 E3-front,Semáforo y tendencia (pantallas),E,N2,IA-E,L,2,E3-back,wp/E3-semaforo-front,,v0.2 3.5-3.6
 E4-a,Pantallas guiadas Ventas,E,N3+N2,IA-local,L,0,,wp/E4a-ventas,,v0.2 4.1-4.3
-E4-b,Pantallas guiadas Contabilidad,E,N3+N2,IA-local,L,0,,wp/E4b-contabilidad,,v0.2 4.1-4.3
-E4-c,Pantallas guiadas Bancos,E,N3+N2,IA-local,L,0,,wp/E4c-bancos,,v0.2 4.1-4.3
-E4-d,Pantallas guiadas Reportes y Configuración,E,N3+N2,IA-local,L,0,,wp/E4d-reportes-config,,v0.2 4.1-4.3
+E4-b,Pantallas guiadas Contabilidad,E,N3+N2,IA-local,L,0,E4-a,wp/E4b-contabilidad,,v0.2 4.1-4.3
+E4-c,Pantallas guiadas Bancos,E,N3+N2,IA-local,L,0,E4-a,wp/E4c-bancos,,v0.2 4.1-4.3
+E4-d,Pantallas guiadas Reportes y Configuración,E,N3+N2,IA-local,L,0,E4-a,wp/E4d-reportes-config,,v0.2 4.1-4.3
 E4-e,Pantallas guiadas fiscales,E,N2,IA-E,L,4,N2d;N5,wp/E4e-fiscales,,v0.2 4.1-4.3
 A1,Rol Auditor modelos y encargos,A,N1,IA-A,L,0,,wp/A1-auditor-base,Plantillas validadas,v0.2 5.1-5.3
 A2,Hallazgos y pruebas de restricciones,A,N1,IA-A,L,1,A1,wp/A2-hallazgos,,v0.2 5.4-5.5
