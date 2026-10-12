@@ -8,6 +8,7 @@
   (Oficial / Validar) y el checklist contable-fiscal (sección 8), que aplica a todo cambio que toque dinero,
   impuestos o asientos. Precedencia: la exactitud contable y la ley no se negocian; la forma de presentarlas
   la manda la Guía de producto. Ningún valor fiscal se escribe en el código: va como parámetro con vigencia (R9).
+- **Reparto del trabajo:** `docs/PAQUETES-DE-TRABAJO.md` (reglas para cada IA, niveles, olas y paquetes) y `docs/tablero-paquetes.csv`.
 - **Principio rector de diseño:** que cualquier persona lo pueda usar sin capacitación (P7).
 - **Línea del socio:** el código es copropiedad con el socio, que sigue desarrollando en su repo. Hay que imitar
   sus convenciones y minimizar los cambios en archivos existentes (ver docs/PLAN-v0.2.md).
