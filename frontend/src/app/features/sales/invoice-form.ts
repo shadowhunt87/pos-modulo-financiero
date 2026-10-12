@@ -20,6 +20,8 @@ type Side = 'SALES' | 'PURCHASES';
 const r2 = (d: Decimal): Decimal => d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 /** Comprobantes que puede pedir una venta (el resto los usan notas y compras). */
 const SALES_NCF = ['B01', 'B02', 'B14', 'B15', 'B16', 'E31', 'E32', 'E44', 'E45', 'E46'];
+/** Cómo se nombra cada tipo de tercero en los avisos. */
+const PARTNER_TYPE_TEXT: Record<string, string> = { SUPPLIER: 'proveedor', CUSTOMER: 'cliente', BOTH: 'cliente y proveedor' };
 const NOTE_TYPES = ['CREDIT_NOTE', 'DEBIT_NOTE'];
 
 /**
@@ -296,6 +298,7 @@ export class InvoiceForm {
     const fits = side === 'SALES' ? p.type !== 'SUPPLIER' : side === 'PURCHASES' ? p.type !== 'CUSTOMER' : true;
     if (!this.editingPartner()) {
       if (fits) this.form.controls.partnerId.setValue(p.id);
+      else this.notify.info(`Se guardó ${p.name} como ${PARTNER_TYPE_TEXT[p.type] ?? 'tercero'}; en una ${side === 'SALES' ? 'factura de venta solo se pueden elegir clientes' : 'compra solo se pueden elegir proveedores'}. Edítalo y márcalo como ${side === 'SALES' ? 'cliente' : 'proveedor'} o ambos.`);
     } else if (!fits) {
       this.form.controls.partnerId.setValue('');
       this.notify.info(`${p.name} ya no es ${side === 'SALES' ? 'cliente' : 'proveedor'}, así que se quitó de la factura. Elige otro.`);

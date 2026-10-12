@@ -2,7 +2,7 @@ import { ConflictException, Injectable, UnprocessableEntityException } from '@ne
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import ExcelJS from 'exceljs';
-import type { Prisma } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { AuditAction } from '../generated/prisma/enums.js';
 import type { AuthUser } from '../auth/types/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -22,6 +22,8 @@ type Db = Prisma.TransactionClient | PrismaService;
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const HEADERS = Object.values(COLUMNS) as string[];
+/** Cuentas por cada UPDATE en bloque (3 parámetros por cuenta; Postgres admite hasta 65.535). */
+const UPDATE_BATCH = 1000;
 
 /**
  * Catálogo estándar de RD (generado desde docs/catalogos/Catalogo_de_Cuentas_Estandar_RD.xlsx con
@@ -205,8 +207,16 @@ export class ChartOfAccountsService {
             cashFlowCategory: a.cashFlowCategory, subledger: a.subledger, description: a.description, active: a.active,
           })),
         });
-        for (const u of p.toUpdate) {
-          await tx.account.update({ where: { id: u.id, companyId: user.companyId }, data: u.after });
+        // En bloque (una sentencia por cada 1.000 cuentas), parametrizado y siempre dentro de la empresa
+        for (let i = 0; i < p.toUpdate.length; i += UPDATE_BATCH) {
+          const batch = p.toUpdate.slice(i, i + UPDATE_BATCH);
+          const values = Prisma.join(batch.map((u) => Prisma.sql`(${u.id}::text, ${u.after.name}::text, ${u.after.description}::text)`));
+          const n = await tx.$executeRaw(Prisma.sql`
+            UPDATE "Account" AS a
+               SET "name" = v."name", "description" = v."description", "updatedAt" = (now() AT TIME ZONE 'UTC')
+              FROM (VALUES ${values}) AS v("id", "name", "description")
+             WHERE a."id" = v."id" AND a."companyId" = ${user.companyId}`);
+          if (n !== batch.length) throw new ConflictException('Alguien cambió el plan de cuentas al mismo tiempo. Vuelve a intentarlo');
         }
         await writeAudit(tx, user, 'Account', 'import', p.toCreate.length ? AuditAction.CREATE : AuditAction.UPDATE, {
           origen,

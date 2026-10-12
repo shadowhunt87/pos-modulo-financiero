@@ -6,6 +6,6 @@ export type ChartExportFormat = (typeof CHART_EXPORT_FORMATS)[number];
 export class ExportChartQuery {
   // Sin format = xlsx
   @IsOptional()
-  @IsIn(CHART_EXPORT_FORMATS, { message: 'format debe ser xlsx o csv' })
+  @IsIn(CHART_EXPORT_FORMATS, { message: 'El formato debe ser Excel (xlsx) o CSV' })
   format?: ChartExportFormat;
 }

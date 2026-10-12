@@ -11,6 +11,14 @@ describe('translateValidation', () => {
   it('deja igual lo que no reconoce', () => {
     expect(translateValidation('Indica exactamente uno: invoiceId, paymentId')).toBe('Indica exactamente uno: invoiceId, paymentId');
   });
+  it('nombra los campos de comentarios, importación y exportación', () => {
+    expect(translateValidation('kind must be one of the following values: BUG, IDEA')).toContain('«Tipo de comentario»');
+    expect(translateValidation('message should not be empty')).toBe('«Comentario» es obligatorio.');
+    expect(translateValidation('route must be a string')).toBe('«Pantalla» debe ser texto.');
+    expect(fieldLabel('format')).toBe('Formato de exportación');
+    expect(fieldLabel('file')).toBe('Archivo');
+    expect(fieldLabel('taskRef')).toBe('Referencia de la tarea');
+  });
   it('nombra campos anidados', () => {
     expect(fieldLabel('lines.2.accountId')).toBe('Cuenta (línea 3)');
     expect(fieldLabel('campoDesconocido')).toBe('campoDesconocido');

@@ -186,6 +186,7 @@ export class PaymentForm {
     const fits = this.received() ? p.type !== 'SUPPLIER' : p.type !== 'CUSTOMER';
     if (!this.editingPartner()) {
       if (fits) this.form.controls.partnerId.setValue(p.id);
+      else this.notify.info(`Se guardó ${p.name} como ${p.type === 'SUPPLIER' ? 'proveedor' : 'cliente'}; en ${this.received() ? 'un cobro solo se pueden elegir clientes' : 'un pago solo se pueden elegir proveedores'}. Edítalo y márcalo como ${this.received() ? 'cliente' : 'proveedor'} o ambos.`);
     } else if (!fits) {
       this.form.controls.partnerId.setValue(null);
       this.notify.info(`${p.name} ya no es ${this.received() ? 'cliente' : 'proveedor'}, así que se quitó. Elige otro.`);

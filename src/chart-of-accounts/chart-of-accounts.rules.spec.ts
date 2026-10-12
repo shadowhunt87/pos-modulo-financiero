@@ -1,4 +1,4 @@
-import { buildPlan, deduceParent, neutralize, parseCsv, rowsFromGrid, unneutralize, type ExistingAccount, type RawRow } from './chart-of-accounts.rules.js';
+import { MAX_ROWS, buildPlan, deduceParent, neutralize, parseCsv, rowsFromGrid, unneutralize, type ExistingAccount, type RawRow } from './chart-of-accounts.rules.js';
 
 const row = (fila: number, codigo: string, nombre: string, tipoCuenta = 'Detalle', naturaleza = '', extra: Partial<RawRow> = {}): RawRow =>
   ({ fila, codigo, nombre, tipoCuenta, naturaleza, ...extra });
@@ -24,7 +24,13 @@ describe('Plan de cuentas: reglas de conversión', () => {
       expect(neutralize(s)).toBe(`'${s}`);
       expect(unneutralize(neutralize(s))).toBe(s);
     }
+    // Tabulador y retorno de carro delante también se neutralizan
+    for (const s of ['\t=1+1', '\r=1+1', '\tnombre']) {
+      expect(neutralize(s)).toBe(`'${s}`);
+      expect(unneutralize(neutralize(s))).toBe(s);
+    }
     expect(neutralize('(-) Provisión')).toBe('(-) Provisión');
+    expect(neutralize('Caja\tGeneral')).toBe('Caja\tGeneral');
     expect(unneutralize("'texto con comilla")).toBe("'texto con comilla");
   });
 
@@ -67,8 +73,8 @@ describe('Plan de cuentas: reglas de conversión', () => {
       row(2, '2', 'PASIVO', 'Control'),
       row(3, '21', 'Bajo pasivo pero dice activo', 'Detalle', '', { tipoSistema: 'Activo' }),
       row(4, '1 01', 'Espacio en el código'),
-      row(5, 'A', 'A', 'Detalle', '', { tipoSistema: 'Gasto', padre: 'B' }),
-      row(6, 'B', 'B', 'Detalle', '', { tipoSistema: 'Gasto', padre: 'A' }),
+      row(5, 'A', 'A', 'Control', '', { tipoSistema: 'Gasto', padre: 'B' }),
+      row(6, 'B', 'B', 'Control', '', { tipoSistema: 'Gasto', padre: 'A' }),
       row(7, '9', 'Nueve'),
     ], new Map());
     const msg = (f: number) => p.filas.find((x) => x.fila === f)!.mensajes.join(' ');
@@ -108,5 +114,56 @@ describe('Plan de cuentas: reglas de conversión', () => {
     expect(p.toCreate.find((a) => a.code === '1101')).toMatchObject({ category: 'ACCOUNTS_RECEIVABLE', cashFlowCategory: 'OPERATING', subledger: 'RECEIVABLE' });
     expect(p.toCreate.find((a) => a.code === '1102')).toMatchObject({ category: 'CASH_AND_EQUIVALENTS', cashFlowCategory: 'CASH_EQUIVALENT', subledger: null });
     expect(p.filas[2].mensajes[0]).toMatch(/no corresponde a una cuenta de tipo Activo/);
+  });
+
+  it('CSV de solo saltos de línea o separadores: no acumula filas vacías y se corta al pasar del máximo', () => {
+    const t = Date.now();
+    expect(parseCsv('Código de Cuenta,Nombre\n' + '\n'.repeat(2 * 1024 * 1024))).toEqual([{ n: 1, cells: ['Código de Cuenta', 'Nombre'] }]);
+    expect(parseCsv('Código de Cuenta,Nombre\n1,' + ','.repeat(2 * 1024 * 1024))[1].cells).toHaveLength(30);
+    expect(parseCsv('Código de Cuenta,Nombre\n' + '1,a\n'.repeat(100_000))).toHaveLength(MAX_ROWS + 51);
+    expect(Date.now() - t).toBeLessThan(1500);
+    // Las filas vacías intermedias no cambian la numeración
+    expect(parseCsv('a,b\n\n,\n1,2\n')).toEqual([{ n: 1, cells: ['a', 'b'] }, { n: 4, cells: ['1', '2'] }]);
+  });
+
+  it('byte nulo en el nombre o la descripción: error en la fila (Postgres no lo admite)', () => {
+    const p = buildPlan([row(1, '6101', 'Gasto\u0000raro'), row(2, '6102', 'Bien', 'Detalle', '', { descripcion: 'x\u0000' })], new Map());
+    expect(p.filas.map((f) => f.accion)).toEqual(['error', 'error']);
+    expect(p.filas[0].mensajes[0]).toMatch(/nombre tiene un carácter invisible/);
+    expect(p.filas[1].mensajes[0]).toMatch(/descripción tiene un carácter invisible/);
+  });
+
+  it('subcuentas: no bajo una cuenta con movimientos ni bajo una "Detalle" del archivo; aviso si la existente deja de recibir movimientos', () => {
+    const ex = new Map([
+      existing({ code: '1', isPostable: false }),
+      existing({ code: '1101', name: 'Caja', parentCode: '1', hasMovements: true }),
+      existing({ code: '1102', name: 'Bancos', parentCode: '1' }), // recibe movimientos, aún no tiene
+      existing({ code: '1103', name: 'Otros', parentCode: '1' }),
+      existing({ code: '1103-01', parentCode: '1103' }), // ya es de grupo de hecho
+    ]);
+    const p = buildPlan([
+      row(1, '1101-01', 'Caja chica'),
+      row(2, '1102-01', 'Banco A'),
+      row(3, '1103-02', 'Otro'),
+      row(4, '12', 'Detalle con hijas', 'Detalle'),
+      row(5, '1201', 'Hija de detalle'),
+      row(6, '13', 'Reguladora con hijas', 'Reguladora'),
+      row(7, '1301', 'Hija de reguladora'),
+      row(8, '14', 'Sin tipo de cuenta', ''),
+      row(9, '1401', 'Hija 1'),
+      row(10, '1402', 'Hija 2'),
+    ], ex);
+    const f = (n: number) => p.filas.find((x) => x.fila === n)!;
+    expect(f(1)).toMatchObject({ accion: 'error', mensajes: ['La cuenta 1101 Caja ya tiene movimientos: no puede tener subcuentas. Crea la subcuenta debajo de una cuenta de grupo'] });
+    expect(f(2)).toMatchObject({ accion: 'create', mensajes: ['La cuenta 1102 Bancos recibe movimientos. Al tener esta subcuenta ya no podrá recibirlos y quedará solo para agrupar'] });
+    expect(f(3)).toMatchObject({ accion: 'create', mensajes: [] });
+    expect(f(5).accion).toBe('error');
+    expect(f(5).mensajes[0]).toMatch(/padre 12 está marcada como "Detalle" en la fila 4: una cuenta de detalle recibe movimientos y no puede tener subcuentas/);
+    expect(f(7).mensajes[0]).toMatch(/padre 13 está marcada como "Reguladora"/);
+    // "Tipo de Cuenta" vacío con hijas: pasa a Control con un solo aviso
+    expect(f(8)).toMatchObject({ accion: 'create', mensajes: ['Tiene subcuentas en el archivo: se crea como cuenta de grupo (Control), que no recibe movimientos'] });
+    expect(p.toCreate.find((a) => a.code === '14')!.isPostable).toBe(false);
+    expect([f(9).accion, f(10).accion]).toEqual(['create', 'create']);
+    expect(p.resumen.errores).toBe(3);
   });
 });

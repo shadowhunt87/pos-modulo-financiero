@@ -50,7 +50,7 @@ Solo las cuentas sin subcuentas admiten movimientos.
 
 ### Importar, exportar o cargar el catálogo estándar RD
 
-Si tu empresa aún no tiene cuentas, pulsa **Cargar catálogo estándar RD**: trae unas 190 cuentas listas para usar. Si ya llevas tu contabilidad en Excel, pulsa **Importar desde Excel**, descarga la plantilla, llénala y súbela (Excel o CSV, hasta 2 MB). En los dos casos ves primero una vista previa de lo que se creará y actualizará, y no se guarda nada hasta que pulses **Importar**. Si el archivo tiene errores, se muestran primero con su explicación y debes corregirlos y subirlo de nuevo. Importar nunca borra cuentas: solo agrega las nuevas y actualiza nombres. **Exportar** baja tu plan de cuentas a Excel o CSV (lo puede hacer cualquier usuario). Solo administradores y contadoras pueden importar. Al terminar, revisa la **Clasificación de cuentas** para que los reportes las ubiquen bien.
+Si tu empresa aún no tiene cuentas, pulsa **Cargar catálogo estándar RD**: trae 198 cuentas listas para usar. Si ya llevas tu contabilidad en Excel, pulsa **Importar desde Excel**, descarga la plantilla, llénala y súbela (Excel o CSV, hasta 2 MB). En los dos casos ves primero una vista previa de lo que se creará y actualizará, y no se guarda nada hasta que pulses **Importar**. Si el archivo tiene errores, se muestran primero con su explicación y debes corregirlos y subirlo de nuevo. Importar nunca borra cuentas: solo agrega las nuevas y actualiza nombres. **Exportar** baja tu plan de cuentas a Excel o CSV (lo puede hacer cualquier usuario). Solo administradores y contadoras pueden importar. Al terminar, revisa la **Clasificación de cuentas** para que los reportes las ubiquen bien.
 
 ## Saldos iniciales
 

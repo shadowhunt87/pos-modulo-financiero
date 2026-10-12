@@ -23,9 +23,16 @@ import { CATEGORIES_BY_TYPE } from '../masters/account-classification/account-cl
  * 7. Los nombres traen sangría con espacios: se recortan.
  * 8. Si viene "Categoría", se guarda con su flujo de efectivo y su auxiliar (CxC/CxP), igual que lo haría la
  *    auto-clasificación. Las cuentas que quedan sin categoría las clasifica después la auto-clasificación.
+ * 9. Una cuenta con subcuentas no recibe movimientos (el motor de asientos lo rechaza). Por eso, una cuenta
+ *    nueva no puede quedar debajo de: una cuenta que ya tiene movimientos (error); una cuenta del archivo
+ *    marcada "Detalle" o "Reguladora" (error); una cuenta existente que recibe movimientos pero aún no los
+ *    tiene (se permite con aviso: deja de recibirlos). Una cuenta del archivo con "Tipo de Cuenta" vacío
+ *    que resulta tener subcuentas se crea como Control (con aviso).
  */
 
 export const MAX_ROWS = 5000;
+/** Columnas que se leen de cada fila (el formato usa 10; el resto se ignora). */
+export const MAX_COLS = 30;
 
 /** Encabezados, en el orden en que se exportan (los 6 primeros son los del archivo de Carlos). */
 export const COLUMNS = {
@@ -76,11 +83,12 @@ const CASH_FLOW_BY_CATEGORY: Partial<Record<C, F>> = {
 export const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 /**
- * Inyección de fórmulas (CSV/Excel): un texto que empieza con = + - @ podría ejecutarse como fórmula al
- * abrir el archivo. Se exporta con una comilla delante; al importar se quita esa comilla.
+ * Inyección de fórmulas (CSV/Excel): un texto que empieza con = + - @ (o con tabulador o retorno de carro,
+ * que algunas hojas de cálculo saltan antes de leer la fórmula) podría ejecutarse como fórmula al abrir el
+ * archivo. Se exporta con una comilla delante; al importar se quita esa comilla.
  */
-export const neutralize = (s: string) => (/^[=+\-@]/.test(s) ? `'${s}` : s);
-export const unneutralize = (s: string) => (/^'[=+\-@]/.test(s) ? s.slice(1) : s);
+export const neutralize = (s: string) => (/^[=+\-@\t\r]/.test(s) ? `'${s}` : s);
+export const unneutralize = (s: string) => (/^'[=+\-@\t\r]/.test(s) ? s.slice(1) : s);
 
 /** Columna a la que corresponde un encabezado (tolerante a acentos, mayúsculas y variantes). */
 export function headerKey(raw: string): ColumnKey | undefined {
@@ -121,7 +129,12 @@ export function rowsFromGrid(grid: { n: number; cells: string[] }[]): RawRow[] |
   return rows;
 }
 
-/** CSV con comillas (RFC 4180). Detecta el separador (coma o punto y coma, como lo guarda Excel en español). */
+/**
+ * CSV con comillas (RFC 4180). Detecta el separador (coma o punto y coma, como lo guarda Excel en español).
+ * Las filas vacías no se guardan, cada fila se corta en MAX_COLS celdas y la lectura se detiene al pasar de
+ * MAX_ROWS + 50 filas (quien llama rechaza el archivo): un CSV de solo saltos de línea o separadores no
+ * debe consumir memoria ni tiempo.
+ */
 export function parseCsv(text: string): { n: number; cells: string[] }[] {
   const src = text.replace(/^﻿/, '');
   // El separador se mira en la línea del encabezado ("Código..."), no en las de título
@@ -141,14 +154,17 @@ export function parseCsv(text: string): { n: number; cells: string[] }[] {
       else if (ch === '"') quoted = false;
       else { if (ch === '\n') line++; cur += ch; }
     } else if (ch === '"' && cur === '') quoted = true;
-    else if (ch === sep) { cells.push(cur); cur = ''; }
+    else if (ch === sep) { if (cells.length < MAX_COLS) cells.push(cur); cur = ''; }
     else if (ch === '\n' || ch === '\r') {
       if (ch === '\r' && src[i + 1] === '\n') i++;
-      cells.push(cur); out.push({ n: start, cells });
+      if (cells.length < MAX_COLS) cells.push(cur);
+      if (cells.some((c) => c.trim())) out.push({ n: start, cells });
+      if (out.length > MAX_ROWS + 50) return out;
       cells = []; cur = ''; line++; start = line;
     } else cur += ch;
   }
-  if (cur !== '' || cells.length) { cells.push(cur); out.push({ n: start, cells }); }
+  if (cells.length < MAX_COLS) cells.push(cur);
+  if (cells.some((c) => c.trim())) out.push({ n: start, cells });
   return out;
 }
 
@@ -269,7 +285,7 @@ export function deduceParent(code: string, known: Set<string>): string | null {
 
 /** Compara el archivo contra lo que ya existe y decide qué pasaría con cada fila. No guarda nada. */
 export function buildPlan(raw: RawRow[], existing: Map<string, ExistingAccount>): ImportPlan {
-  interface Work extends PlanRow { acc?: NewAccount }
+  interface Work extends PlanRow { acc?: NewAccount; kindVacio?: boolean }
   const works: Work[] = [];
   const firstRow = new Map<string, number>();
 
@@ -303,8 +319,10 @@ export function buildPlan(raw: RawRow[], existing: Map<string, ExistingAccount>)
 
     if (!nombre) err('Falta el nombre de la cuenta');
     else if (nombre.length > 200) err('El nombre no puede pasar de 200 caracteres');
+    else if (nombre.includes('\u0000')) err('El nombre tiene un carácter invisible no válido. Vuelve a escribirlo a mano');
     const descripcion = (r.descripcion ?? '').trim();
     if (descripcion.length > 500) err('La descripción no puede pasar de 500 caracteres');
+    else if (descripcion.includes('\u0000')) err('La descripción tiene un carácter invisible no válido. Vuelve a escribirla a mano');
 
     const kind = parseKind(r.tipoCuenta ?? '');
     if (!kind) err(`"Tipo de Cuenta" no reconocido: "${r.tipoCuenta}". Usa Control, Detalle o Reguladora`);
@@ -330,6 +348,7 @@ export function buildPlan(raw: RawRow[], existing: Map<string, ExistingAccount>)
       // Auxiliar de clientes/proveedores como la auto-clasificación (no en una contra-cuenta como la provisión)
       subledger: isContra ? null : category === C.ACCOUNTS_RECEIVABLE ? SubledgerType.RECEIVABLE : category === C.ACCOUNTS_PAYABLE ? SubledgerType.PAYABLE : null,
     };
+    w.kindVacio = !(r.tipoCuenta ?? '').trim();
     w.accion = 'create';
   }
 
@@ -337,6 +356,8 @@ export function buildPlan(raw: RawRow[], existing: Map<string, ExistingAccount>)
   const known = new Set<string>([...firstRow.keys(), ...existing.keys()]);
   const inFile = new Map(works.filter((w) => w.codigo && firstRow.get(w.codigo) === w.fila).map((w) => [w.codigo, w]));
   const rawByFila = new Map(raw.map((r) => [r.fila, r]));
+  const withChildren = new Set([...existing.values()].map((a) => a.parentCode).filter((c): c is string => !!c));
+  const asGroup = new Set<string>(); // cuentas del archivo sin "Tipo de Cuenta" que pasan a Control
   for (const w of works) {
     if (!w.acc) continue;
     const explicit = rawByFila.get(w.fila)?.padre?.trim();
@@ -353,6 +374,25 @@ export function buildPlan(raw: RawRow[], existing: Map<string, ExistingAccount>)
     if (!pFile && !pDb) { err(`La cuenta padre ${padre} no está en el archivo ni en tu plan de cuentas`); continue; }
     if (pType && pType !== w.tipo) {
       err(`La cuenta padre ${padre} es de tipo ${TYPE_LABEL[pType]} y esta sería ${TYPE_LABEL[w.tipo!]}: deben ser del mismo tipo`);
+      continue;
+    }
+    // Regla 9 (solo para cuentas nuevas: las que ya existen conservan su padre o dan error en el paso 3)
+    if (existing.has(w.codigo)) continue;
+    if (pDb) {
+      if (pDb.hasMovements) {
+        err(`La cuenta ${padre} ${pDb.name} ya tiene movimientos: no puede tener subcuentas. Crea la subcuenta debajo de una cuenta de grupo`);
+      } else if (pDb.isPostable && !withChildren.has(padre)) {
+        w.mensajes.push(`La cuenta ${padre} ${pDb.name} recibe movimientos. Al tener esta subcuenta ya no podrá recibirlos y quedará solo para agrupar`);
+      }
+    } else if (pFile?.acc?.isPostable) {
+      if (pFile.kindVacio) {
+        pFile.acc.isPostable = false;
+        if (!asGroup.has(padre)) pFile.mensajes.push('Tiene subcuentas en el archivo: se crea como cuenta de grupo (Control), que no recibe movimientos');
+        asGroup.add(padre);
+      } else {
+        const kind = rawByFila.get(pFile.fila)?.tipoCuenta?.trim();
+        err(`La cuenta padre ${padre} está marcada como "${kind}" en la fila ${pFile.fila}: una cuenta de detalle recibe movimientos y no puede tener subcuentas. Cámbiala a "Control" o pon esta cuenta debajo de otra`);
+      }
     }
   }
 
@@ -408,7 +448,7 @@ export function buildPlan(raw: RawRow[], existing: Map<string, ExistingAccount>)
     depth.set(w.codigo, d);
   }
 
-  const filas: PlanRow[] = works.map(({ acc: _a, ...p }) => p);
+  const filas: PlanRow[] = works.map(({ acc: _a, kindVacio: _k, ...p }) => p);
   const count = (a: Accion) => filas.filter((f) => f.accion === a).length;
   const resumen = { crear: count('create'), actualizar: count('update'), sinCambios: count('unchanged'), omitidas: count('skip'), errores: count('error') };
   const avisos: string[] = [];

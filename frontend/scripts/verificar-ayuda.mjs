@@ -4,7 +4,7 @@
  *   npm run verificar-ayuda            (o: node scripts/verificar-ayuda.mjs [carpeta-del-manual])
  * Sale con código 1 si falta algo. Comprueba:
  *  1. public/manual/ayuda.json existe y es JSON válido; `secciones` con slug, archivo y titulo (sin repetidos).
- *  2. Cada sección tiene su .md. Avisa de los .md que no están en `secciones` (salvo GUIA-DE-ESTILO.md).
+ *  2. Cada sección tiene su .md. Avisa de los .md que no están en `secciones`.
  *  3. Cada ruta de los *.routes.ts (con pantalla) tiene su entrada en `pantallas`, con `seccion` existente
  *     y, si trae `ancla`, que exista como título en ese .md.
  *  4. `campos` con seccion/ancla, y los enlaces de `errores` y `siguiente`, apuntan a algo que existe.
@@ -106,7 +106,7 @@ for (const s of bySlug.values()) {
   checkMarkdown(s, text);
 }
 for (const f of existsSync(manualDir) ? readdirSync(manualDir) : []) {
-  if (f.endsWith('.md') && f !== 'GUIA-DE-ESTILO.md' && !byFile.has(f)) warn(`${f} está en el manual pero no figura en "secciones" (no se publica).`);
+  if (f.endsWith('.md') && !byFile.has(f)) warn(`${f} está en el manual pero no figura en "secciones" (no se publica).`);
 }
 
 function checkAnchor(where, slug, ancla) {

@@ -19,13 +19,13 @@ El correo o la clave no coinciden. Revisa, en este orden:
 3. **El correo.** Debe ser exactamente el que te dio tu administrador.
 4. Si sigue igual, pídele a tu administrador que restablezca tu clave en **Usuarios**.
 
-Ojo: después de **5 intentos fallidos** seguidos, el acceso se bloquea unos minutos (ver la siguiente pregunta).
+Ojo: después de varios intentos fallidos seguidos, el acceso se bloquea unos minutos (ver la siguiente pregunta).
 
 ### Me dice "Demasiados intentos fallidos"
 
-Por seguridad, tras 5 intentos fallidos con el mismo correo desde el mismo equipo, el acceso se bloquea hasta **15 minutos**. El aviso te dice cuánto falta.
+Por seguridad, tras varios intentos fallidos el acceso se bloquea un rato. Espera unos minutos o pide al administrador que te ayude.
 
-1. Espera ese tiempo. Intentar más no ayuda, solo lo alarga.
+1. Espera unos minutos. Intentar más no ayuda, solo lo alarga.
 2. Mientras esperas, revisa tu clave (sin espacios).
 3. Pasado el tiempo, escribe la clave despacio y pulsa **Entrar**.
 
@@ -161,7 +161,7 @@ Es un límite para evitar envíos repetidos. Espera un rato y envía el siguient
 
 ## Si eres la contadora
 
-- **Bloqueo de login**: ventana fija de 15 minutos desde el primer fallo; 5 fallos por correo+IP, 20 por correo y 40 por IP. El contador es en memoria del servidor: reiniciar el servicio lo limpia. El cambio de clave tiene su propio límite de 5 fallos por usuario.
+- **Bloqueo de login**: tras varios intentos fallidos el acceso se bloquea un rato; espera unos minutos o pide al administrador que te ayude. El cambio de clave también tiene un límite de intentos.
 - **Errores de configuración**: los mensajes "Falta configurar en Configuración contable: …" nombran la cuenta que falta; se resuelven en **Cuentas automáticas**. "No hay diario …" se resuelve creando los diarios por defecto en **Libros diarios**.
 - **NCF**: una secuencia por tipo; solo se amplía su rango, y solo se renueva si está agotada o vencida.
 - **Cierres**: un período no se cierra con asientos pendientes de aprobación, y un año cerrado bloquea todas sus fechas, tengan o no períodos.

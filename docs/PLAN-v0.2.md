@@ -508,8 +508,9 @@ sección con la pregunta **"¿lo entiende un dueño?"** (Carlos) y "¿le sirve a
   ayuda.json            ← UN solo archivo de configuración (ver abajo)
   01-primeros-pasos.md ... 12-auditoria.md
   img/                  ← capturas con fecha en el nombre: factura-nueva-2026-10.png
-  GUIA-DE-ESTILO.md     ← cómo escribir (no se publica)
 ```
+La guía de estilo para escribir el manual vive fuera de `public/` (no se publica): `frontend/docs/GUIA-DE-ESTILO-MANUAL.md`.
+
 `ayuda.json` reúne lo que en la v1.0 eran 4 archivos, con 4 claves:
 - `secciones`: `{ slug, archivo, titulo }` en orden;
 - `pantallas`: por ruta, `{ seccion, ancla, siguiente: { texto, ruta } }` (el "?" y el "siguiente paso");

@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import * as bcrypt from 'bcrypt';
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip'; // viene con exceljs
 import { readFileSync } from 'node:fs';
 import { createApp } from '../src/app.setup.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -212,7 +213,8 @@ describe('Plan de cuentas: importar, exportar y catálogo RD (e2e)', () => {
 
     it('formato inválido: 400 en español; plantilla con hoja de instrucciones', async () => {
       const bad = await api('get', '/chart-of-accounts/export?format=pdf', 'view').expect(400);
-      expect(JSON.stringify(bad.body.message)).toMatch(/xlsx o csv/);
+      expect(JSON.stringify(bad.body.message)).toMatch(/El formato debe ser Excel \(xlsx\) o CSV/);
+      expect(JSON.stringify(bad.body.message)).not.toMatch(/\bformat\b/);
       const res = await binary(api('get', '/chart-of-accounts/template', 'view')).expect(200);
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.load(res.body as never);
@@ -282,11 +284,56 @@ describe('Plan de cuentas: importar, exportar y catálogo RD (e2e)', () => {
       expect(p2.body.filas[1].mensajes[0]).toMatch(/ya existe sin cuenta padre y el archivo la pone bajo 11. La cuenta ya tiene movimientos/);
     });
 
+    it('no crea subcuentas bajo una cuenta con movimientos (el motor ya no dejaría registrar en ella)', async () => {
+      // Caso de QA: 1101 de B tiene un asiento; importar 1101-01 la dejaría con subcuentas
+      const file = csv([HEAD, ['1101-01', 'Caja chica', '4', 'Detalle', 'Debito', '']]);
+      const p = await upload('/chart-of-accounts/import/preview', 'adminb', file, 'b.csv').expect(201);
+      expect(p.body.filas[0]).toMatchObject({
+        codigo: '1101-01', padre: '1101', accion: 'error',
+        mensajes: ['La cuenta 1101 Caja B ya tiene movimientos: no puede tener subcuentas. Crea la subcuenta debajo de una cuenta de grupo'],
+      });
+      const r = await upload('/chart-of-accounts/import', 'adminb', file, 'b.csv').expect(422);
+      expect(r.body.filas[0].mensajes[0]).toMatch(/ya tiene movimientos: no puede tener subcuentas/);
+      expect(await count(companyB)).toBe(2);
+      // 1101 sigue recibiendo movimientos
+      await api('post', '/accounting/journal-entries', 'adminb').send({
+        date: '2031-01-11', description: 'Otra venta', lines: [{ accountId: accB.caja, debit: 50 }, { accountId: accB.ventas, credit: 50 }],
+      }).expect(201);
+    });
+
+    it('subcuenta bajo una cuenta "Detalle" del mismo archivo: error en la vista previa y en la importación', async () => {
+      const file = csv([HEAD, ['6', 'GASTOS', '1', 'Control', 'Debito', ''], ['61', 'Gastos varios', '2', 'Detalle', 'Debito', ''], ['6101', 'Papelería', '3', 'Detalle', 'Debito', '']]);
+      const p = await upload('/chart-of-accounts/import/preview', 'adminb', file, 'b.csv').expect(201);
+      expect(p.body.filas[2].mensajes[0]).toMatch(/padre 61 está marcada como "Detalle" en la fila 3: una cuenta de detalle recibe movimientos y no puede tener subcuentas/);
+      await upload('/chart-of-accounts/import', 'adminb', file, 'b.csv').expect(422);
+      expect(await count(companyB)).toBe(2);
+    });
+
+    it('byte nulo en un nombre: el CSV se rechaza como no válido (400) y en Excel es error en la fila; nunca 500', async () => {
+      const file = Buffer.from(`${HEAD.slice(0, 2).join(',')}\r\n6101,Gasto\u0000raro\r\n`, 'utf8');
+      const c = await upload('/chart-of-accounts/import', 'adminb', file, 'b.csv').expect(400);
+      expect(c.body.message).toMatch(/Excel|CSV/);
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Plan');
+      ws.addRow(HEAD.slice(0, 2));
+      ws.addRow(['6101', 'Gasto raro']);
+      // En el xlsx el byte nulo se escribe como _x0000_ (exceljs lo convierte de vuelta a \u0000)
+      const zip = await JSZip.loadAsync(await wb.xlsx.writeBuffer());
+      zip.file('xl/sharedStrings.xml', (await zip.file('xl/sharedStrings.xml')!.async('string')).replace('Gasto raro', 'Gasto_x0000_raro'));
+      const xlsx = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+      const p = await upload('/chart-of-accounts/import/preview', 'adminb', xlsx, 'b.xlsx').expect(201);
+      expect(p.body.filas[0]).toMatchObject({ accion: 'error', mensajes: ['El nombre tiene un carácter invisible no válido. Vuelve a escribirlo a mano'] });
+      await upload('/chart-of-accounts/import', 'adminb', xlsx, 'b.xlsx').expect(422);
+      expect(await count(companyB)).toBe(2);
+    });
+
     it('aislamiento: los códigos de otra empresa no cuentan y nada se cruza', async () => {
-      // En B, el catálogo RD se crearía casi completo (lo de A no existe para B); 1101 choca con la de B
+      // En B, el catálogo RD se crearía casi completo (lo de A no existe para B); 1101 choca con la de B,
+      // y las subcuentas de 1101 y 4101 (con movimientos en B) no se pueden crear
       const r = await api('get', '/chart-of-accounts/standard/rd/preview', 'adminb').expect(200);
-      expect(r.body.resumen.crear).toBeGreaterThan(190);
+      expect(r.body.resumen.crear).toBeGreaterThan(180);
       expect(r.body.filas.find((f: { codigo: string }) => f.codigo === '1101').accion).toBe('error');
+      expect(r.body.filas.find((f: { codigo: string }) => f.codigo === '4101-01').mensajes[0]).toMatch(/4101 Ventas B ya tiene movimientos/);
       const nA = await count(companyA);
       const file = csv([HEAD, ['5', 'COSTOS', '1', 'Control', 'Debito', '']]);
       await upload('/chart-of-accounts/import', 'adminb', file, 'b.csv').expect(201);
@@ -333,6 +380,52 @@ describe('Plan de cuentas: importar, exportar y catálogo RD (e2e)', () => {
       expect(r.body.message).toMatch(/No se encontró el encabezado/);
     });
 
+    it('"bomba de celdas combinadas": un xlsx de pocos KB con rangos sobre toda la hoja se lee sin agotar la memoria', async () => {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Plan');
+      ws.addRow(HEAD);
+      ws.addRow(['9101', 'Cuenta de prueba', '1', 'Detalle', 'Debito', '']);
+      const zip = await JSZip.loadAsync(await wb.xlsx.writeBuffer());
+      const all = 'A1:XFD1048576';
+      const sheet = (await zip.file('xl/worksheets/sheet1.xml')!.async('string')).replace('</sheetData>', '</sheetData>'
+        + `<conditionalFormatting sqref="${all}"><cfRule type="expression" dxfId="0" priority="1"><formula>TRUE</formula></cfRule></conditionalFormatting>`
+        + `<mergeCells count="1"><mergeCell ref="${all}"/></mergeCells>`
+        + `<dataValidations count="1"><dataValidation type="list" allowBlank="1" sqref="${all}"><formula1>"a,b"</formula1></dataValidation></dataValidations>`);
+      zip.file('xl/worksheets/sheet1.xml', sheet);
+      const buf = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+      expect(buf.length).toBeLessThan(20 * 1024);
+      const t = Date.now();
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', buf, 'celdas.xlsx').expect(201);
+      expect(Date.now() - t).toBeLessThan(5000);
+      expect(r.body.filas).toEqual([expect.objectContaining({ codigo: '9101', nombre: 'Cuenta de prueba' })]);
+
+      // Un nombre definido sobre toda la hoja (exceljs también lo expande celda por celda): 400 en español
+      const withName = async (ref: string) => {
+        const z = await JSZip.loadAsync(buf);
+        const book = (await z.file('xl/workbook.xml')!.async('string')).replace('</sheets>', `</sheets><definedNames><definedName name="zona">Plan!${ref}</definedName></definedNames>`);
+        z.file('xl/workbook.xml', book);
+        return z.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+      };
+      const big = await upload('/chart-of-accounts/import/preview', 'acct', await withName('$A$1:$XFD$1048576'), 'nombre.xlsx').expect(400);
+      expect(big.body.message).toMatch(/nombre definido que cubre una zona enorme/);
+      // Columnas enteras (área de impresión típica de Excel) o un rango normal: se aceptan
+      await upload('/chart-of-accounts/import/preview', 'acct', await withName('$A:$J'), 'nombre.xlsx').expect(201);
+      await upload('/chart-of-accounts/import/preview', 'acct', await withName('$A$1:$J$5001'), 'nombre.xlsx').expect(201);
+      expect(Date.now() - t).toBeLessThan(5000);
+    });
+
+    it('CSV de 2 MB de solo saltos de línea: se responde rápido, sin acumular filas vacías', async () => {
+      const t = Date.now();
+      const nl = Buffer.from(`${HEAD.slice(0, 2).join(',')}\n${'\n'.repeat(2 * 1024 * 1024 - 100)}`);
+      const r = await upload('/chart-of-accounts/import/preview', 'acct', nl, 'vacio.csv').expect(400);
+      expect(r.body.message).toMatch(/no tiene cuentas/);
+      // Muchísimas filas cortas: se corta al pasar del máximo
+      const many = Buffer.from(`${HEAD.slice(0, 2).join(',')}\n${'1,a\n'.repeat(400_000)}`);
+      const r2 = await upload('/chart-of-accounts/import/preview', 'acct', many, 'muchas.csv').expect(400);
+      expect(r2.body.message).toMatch(/más de 5\.000 filas/);
+      expect(Date.now() - t).toBeLessThan(3000);
+    });
+
     it('"bomba zip": un xlsx pequeño que se infla a más de 30 MB se rechaza', async () => {
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('Plan');
@@ -343,5 +436,27 @@ describe('Plan de cuentas: importar, exportar y catálogo RD (e2e)', () => {
       const r = await upload('/chart-of-accounts/import/preview', 'acct', buf, 'bomba.xlsx').expect(400);
       expect(r.body.message).toMatch(/dañado o es demasiado grande/);
     });
+  });
+
+  // ------------------------------------------------------------------
+  describe('Rendimiento', () => {
+    it('5.000 cuentas renombradas en una importación: menos de 5 s, con bitácora y sin tocar la otra empresa', async () => {
+      const parentId = (await prisma.account.create({ data: { companyId: companyA, code: '6900', name: 'Grupo de prueba', type: 'EXPENSE', isPostable: false } })).id;
+      const codes = Array.from({ length: 5000 }, (_, i) => `6900-${String(i).padStart(4, '0')}`);
+      await prisma.account.createMany({ data: codes.map((code) => ({ companyId: companyA, code, name: `Cuenta ${code}`, type: 'EXPENSE' as const, parentId })) });
+      const file = csv([HEAD.slice(0, 2), ...codes.map((c) => [c, `Cuenta nueva ${c}`])]);
+      const t = Date.now();
+      const r = await upload('/chart-of-accounts/import', 'acct', file, 'renombres.csv').expect(201);
+      const ms = Date.now() - t;
+      expect(r.body.resumen).toMatchObject({ crear: 0, actualizar: 5000, errores: 0 });
+      expect(ms).toBeLessThan(5000);
+      const renamed = await prisma.account.count({ where: { companyId: companyA, code: { in: codes }, name: { startsWith: 'Cuenta nueva 6900-' } } });
+      expect(renamed).toBe(5000);
+      const audit = await prisma.auditLog.findFirst({ where: { companyId: companyA, entityName: 'Account', entityId: 'import' }, orderBy: { createdAt: 'desc' } });
+      const changes = audit!.changes as { actualizadas: { code: string; before: { name: string }; after: { name: string } }[] };
+      expect(changes.actualizadas).toHaveLength(5000);
+      expect(changes.actualizadas[0]).toMatchObject({ code: '6900-0000', before: { name: 'Cuenta 6900-0000' }, after: { name: 'Cuenta nueva 6900-0000' } });
+      expect(await count(companyB)).toBe(3);
+    }, 60000);
   });
 });

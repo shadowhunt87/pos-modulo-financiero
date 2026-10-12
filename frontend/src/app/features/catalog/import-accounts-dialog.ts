@@ -10,6 +10,8 @@ import {
 } from './import-accounts-logic';
 
 type Source = 'rd' | 'file';
+/** Filas que se dibujan por tanda (el catálogo o un Excel pueden traer miles). */
+const PAGE = 200;
 const FILTERS: ImportAction[] = ['error', 'create', 'update', 'skip', 'unchanged'];
 
 /**
@@ -33,14 +35,14 @@ const FILTERS: ImportAction[] = ['error', 'create', 'update', 'skip', 'unchanged
 
       @if (step() === 1) {
         <p>Puedes usar el catálogo estándar de República Dominicana o tu propio Excel con estas columnas: código, nombre, tipo y cuenta padre.
-          <app-field-help text="El catálogo estándar trae unas 190 cuentas listas para usar (activos, pasivos, patrimonio, ingresos y gastos). Si usas tu Excel, descarga la plantilla: trae las columnas y las instrucciones. Antes de guardar verás una vista previa y no se cambia nada hasta que confirmes." /></p>
+          <app-field-help text="El catálogo estándar trae 198 cuentas listas para usar (activos, pasivos, patrimonio, ingresos y gastos). Si usas tu Excel, descarga la plantilla: trae las columnas y las instrucciones. Antes de guardar verás una vista previa y no se cambia nada hasta que confirmes." /></p>
         @if (hasAccounts()) {
           <div class="notice info gap"><span aria-hidden="true">i</span><span>Tu plan ya tiene cuentas. Aquí solo se agregan cuentas nuevas y se actualizan nombres. <strong>Nunca se borra nada.</strong></span></div>
         }
         <div class="choices" role="radiogroup" aria-label="Origen de las cuentas">
           <button type="button" class="choice" role="radio" [attr.aria-checked]="src() === 'rd'" [class.sel]="src() === 'rd'" (click)="pick('rd')">
             <strong>Catálogo estándar de RD</strong>
-            <span class="sub">Unas 190 cuentas ya clasificadas. La opción más rápida.</span>
+            <span class="sub">198 cuentas ya clasificadas. La opción más rápida.</span>
           </button>
           <button type="button" class="choice" role="radio" [attr.aria-checked]="src() === 'file'" [class.sel]="src() === 'file'" (click)="pick('file')">
             <strong>Mi propio archivo</strong>
@@ -72,16 +74,16 @@ const FILTERS: ImportAction[] = ['error', 'create', 'update', 'skip', 'unchanged
           <div class="notice gap"><span aria-hidden="true">i</span><span>No hay nada nuevo que importar: todas las cuentas ya existen igual.</span></div>
         }
         <div class="chips gap" role="group" aria-label="Filtrar por acción">
-          <button type="button" class="chip" [class.on]="filter() === ''" [attr.aria-pressed]="filter() === ''" (click)="filter.set('')">Todas ({{ p.filas.length }})</button>
+          <button type="button" class="chip" [class.on]="filter() === ''" [attr.aria-pressed]="filter() === ''" (click)="setFilter('')">Todas ({{ p.filas.length }})</button>
           @for (k of filters; track k) {
-            @if (count(k) > 0) { <button type="button" class="chip" [class.on]="filter() === k" [attr.aria-pressed]="filter() === k" (click)="filter.set(k)">{{ look[k].text }} ({{ count(k) }})</button> }
+            @if (count(k) > 0) { <button type="button" class="chip" [class.on]="filter() === k" [attr.aria-pressed]="filter() === k" (click)="setFilter(k)">{{ look[k].text }} ({{ count(k) }})</button> }
           }
         </div>
         <div class="table-wrap tall">
           <table class="table">
             <thead><tr><th>Fila</th><th>Acción</th><th>Código</th><th>Nombre</th><th>Tipo</th><th>Padre</th></tr></thead>
             <tbody>
-              @for (r of rows(); track r.fila) {
+              @for (r of visibleRows(); track r.fila) {
                 <tr>
                   <td class="mono">{{ r.fila }}</td>
                   <td><span class="badge" [class]="'badge ' + look[r.accion].tone"><span aria-hidden="true">{{ look[r.accion].icon }}</span>&nbsp;{{ look[r.accion].text }}</span></td>
@@ -96,6 +98,9 @@ const FILTERS: ImportAction[] = ['error', 'create', 'update', 'skip', 'unchanged
             </tbody>
           </table>
         </div>
+        @if (rows().length > shown()) {
+          <p class="sub gap">Mostrando {{ visibleRows().length }} de {{ rows().length }} filas. <button type="button" class="link" (click)="showMore()">Mostrar más</button></p>
+        }
         @if (error()) { <app-error-notice style="display:block;margin-top:14px" [error]="error()" /> }
       }
 
@@ -183,6 +188,8 @@ export class ImportAccountsDialog {
 
   protected readonly summary = computed<ImportSummary>(() => this.preview()?.resumen ?? { crear: 0, actualizar: 0, sinCambios: 0, omitidas: 0, errores: 0 });
   protected readonly rows = computed<ImportRow[]>(() => sortRows([...(this.preview()?.filas ?? [])], this.filter()));
+  protected readonly shown = signal(PAGE);
+  protected readonly visibleRows = computed(() => this.rows().slice(0, this.shown()));
   protected readonly canReview = computed(() => this.src() === 'rd' || !!this.file());
   protected readonly canApply = computed(() => { const s = this.summary(); return s.errores === 0 && s.crear + s.actualizar > 0; });
 
@@ -192,7 +199,7 @@ export class ImportAccountsDialog {
       const s = this.source();
       untracked(() => {
         this.step.set(1); this.src.set(s); this.file.set(null); this.preview.set(null);
-        this.filter.set(''); this.error.set(''); this.busy.set(false);
+        this.filter.set(''); this.shown.set(PAGE); this.error.set(''); this.busy.set(false);
       });
     });
   }
@@ -203,6 +210,8 @@ export class ImportAccountsDialog {
   }
   protected tipo(r: ImportRow): string { return label(ACCOUNT_TYPE, r.tipo); }
 
+  protected setFilter(k: ImportAction | ''): void { this.filter.set(k); this.shown.set(PAGE); }
+  protected showMore(): void { this.shown.update((n) => n + PAGE); }
   protected pick(s: Source): void { this.src.set(s); this.error.set(''); }
   protected onFile(e: Event): void {
     const f = (e.target as HTMLInputElement).files?.[0] ?? null;
@@ -224,7 +233,7 @@ export class ImportAccountsDialog {
       const p = this.src() === 'rd'
         ? await this.api.getP<ImportPreview>('/chart-of-accounts/standard/rd/preview')
         : await firstValueFrom(this.api.upload<ImportPreview>('/chart-of-accounts/import/preview', f as File));
-      this.preview.set(p); this.filter.set(''); this.step.set(2);
+      this.preview.set(p); this.filter.set(''); this.shown.set(PAGE); this.step.set(2);
     } catch (e) { this.error.set(e); }
     this.busy.set(false);
   }

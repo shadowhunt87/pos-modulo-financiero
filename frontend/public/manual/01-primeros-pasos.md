@@ -119,7 +119,7 @@ Tus comentarios se revisan cada semana. La respuesta aparece en **Ayuda › Mis 
 - El indicador **Libros cuadrados** compara los débitos y créditos del año. Si dice descuadrados, revisa los asientos del año.
 - El menú **Contabilidad** reúne Asientos, Plan de cuentas, Períodos fiscales, Años fiscales y cierre, y Saldos iniciales. **Configuración** reúne Impuestos, Comprobantes fiscales (NCF), Clasificación de cuentas para reportes, Cuentas automáticas, Libros diarios y Numeración de facturas y pagos.
 - El cambio de clave invalida las sesiones anteriores del usuario; la pantalla guarda el token nuevo y no pide volver a entrar.
-- El intento de login y el cambio de clave tienen límite de intentos fallidos (5 en 15 minutos).
+- El intento de login y el cambio de clave tienen límite de intentos fallidos.
 - **Ocultar ayudas** es una preferencia del navegador, no del servidor.
 
 ## Si algo sale mal
@@ -127,7 +127,7 @@ Tus comentarios se revisan cada semana. La respuesta aparece en **Ayuda › Mis 
 | Qué ves | Qué hacer |
 |---|---|
 | "Credenciales inválidas" | Revisa el correo y la clave. Mira [Preguntas frecuentes](/help/preguntas-frecuentes). |
-| "Demasiados intentos" | Espera lo que dice el aviso (máximo 15 minutos). |
+| "Demasiados intentos" | Espera unos minutos, o pide al administrador que te ayude. |
 | No me acuerdo de mi clave | Pídele a tu administrador que la restablezca en **Usuarios**. |
 | No veo una opción del menú | Depende de tu rol. Pregúntale a tu administrador. |
 | "Tu sesión venció" | Entra de nuevo. |

@@ -95,6 +95,22 @@ describe('Comentarios (e2e)', () => {
       await api('post', '/feedback', 'acct').send({ kind: 'IDEA', message: 'Hola' }).expect(400);
     });
 
+    it('mensajes de validación en español sencillo, sin el nombre técnico del campo', async () => {
+      const r1 = await send('acct', { message: '  ' }).expect(400);
+      expect(r1.body.message).toEqual(['Escribe el comentario']);
+      const r2 = await send('acct', { route: 'sales' }).expect(400);
+      expect(r2.body.message).toEqual(['La pantalla desde la que se envía debe empezar con /']);
+      const r3 = await send('acct', { message: 'a'.repeat(2001) }).expect(400);
+      expect(r3.body.message).toEqual(['El comentario no puede pasar de 2000 caracteres']);
+    });
+
+    it('byte nulo (\\u0000) en el comentario o la ruta: 400 claro, no 500', async () => {
+      for (const extra of [{ message: 'hola\u0000mundo' }, { route: '/x\u0000y' }]) {
+        const r = await send('acct', extra).expect(400);
+        expect(r.body.message).toEqual(['El texto tiene un carácter invisible no válido. Bórralo y vuelve a escribirlo']);
+      }
+    });
+
     it('no se puede colar empresa, usuario, estado ni respuesta por el body (400)', async () => {
       for (const extra of [{ companyId: companyB }, { userId: userId.admin }, { status: 'DONE' }, { response: 'x' }, { userAgent: 'x' }]) {
         await send('view', extra).expect(400);
@@ -236,6 +252,11 @@ describe('Comentarios (e2e)', () => {
       await api('patch', `/feedback/${fbId}`, 'admin').send({ response: 'r'.repeat(1001) }).expect(400);
       await api('patch', `/feedback/${fbId}`, 'admin').send({ taskRef: 't'.repeat(101) }).expect(400);
       await api('patch', `/feedback/${fbId}`, 'admin').send({ message: 'otro texto' }).expect(400);
+      // Byte nulo: 400 con mensaje claro (antes, 500 al guardar)
+      for (const body of [{ response: 'a\u0000b' }, { taskRef: '#1\u0000' }]) {
+        const r = await api('patch', `/feedback/${fbId}`, 'admin').send(body).expect(400);
+        expect(r.body.message).toEqual(['El texto tiene un carácter invisible no válido. Bórralo y vuelve a escribirlo']);
+      }
       await api('patch', '/feedback/no-es-uuid', 'admin').send({ status: 'DONE' }).expect(400);
       await api('patch', '/feedback/00000000-0000-4000-8000-000000000000', 'admin').send({ status: 'DONE' }).expect(404);
     });

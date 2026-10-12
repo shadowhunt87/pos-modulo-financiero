@@ -44,8 +44,8 @@ WHERE="TRUE"
 [ -n "$DESDE" ]  && WHERE="$WHERE AND f.\"createdAt\" >= '$DESDE'"
 [ -n "$ESTADO" ] && WHERE="$WHERE AND f.status::text = '$ESTADO'"
 
-# Texto libre: se antepone ' si empieza con = + - @ (evita que Excel lo trate como formula)
-SAFE() { printf "CASE WHEN %s ~ '^[=+@-]' THEN '''' || %s ELSE %s END" "$1" "$1" "$1"; }
+# Texto libre: se antepone ' si empieza con = + - @, tabulador o retorno de carro (evita que Excel lo trate como formula)
+SAFE() { printf "CASE WHEN %s ~ '^[=+@\\\\t\\\\r-]' THEN '''' || %s ELSE %s END" "$1" "$1" "$1"; }
 
 TASKREF='f."taskRef"'
 SQL="COPY (
