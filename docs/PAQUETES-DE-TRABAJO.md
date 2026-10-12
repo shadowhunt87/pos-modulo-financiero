@@ -1,7 +1,8 @@
 # Paquetes de trabajo — repartir el desarrollo entre varias IA y personas
 
 > Versión 1.0 · 2026-10-12 · Deriva de [PLAN-v0.2](PLAN-v0.2.md) y [PLAN-v0.3](PLAN-v0.3.md) (v1.2).
-> Objetivo: terminar la parte financiera lo antes posible para que el socio integre su **vertical**.
+> Objetivo: terminar la parte financiera lo antes posible. El socio de Carlos desarrolla una **vertical** aparte;
+> la parte financiera la lleva Carlos y la reparte entre varias IA.
 > Cada paquete se puede entregar a una IA (o a una persona) con un encargo completo, sin leer toda la conversación.
 > Tablero para importar a GitHub Projects: [tablero-paquetes.csv](tablero-paquetes.csv).
 
@@ -66,13 +67,14 @@ Seis carriles que casi no se pisan. Entre paréntesis, a quién se sugiere.
 
 | Carril | Contenido | Sugerido |
 |---|---|---|
-| **N · Núcleo fiscal** (backend) | v0.3: reverso, parámetros con vigencia, e-CF mínimo, cuadres, calendario, 609/IT-1/IR-17 | Socio con IA N1, o una IA N1 con su revisión |
-| **E · Experiencia** | v0.2 Fases 2 a 4: arranque guiado, semáforo, pantallas guiadas | Carlos con Claude + IA N2/N3 |
-| **A · Auditoría** | v0.2 Fases 5 y 6 | Una IA N1/N2 dedicada (carril casi independiente) |
-| **S · Puerta de datos reales** | 2FA, exportación completa, copia externa | Claude N1 + devops (necesita D17 y D18) |
-| **V · Vertical** | Contrato de integración para que el socio conecte su vertical | Arquitecto (N1) primero |
-| **D · Documentación** | Manual, `ayuda.json`, notas de versión | IA N3 con revisión de N2 |
-| **Q · Puertas de calidad** | QA, seguridad, revisor, despliegue | **Siempre N1/N2; no se delega a N3** |
+| **N · Núcleo fiscal** (backend) | v0.3: reverso, parámetros con vigencia, cuadres, calendario, 609/IT-1/IR-17 | IA-N |
+| **E · Experiencia** | v0.2 Fases 2 a 4: arranque guiado, semáforo, pantallas guiadas | IA-E (y la IA local para E4-a a E4-d) |
+| **A · Auditoría** | v0.2 Fases 5 y 6 | IA-A (carril casi independiente) |
+| **S · Puerta de datos reales** | 2FA, exportación completa, copia externa | IA-S (necesita D17 y D18); Claude hace antes el anexo S0 |
+| **V · Vertical** | Contrato para que la vertical del socio se conecte al núcleo | Claude escribe el contrato (V0); el resto, IA-N e IA-E |
+| **D · Documentación** | Manual, `ayuda.json`, notas de versión | IA local, con revisión |
+| **Q · Puertas de calidad** | QA, seguridad, revisor, despliegue | **Claude**; no se delega a IA local |
+| **Facturación electrónica** (N3, N7) | e-CF mínimo, importación de XML, emisión con el proveedor | **Claude**; las demás IA no la tocan |
 
 ### Orden por olas
 
@@ -90,6 +92,58 @@ de calidad son el cuello de botella real; abrir 15 ramas a la vez solo produce c
 
 ---
 
+## 3.1 Quién hace qué (Carlos, 2026-10-12)
+
+La parte financiera la reparte Carlos entre sus IA: **IA local, Gemini, DeepSeek, Grok y Kimi K3**.
+**Claude** hace la facturación electrónica (N3 y N7). El socio de Carlos desarrolla la vertical y no entra en estos paquetes.
+
+**Reparto provisional** (se confirma con la prueba de calibración, sección 3.2). Un carril = una IA, para que cada una
+conserve el contexto de su zona del código y no se pisen:
+
+| Etiqueta | Carril | IA inicial | Por qué |
+|---|---|---|---|
+| **IA-N** | Núcleo fiscal | DeepSeek | Es el carril de más razonamiento contable y fiscal |
+| **IA-S** | Puerta de datos reales | Gemini | Seguridad y operación; contexto grande para exportar todas las tablas |
+| **IA-E** | Experiencia guiada | Kimi K3 | Mucho frontend y backend con patrón claro |
+| **IA-A** | Auditoría | Grok | Carril casi independiente, buen candidato para correr en paralelo |
+| **IA-local** | Documentación y pantallas guiadas mecánicas | Modelo local | Trabajo acotado con ejemplo a imitar |
+| **Claude** | e-CF (N3, N7), anexo S0, contrato V0 y puertas de calidad | Claude | Ver abajo |
+
+**Esta asignación es una suposición mía.** No conozco el rendimiento actual de cada una de esas IA; la primera tabla puede
+cambiar por completo después de la calibración.
+
+**Qué se queda Claude, además de la facturación electrónica, y por qué:**
+- **S0 y V0** (dos documentos cortos de diseño). Todo lo demás depende de ellos y los revisa el revisor crítico.
+- **Las puertas de calidad** (QA, seguridad, revisión final y fusión). Revisar cuesta mucho menos que construir. Un
+  paquete construido por otra IA y revisado por Claude suma poco a tu consumo y evita que un error de dinero, permisos o
+  seguridad llegue a producción. Si prefieres que otra IA también revise, se puede, pero no recomiendo quitar la revisión
+  de seguridad de los paquetes S1–S3, N1, N2a–c, A1 y A2.
+
+### 3.2 Prueba de calibración (antes de repartir los paquetes grandes)
+
+Para no apostar un carril entero a una IA sin conocerla, a cada una se le entregan las **mismas dos tareas pequeñas**:
+
+| Prueba | Tarea | Qué mide |
+|---|---|---|
+| **C1 · backend** | Paquete S5 (cabeceras de seguridad duplicadas entre helmet y nginx) | Sigue el código del socio, escribe pruebas, no rompe nada |
+| **C2 · frontend** | Una sola lista (por ejemplo «Clientes») pasada al patrón de la Fase 1: estado vacío, ayuda de campo y errores claros | Imita un patrón, respeta el checklist de pantallas |
+
+Cada IA entrega en su propia rama. Claude revisa las cinco con la misma lista (¿compila?, ¿pasan las 370 pruebas?,
+¿tocó solo lo permitido?, ¿pruebas nuevas?, ¿errores de dinero o de permisos?) y da una nota. Con eso se fija qué IA lleva
+qué carril. Las ramas de la calibración se descartan, salvo la mejor.
+
+### 3.3 Cómo trabaja cada IA
+
+- **Una ficha por paquete** en `docs/paquetes/<ID>.md`, con lo que debe leer, los archivos que puede tocar, los criterios
+  de aceptación y los comandos de prueba. Se la pegas a la IA tal cual, junto con el archivo `AGENTS.md` de la raíz.
+- **La IA trabaja en su PC o en su herramienta**, con una copia del repositorio privado y su propia cuenta de GitHub
+  (nunca la clave del servidor). Hace su rama `wp/<ID>-…` y abre un PR.
+- **Tú me avisas el PR** («revisa el PR de N1»). Claude corre QA y, si toca dinero, permisos o archivos subidos, la revisión
+  de seguridad. Devuelve una lista de cambios para que la IA los corrija. Cuando queda aprobado, se fusiona y se despliega en pruebas.
+- **Ninguna IA hace push a la rama principal.**
+
+---
+
 ## 4. Choques que hay que evitar (para cualquier cantidad de IA)
 
 **Migraciones de Prisma.** Dos ramas que cambian `prisma/schema.prisma` chocan seguro.
@@ -102,7 +156,7 @@ de calidad son el cuello de botella real; abrir 15 ramas a la vez solo produce c
 `frontend/src/app/layout/nav.ts`, `frontend/src/app/shared/labels.ts`, `frontend/public/manual/ayuda.json`,
 `src/posting/posting.service.ts`, `src/invoicing/invoicing.service.ts`.
 - `ayuda.json`: cada paquete agrega **sus** entradas al final de su bloque; el documentador consolida.
-- `posting.service.ts` e `invoicing.service.ts` son del socio y los toca N1 y N2c: cada uno en su PR, con explicación.
+- `posting.service.ts` e `invoicing.service.ts` son de la base del socio y los tocan N1 y N2c: cada uno en su PR, con explicación. Como el socio sigue en su vertical, se le avisa de esos cambios antes de fusionar.
 
 **Pantallas fiscales.** Impuestos, NCF, DGII, Panel y empresa los tocan E4, N2 y N5. Se hacen en ese orden, en una
 sola rama por área, para que no haya dos versiones de `tax-rates.ts` o `ncf.ts`.
@@ -231,7 +285,7 @@ No se delegan a N3. Se corren en este orden y cada una puede devolver el paquete
 2. **Seguridad** (N1): obligatoria para los paquetes que tocan permisos, migraciones, archivos subidos, tokens, dinero o aislamiento entre empresas. Lista: N1, N2a–c, N3, N5, N6, S1–S3, A1, A2, E1c, V1.
 3. **Revisor crítico** (N1): al cerrar cada fase y cada versión, contra las dos guías y el plan.
 4. **Documentación** (N3 + revisión): el manual del paquete está en el PR.
-5. **Revisión humana**: el otro socio aprueba el PR (los que tocan sus archivos, sin excepción).
+5. **Revisión humana**: Carlos aprueba la fusión; si el PR toca archivos del socio (`posting`, `invoicing`), se le avisa a él.
 6. **Despliegue en pruebas**: con respaldo previo y con autorización de Carlos. Datos reales: **no** hasta que S1, S2 y S3 estén aprobados y Carlos lo diga.
 
 ---
