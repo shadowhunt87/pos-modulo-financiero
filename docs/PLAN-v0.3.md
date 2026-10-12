@@ -1,6 +1,6 @@
 # Plan técnico v0.3 — Cumplimiento fiscal: vigencias, ficha fiscal, puerta de datos reales, calendario, declaraciones y e-CF
 
-Fecha: 2026-10-12 · Autor: Arquitecto · **Versión 1.2** (v1.1 aprobada con cambios por el revisor-critico; cada ajuste verificado en el código)
+Fecha: 2026-10-12 · Autor: Arquitecto · **Versión 1.2 · APROBADA por Carlos el 2026-10-12** (las decisiones D29 y D34–D40 se toman con la opción recomendada en la sección 16, salvo que Carlos indique otra; D37 se confirma con la contadora antes de la Fase 2) (v1.1 aprobada con cambios por el revisor-critico; cada ajuste verificado en el código)
 Documentos que mandan: `CLAUDE.md`, `docs/GUIA-PRODUCTO.md` (P1–P14, checklist 6) y `docs/GUIA-CONTABLE-FISCAL.md`
 (R1–R12, sección 3, checklist 8). Planes vigentes: `docs/PLAN-v0.2.md` (en curso) y `docs/PLAN.md`; este plan no los
 reemplaza y reutiliza las convenciones del socio (PLAN-v0.2, sección 2) y la entrega con un PR por fase (12.4). El
