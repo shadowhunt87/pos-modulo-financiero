@@ -18,6 +18,8 @@ Crear la base para que ningún valor de la DGII viva en el código (R9): tablas 
 - **`src/app.module.ts` (caliente):** 1 import de `FiscalModule`.
 - Endpoints de este paquete (decisión de reparto de esta ficha, el plan no los separa): solo **lectura** `GET /fiscal/parameters?date=` y `GET /fiscal/parameters/:key` (historial). Las rutas de sugerencias, `effective?date`, ficha (`/fiscal/profile`) y avisos son de **N2d**.
 
+- **Exportación completa (anexo S0 v1.2 §4.2, nota del 2026-10-12):** si S2 ya está fusionado, registra en `src/data-export/export-registry.ts` cada modelo que crees: las tablas globales (`FiscalParameter`, `FiscalParameterValidation`, `FiscalParameterLoad`) como `GLOBAL_PUBLIC` y los de empresa (ficha fiscal) como `COMPANY`; las columnas `Json` (`valueJson`) en `jsonColumns`. Si S2 aún no está, avisa en el PR. Sin esto la prueba de cobertura deja la suite en rojo.
+
 ## 5. No hagas
 - No pongas ningún valor fiscal en el código. No crees `validTo`. No agregues métodos que modifiquen o borren parámetros.
 - No cambies migraciones existentes ni `build()` de facturación (es N2c). No toques `invoicing.service.ts`.

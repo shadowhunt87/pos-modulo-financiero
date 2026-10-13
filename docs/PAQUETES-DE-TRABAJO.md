@@ -81,8 +81,8 @@ Seis carriles que casi no se pisan. Entre paréntesis, a quién se sugiere.
 | Ola | Qué puede arrancar | Condición |
 |---|---|---|
 | **0 · Ya** | S0, V0, A1, E3-back, E4-a a E4-d (lo que no toca lo fiscal), D1, D3 | La base común (abajo); S0 y V0 esperan la aprobación del plan v0.3 |
-| **1** | N1, N2a, N2b, S1, S5, A2, V1, V2, E1a | N1 espera D34; S1 espera el anexo S0 aprobado |
-| **2** | N2c, N2d, E1b, E1c, S2, S3, A3, E3-front | N2c y E1b esperan a N2a; S3 espera D17 y D18 |
+| **1** | N1, N2a, N2b, S1, S5, A2, V1a, V4, V2, E1a | N1 espera D34; S1 espera el anexo S0 aprobado; V4 y V2 esperan a V1a (V4 también la decisión P4 del contrato de verticales) |
+| **2** | N2c, N2d, E1b, E1c, S2, S3, A3, E3-front, V1b, V3 | N2c y E1b esperan a N2a; S3 espera D17 y D18; V1b espera N1 y V1a; V3 espera V1b, V2 y V4 |
 | **3** | N3, N4, N5, S4, A4, E2 | N3 espera N1; N4 y N5 esperan N2c |
 | **4** | N6, A5, D2, E4 fiscal | N6 espera N4 y N5, y las casillas validadas |
 | **5** | Q-cierre de v0.2 y v0.3; **N7 (e-CF con proveedor) cuando haya documentación** | — |
@@ -114,8 +114,14 @@ desbloquea a los demás. Claude-PC lleva el resto del trabajo de programación. 
 ### Orden de trabajo de Claude-PC (cola, según lo que desbloquea)
 
 1. **Ahora, sin esperar a nadie:** **A1** (Auditoría base), **E3-back** (semáforo), **E4-a** (crea el componente de estado vacío que Ollama necesita), **S5** (cabeceras), **D3** (valores fiscales con la contadora).
-2. **Cuando termine N2a:** **N2b** (cargador). **Cuando termine V1a:** **V4**, **V2**.
-3. **Después:** **A2, E1a, E3-front, A3, A4**, y luego **N4, N5, E1b, E1c, S3, S4, A5, E2**, y al final **N6, E4-e, V1b, V3**.
+2. **Cuando termine N2a:** **N2b** (cargador).
+3. **Verticales, en cuanto termine V1a (lo que espera el socio; van antes que el resto de la cola):** **V4** → **V2** →
+   **V1b** (cuando estén N1 y V1a) → **V3**. Fechas estimadas en `docs/CONTRATO-VERTICALES.md` §6.2 (V4 ≈ 9–13 nov,
+   V2 ≈ 16–20 nov, V1b ≈ 23–27 nov, V3 ≈ 30 nov–11 dic).
+4. **Después:** **A2, E1a, E3-front, A3, A4**, y luego **N4, N5, E1b, E1c, S3, S4, A5, E2**, y al final **N6, E4-e**.
+
+**Costo de este orden:** adelantar el carril V corre unas 3–4 semanas lo que estaba antes en la cola (A2, E1a, E3-front,
+A3, A4 y siguientes). Carlos puede invertirlo; entonces las fechas que se le dan al socio se corren lo mismo.
 
 Ollama arranca con **D1**, y con **E4-b, E4-c y E4-d** cuando exista E4-a. Cada pantalla de E4 es un encargo aparte y pequeño.
 
@@ -227,9 +233,11 @@ cada paquete incluye sus pruebas e2e, y la **puerta Q** (sección 7) se corre de
 | ID | Paquete | Nivel | T | Depende de | Plan |
 |---|---|---|---|---|---|
 | **V0** | **Contrato de integración**: documento que dice cómo una vertical usa el núcleo financiero. Debe responder: ¿cómo genera asientos (`PostingService.post`)?; ¿cómo se extiende `SourceDocumentType` sin que cada vertical migre el enum?; ¿cómo reutiliza clientes/proveedores, impuestos, NCF, centros de costo y adjuntos?; ¿cómo registra sus permisos, su menú y su ayuda?; ¿qué versión del núcleo requiere?; ¿qué cosas **no** puede hacer (editar lo contabilizado, saltarse períodos)? | N1 (arquitecto) | M | Plan v0.3 aprobado | Nuevo; `docs/CONTRATO-VERTICALES.md` |
-| **V1** | Los **puntos de enganche mínimos** que defina V0 (por ejemplo, un origen genérico para asientos de terceros) con sus pruebas | N1 | M | V0 | Nuevo |
-| **V2** | **Plantilla de módulo vertical**: carpeta ejemplo con controller, service, dto, e2e, entrada de menú y ayuda, que la IA del socio copia para empezar | N2 | M | V0 | Nuevo |
-| **V3** | **Pruebas de contrato**: una suite que verifica que cualquier vertical respeta R1–R12 (asientos que cuadran, períodos cerrados, aislamiento por empresa) | N1 | M | V1 | Nuevo |
+| **V1a** | **Enganches** (Claude-servidor): origen `VERTICAL` + `sourceModule`, origen en facturas, `createInTx`, `findBySource`, `nextFor`, registro y versión, pruebas con módulos extra, enlaces en pantallas. No espera a N1 | N1 | L | V0 | Contrato §7.1; ficha V1 |
+| **V1b** | **Validaciones** (Claude-PC): cliente y centro de costo de la empresa en `post` y `build`; cuentas prohibidas para asientos de verticales; según decisiones, cobro en la transacción | N1 | M | N1, V1a | Contrato §7.2; ficha V1 |
+| **V4** | **Activación por empresa** (Claude-PC): cada empresa ve solo las verticales que contrató; apagar no impide corregir lo existente | N1 | M | V1a, decisión P4 | Contrato §3.5, §7.3; ficha V4 |
+| **V2** | **Plantilla de módulo vertical** (Claude-PC): carpeta ejemplo que la IA del socio copia | N2 | M | V1a | Contrato §8.3 |
+| **V3** | **Pruebas de contrato** (Claude-PC): suite que verifica que cualquier vertical respeta las reglas, con revisiones automáticas del código | N1 | L | V1b, V2, V4 | Contrato §8.4 |
 
 ### Carril D · Documentación y contenido (casi todo apto para N3 con revisión)
 
@@ -284,7 +292,7 @@ Nunca incluyas claves, .env ni datos reales. Si algo contradice el plan o las gu
 No se delegan a N3. Se corren en este orden y cada una puede devolver el paquete:
 
 1. **QA** (N2): suite completa, casos límite, pantallas contra el checklist (sección 6 de la Guía de producto).
-2. **Seguridad** (N1): obligatoria para los paquetes que tocan permisos, migraciones, archivos subidos, tokens, dinero o aislamiento entre empresas. Lista: N1, N2a–c, N3, N5, N6, S1–S3, A1, A2, E1c, V1.
+2. **Seguridad** (N1): obligatoria para los paquetes que tocan permisos, migraciones, archivos subidos, tokens, dinero o aislamiento entre empresas. Lista: N1, N2a–c, N3, N5, N6, S1–S3, A1, A2, E1c, V1a, V1b, V4.
 3. **Revisor crítico** (N1): al cerrar cada fase y cada versión, contra las dos guías y el plan.
 4. **Documentación** (N3 + revisión): el manual del paquete está en el PR.
 5. **Revisión humana**: Carlos aprueba la fusión; si el PR toca archivos del socio (`posting`, `invoicing`), se le avisa a él.
@@ -299,5 +307,6 @@ No se delegan a N3. Se corren en este orden y cada una puede devolver el paquete
   **10 a 14 semanas** para tener todo menos N7. La fecha depende de la capacidad de revisión, no de programar.
 - **No se acorta:** la validación de las contadoras, los documentos de la DGII, la documentación del proveedor de
   e-CF (N7 suma unas 3 semanas desde que llegue) ni las decisiones de Carlos.
-- **La vertical del socio** puede empezar en cuanto exista V0 (contrato) y V2 (plantilla). Así no espera a que termine
-  toda la parte financiera. Lo que sí debe esperar para producción: S1–S3 (datos reales) y N1 (corregir sin borrar).
+- **La vertical del socio** puede empezar en cuanto Carlos apruebe V0 (contrato): tablas, pantallas y cálculos no
+  esperan a nadie. Conecta asientos con V1a (≈ 7 nov), se ve en pruebas con V4 (≈ 16 nov) y pasa las pruebas finales
+  con V3 (≈ 11 dic). Lo que sí debe esperar para producción: S1–S3 (datos reales) y N1 (corregir sin borrar).

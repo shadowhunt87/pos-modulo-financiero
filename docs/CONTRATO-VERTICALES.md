@@ -1,15 +1,28 @@
 # Contrato de integración para verticales
 
-> **Versión del documento: 1.1 (borrador)** · 2026-10-12 · Autor: Arquitecto (paquete V0)
+> **Versión del documento: 1.2 (borrador)** · 2026-10-12 · Autor: Arquitecto (paquete V0)
 > **Versión del contrato que describe: 1.0** (`CORE_CONTRACT_VERSION`; vale desde que se fusionan V1a y V4; §4.7.2).
 > No confundir las dos: el documento cambia con cada revisión; el número del contrato solo cuando cambia lo que las verticales pueden usar.
 > **Núcleo verificado:** rama `fase-1`, commit `20613ae` («Plan v0.3 aprobado por Carlos»); `package.json` dice `0.0.1`
 > (el núcleo todavía **no tiene número de versión publicado**; ver §4.7).
-> **Estado:** v1.0-borrador **aprobado con cambios** por el revisor-crítico; esta v1.1 los incorpora, cada uno verificado
-> en el código. Falta la aprobación de Carlos. Hasta entonces V1a, V1b, V2, V3 y V4 no arrancan.
+> **Estado:** documento 1.0 aprobado con cambios por el revisor-crítico (aplicados en 1.1); 1.1 aprobado con cambios
+> menores en la revisión de comprobación (aplicados en 1.2). Falta la aprobación de Carlos. Hasta entonces V1a, V1b, V2, V3 y V4 no arrancan.
 > **Manda sobre:** las fichas `docs/paquetes/V1.md` (partida en V1a y V1b), `V2.md`, `V3.md` y `V4.md` (§8).
 > **Lo leen:** el socio, su IA y quien construya los paquetes V. Está escrito para usarse **sin preguntar**: cuando algo
 > todavía no existe en el código lo dice y nombra el paquete que lo construye.
+
+## Qué cambió (documento 1.1 → 1.2)
+
+| # | Cambio | Dónde |
+|---|---|---|
+| P1 | Fechas honestas según quién hace cada paquete (V1a: Claude-servidor; V4, V2, V1b, V3: Claude-PC, que los toma **antes** que N4–N6, E1b, E1c y E2) | §6.2, §6.3, P8; PAQUETES §3.1 |
+| P2 | La exportación completa (S2) usa un **registro explícito** (`src/data-export/export-registry.ts`): cada vertical agrega ahí sus modelos en su PR; columnas de archivos se llaman `fileUrl` y las de secretos terminan en `Enc` | §4.6.2-8, §4.6.5, §6.1, §8.6 |
+| P3 | Si N1 se fusiona antes que V1a, V1a hace que el reverso copie `sourceModule` | §7.1 (a2), §8.6 |
+| P4 | El paquete que llegue **segundo** entre V2 y V4 pone `@VerticalKey`, `VerticalEnabledGuard` y `verticalGuard` en la plantilla | §7.3, §8.3 |
+| P5 | Apagar una vertical solo impide crear documentos **nuevos**; lo existente se consulta y se corrige (`@AllowWhenInactive`); `post` y `voidEntry` no miran la activación | §3.2, §3.5, §4.7.3, §7.3 |
+| P6 | Centro de costo: «de la empresa» en `post` y `build`; «activo» solo al crear o editar un documento | §7.2 (b3) |
+| P7 | Etiquetas de quién hace cada paquete (Claude-servidor / Claude-PC) | §6.2, fichas |
+| A1+ | «Ver contrato» desde el asiento de una factura lee `Invoice.sourceModule` (en asientos `INVOICE`, `JournalEntry.sourceModule` está vacío) | §7.1 (a9) |
 
 ## Qué cambió (documento 1.0 → 1.1)
 
@@ -139,7 +152,7 @@ respuesta.
 - Se migra **una vez**: `ALTER TYPE "SourceDocumentType" ADD VALUE 'VERTICAL'` **sola en su carpeta** + otra migración
   con las columnas nuevas. Ninguna vertical vuelve a tocar el enum.
 - Reglas en `post` (V1a): `VERTICAL` ⇔ `sourceModule` y `sourceId` presentes; `sourceModule` declarado en el registro
-  (§4.7.1); con V4, además, vertical **activa** en la empresa.
+  (§4.7.1). `post` **no** mira si la vertical está activa (eso se controla al crear documentos nuevos, §3.5).
 - `voidJournalEntry` (endpoint de asientos) **rechaza `VERTICAL` desde V1a** (422 «Este asiento viene de un documento
   de <nombre>: corrígelo desde ese documento»). Con N1 la lista de permitidos (`MANUAL`, `BANK_TRANSACTION`, `OTHER`) lo
   sigue dejando fuera. Así el contador no puede reversar desde «Asientos» un asiento de un contrato y desincronizarlo.
@@ -181,18 +194,27 @@ compatible si el **mayor es igual** y el **menor del núcleo ≥ el pedido**. Si
 
 Sin esto, una vertical registrada aparecería en el menú y en la API de **todas** las empresas.
 - **Dato en el núcleo:** tabla `CompanyVertical` (`companyId`, `key`, `active`, `changedAt`, `changedBy`, `note`;
-  única por `[companyId, key]`) y su historial de cambios. Sin fila activa, la vertical no existe para esa empresa.
+  única por `[companyId, key]`) y su historial de cambios. Sin fila activa, la vertical no aparece en el menú y no se pueden crear documentos nuevos; lo ya registrado se consulta y se corrige.
 - **Quién activa:** decisión de Carlos (P4). Recomendación: **solo por comando**, que corre devops con autorización de
   Carlos y deja historial (como el cargador de valores fiscales, D25), porque la vertical se vende aparte y el ADMIN de
   un cliente no debe poder activársela solo. El ADMIN ve qué módulos tiene activos en «Empresa».
 - **Backend:** decorador de clase `@VerticalKey('<clave>')` en cada controlador de la vertical + `VerticalEnabledGuard`
   (después de `JwtAuthGuard` y `RolesGuard`): si la empresa del token no la tiene activa ⇒ 404 «Este módulo no está
-  disponible para tu empresa». `post`, `createInTx` y `nextFor` rechazan (422) un `sourceModule` de una vertical inactiva.
+  disponible para tu empresa». Las rutas de **consulta** y de **corrección** de documentos existentes llevan
+  `@AllowWhenInactive()` y siguen funcionando con la vertical apagada. `nextFor` y `createInTx` rechazan (422) un
+  identificador de una vertical inactiva (no se numeran documentos ni se emiten facturas nuevas). `post` y `voidEntry`
+  **no** miran la activación: así se puede corregir lo ya registrado.
 - **API:** `GET /verticals/active` (todos los roles) ⇒ `[{ key, name }]`.
 - **Frontend:** `NavGroup.vertical?: string`; el menú oculta los grupos de verticales no activas; `verticalGuard('<clave>')`
   en las rutas de la vertical.
-- **Desactivar** no borra nada: los asientos y facturas siguen en los libros y en los reportes; solo se ocultan las
-  pantallas y se bloquea crear documentos nuevos.
+- **Desactivar** no borra nada: asientos y facturas siguen en libros y reportes. Se ocultan el grupo del menú y las
+  pantallas de creación; el detalle de cada documento sigue accesible desde «Ver documento» en el asiento o la factura
+  (rutas con `data: { verticalInactiveOk: true }`, que `verticalGuard` deja pasar).
+- **Corregir un depósito de una vertical apagada:** desde el detalle del contrato (ruta permitida), «Anular» o
+  «Registrar devolución» funcionan igual que con la vertical encendida, porque esas rutas llevan `@AllowWhenInactive()`
+  y `voidEntry`/`post` no miran la activación. El endpoint de asientos sigue rechazando `VERTICAL` (la corrección se hace
+  desde el documento). Si la vertical ya no está instalada en el sistema, la única vía es un asiento manual de ajuste
+  que haga la contadora (R2 se cumple: no se edita nada).
 
 ### 3.6 «Facturas» ante una factura de una vertical: **avisa, no bloquea**
 
@@ -369,6 +391,9 @@ cerrado si no existe ya). Prueba: `verificar-ayuda` sin errores.
    `@relation(fields: [padreId, companyId], references: [id, companyId])` en la hija).
 6. Dinero `Decimal @db.Decimal(19, 4)`; nunca `Float`.
 7. **No** columnas que copien estado del núcleo («facturado», «pagado», «anulado» de una factura) (§3.3).
+8. **Nombres fijos** (las revisiones de seguridad y de la exportación buscan estos nombres en inglés): la columna que
+   guarda la clave de un archivo se llama `fileUrl` y su valor sigue el patrón `<companyId>/<clave>/<uuid>`; toda
+   columna con un secreto cifrado termina en `Enc` (p. ej. `apiKeyEnc`). Nunca contraseñas ni secretos sin cifrar.
 
 **4.6.3 Migraciones.** `prisma/migrations/<AAAAMMDDhhmmss>_v_<clave>_<qué>/`. Solo aditivas y solo sobre tablas y tipos
 con el prefijo; llaves foráneas desde sus tablas hacia el núcleo sí. Prohibido alterar tablas o enums del núcleo o
@@ -380,8 +405,12 @@ escribe: P2.
 `deleteMany`, `upsert` y SQL se revisan a mano y V3 los busca; 404 para lo ajeno; todo id del núcleo en un DTO se valida
 con su `companyId`. Prueba: V3 aislamiento.
 
-**4.6.5 Respaldos y exportación.** La copia diaria incluye todo. La exportación completa (**S2**) debe detectar los
-modelos con `companyId` desde el cliente de Prisma (§8.6).
+**4.6.5 Respaldos y exportación.** La copia diaria incluye todo. La exportación completa (**S2**) usa un **registro
+explícito** de modelos, `src/data-export/export-registry.ts` (anexo S0 §4.2), y una prueba que falla si un modelo de
+`Prisma.ModelName` no está en él. Por eso **el PR de la vertical edita ese archivo del núcleo**: una entrada por modelo,
+de clase `COMPANY` (todas sus tablas tienen `companyId`), con `excludedColumns` (las que terminan en `Enc`, con motivo),
+`jsonColumns` si las hay y, si guarda archivos, `files` con la columna `fileUrl`, la carpeta del ZIP y el patrón exacto
+`^<companyId>/<clave>/<uuid>$`. Si falta, la prueba de cobertura de S2 falla y el PR no se une.
 
 ### 4.7 Versión y compatibilidad
 
@@ -427,7 +456,7 @@ en verde. Hitos: **1.0** = V1a + V4 fusionados (sin V4 ninguna vertical se regis
 | `FiscalParametersService.valueAt` (lectura de claves del catálogo) | N2a |
 | `writeAudit`, `isUniqueViolation`; `JwtAuthGuard`, `RolesGuard`, `@Roles`, `@CurrentUser`, `AuthUser`, `UserRole` | HOY |
 | `VerticalManifest`, `CORE_CONTRACT_VERSION`, `VERTICALS`, `VerticalsModule`, `createApp({ extraModules, extraManifests })` | V1a |
-| `@VerticalKey`, `VerticalEnabledGuard`, `GET /verticals/active`, `verticalGuard`, `NavGroup.vertical` | V4 |
+| `@VerticalKey`, `VerticalEnabledGuard`, `@AllowWhenInactive()`, `GET /verticals/active`, `verticalGuard`, `NavGroup.vertical` | V4 |
 | Lectura directa con `{ id, companyId }` de tablas **raíz**: `Partner`, `Account`, `TaxRate`, `Invoice`, `JournalEntry` (cabecera), `FiscalPeriod`, `FiscalYear` | HOY. Nunca tablas hijas: para eso `findBySource` |
 | HTTP: `/partners`, `/tax-rates`, `/invoices`, `/payments`, `/attachments`, `/accounting/accounts` (lectura); `/fiscal/tax-rates/effective` | HOY; el último N2d |
 | Frontend: kit `shared/ui/*`, `Api`, `Auth.has`, `roleGuard`, `NAV`, formato de `ayuda.json`; `VERTICAL_SOURCES` | HOY; `VERTICAL_SOURCES` V1a |
@@ -763,6 +792,7 @@ export class AlquilerController {
   @Post()
   crear(@Body() dto: CrearContratoDto, @CurrentUser() user: AuthUser) { return this.alquiler.crear(dto, user); }
 
+  @AllowWhenInactive()                                              // V4: consultar lo existente con la vertical apagada
   @Get(':id')
   ver(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) { return this.alquiler.ver(id, user); }
 
@@ -772,6 +802,7 @@ export class AlquilerController {
     return this.alquiler.facturarMes(id, dto, user);
   }
 
+  @AllowWhenInactive()                                              // V4: corregir lo existente con la vertical apagada
   @Roles(UserRole.ADMIN, UserRole.APPROVER)
   @Post(':id/anular')
   anular(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AnularContratoDto, @CurrentUser() user: AuthUser) {
@@ -797,7 +828,7 @@ Si la contadora anula esa factura desde «Facturas» (o la cubre con una nota de
 export const routes: Routes = [
   { path: 'alquiler/contratos', loadComponent: () => import('./contratos').then((m) => m.Contratos), title: 'Contratos de alquiler', canActivate: [verticalGuard('alquiler')] },
   { path: 'alquiler/contratos/new', loadComponent: () => import('./contrato-form').then((m) => m.ContratoForm), title: 'Nuevo contrato', canActivate: [verticalGuard('alquiler'), roleGuard('ADMIN', 'ACCOUNTANT')] },
-  { path: 'alquiler/contratos/:id', loadComponent: () => import('./contrato-detail').then((m) => m.ContratoDetail), title: 'Contrato de alquiler', canActivate: [verticalGuard('alquiler')] },
+  { path: 'alquiler/contratos/:id', loadComponent: () => import('./contrato-detail').then((m) => m.ContratoDetail), title: 'Contrato de alquiler', canActivate: [verticalGuard('alquiler')], data: { verticalInactiveOk: true } },
   { path: 'alquiler/ajustes', loadComponent: () => import('./ajustes').then((m) => m.Ajustes), title: 'Ajustes del alquiler', canActivate: [verticalGuard('alquiler'), roleGuard('ADMIN')] },
 ];
 ```
@@ -832,6 +863,7 @@ Dos empresas con sufijo, 4 roles, `createApp({ silent: true })`, alquiler **acti
 5. Sin ajustes ⇒ 422 con el texto de `ayuda.json`.
 6. VIEWER ⇒ 403 en `POST`; ACCOUNTANT ⇒ 403 en `anular`.
 7. Empresa B ⇒ 404 (vertical no activa); con la vertical activa en B, el contrato de A ⇒ 404 y los ids de A en un DTO ⇒ 404.
+7b. Apagar la vertical en A ⇒ crear contrato o facturar 404/422; ver y anular un contrato existente siguen funcionando.
 8. Anular con factura vigente ⇒ 422; con la factura cubierta por nota de crédito ⇒ se anula.
 9. Asiento del depósito **conciliado** ⇒ `anular` 422 «No se puede anular un asiento conciliado» y nada cambia.
 10. `POST /accounting/journal-entries/:id/void` sobre el asiento del depósito ⇒ 422.
@@ -856,20 +888,29 @@ Dos empresas con sufijo, 4 roles, `createApp({ silent: true })`, alquiler **acti
 | Factura de mes cerrado o e-CF | Se anula si el período está abierto | N1 (nota de crédito) | Nada: la vertical lee el estado |
 | Depósitos aplicados a facturas, cobro en la transacción | No resuelto | Decisión P9 (+ V1b si opción 2) | Según la decisión |
 | Rol `AUDITOR` | No existe | A1 | Nada salvo datos sensibles |
-| Exportación completa | No existe | S2 | Nada si sus tablas tienen `companyId` |
+| Exportación completa | No existe | S2 | Agregar sus modelos a `export-registry.ts` en su PR (§4.6.5) |
 | Datos reales | Prohibido | S1, S2, S3 | — |
 
-### 6.2 Calendario estimado (semanas desde el 12-oct-2026; depende de la capacidad de revisión y del límite de 5 paquetes abiertos)
+### 6.2 Calendario estimado
 
-| Paquete | Depende de | Fechas estimadas | Habilita |
-|---|---|---|---|
-| V0 (este contrato) | Carlos aprueba | semana del 12-oct | Todo el carril V |
-| **V1a** | V0 | 19-oct a 30-oct | Contrato 1.0 (con V4), V2, V4 |
-| **V4** | V1a | 26-oct a 6-nov | Registrar verticales en producción |
-| N1 | D34 | ≈ hasta el 2-nov (PLAN-v0.3 §15, semanas 1–3) | V1b |
-| **V1b** | N1, V1a | 3-nov a 13-nov | Contrato 1.1, V3 |
-| V2 | V1a | 2-nov a 13-nov | V3 |
-| V3 | V1b, V2, V4 | 16-nov a 27-nov | «Vertical conectada» |
+Supuestos (PAQUETES §3.1): **V1a** lo hace **Claude-servidor**, intercalado con N1 (los dos van primero en su lista);
+**V4, V2, V1b y V3** los hace **Claude-PC**, uno tras otro, **antes** que N4, N5, N6, E1b, E1c, E2 y el resto de su cola,
+en cuanto termine lo que ya tiene en curso (A1, E3-back, E4-a, S5, D3). Las dos sesiones pueden compartir el mismo cupo
+de uso: si se agota, todo se corre. Cada paquete pasa además por la revisión de calidad (≈2–3 días).
+
+| Paquete | Quién | Depende de | Fechas estimadas | Habilita |
+|---|---|---|---|---|
+| V0 (este contrato) | Claude-servidor | Carlos aprueba | semana del 12-oct | Todo el carril V |
+| N1 | Claude-servidor | D34 | ≈ 19-oct a 6-nov | V1b |
+| **V1a** | Claude-servidor | V0 | 26-oct a 6-nov | V4, V2, V1b |
+| **V4** | Claude-PC | V1a, P4 | 9-nov a 13-nov | Contrato 1.0; mostrar la vertical en pruebas |
+| **V2** | Claude-PC | V1a | 16-nov a 20-nov | V3 |
+| **V1b** | Claude-PC | N1, V1a | 23-nov a 27-nov | Contrato 1.1, V3 |
+| **V3** | Claude-PC | V1b, V2, V4 | 30-nov a 11-dic | «Vertical conectada» |
+
+**Lo que se le puede prometer al socio:** asientos y facturas conectados **hacia el 7 de noviembre**; su vertical
+visible en el ambiente de pruebas **hacia el 16 de noviembre**; pruebas finales **hacia el 11 de diciembre**. Margen
+realista: una semana más en cada fecha si el cupo de uso se agota o una revisión devuelve el paquete.
 
 ### 6.3 Orden recomendado para el socio (empezar ya)
 
@@ -880,12 +921,12 @@ de Carlos). Sin acceso, trabaja sobre una copia de `fase-1` y lo integra despué
 2. **Ya:** pantallas con el kit y el checklist, menú, rutas, ayuda y su `.md`.
 3. **Ya:** cómo se arma cada asiento como función pura con pruebas unitarias (la usarán la vista previa y `post`).
 4. **Ya:** facturar con `InvoicingService.create` (existe) para probar el flujo, sabiendo que no queda marcado ni es atómico.
-5. **Con V1a (fin de octubre):** conectar `post` con `VERTICAL`, `createInTx` con origen, `findBySource`, `nextFor`,
+5. **Con V1a (≈ 7 de noviembre):** conectar `post` con `VERTICAL`, `createInTx` con origen, `findBySource`, `nextFor`,
    manifiesto y registro (1 a 2 días). **No** usar `OTHER` ni `MANUAL` como atajo: V3 lo rechaza.
-6. **Con V4 (inicio de noviembre):** `@VerticalKey`, guardas y menú. Recién entonces la vertical entra en `VERTICALS` y
+6. **Con V4 (≈ 16 de noviembre):** `@VerticalKey`, guardas y menú. Recién entonces la vertical entra en `VERTICALS` y
    puede desplegarse en el ambiente de pruebas.
-7. **Con V1b y V2 (mediados de noviembre):** correr toda la suite; comparar con la plantilla.
-8. **Con V3 (fin de noviembre):** conectar el adaptador y corregir lo que falle.
+7. **Con V2 y V1b (≈ 20 a 27 de noviembre):** correr toda la suite; comparar con la plantilla.
+8. **Con V3 (≈ 11 de diciembre):** conectar el adaptador y corregir lo que falle.
 9. **Datos reales:** solo después de S1–S3.
 
 ---
@@ -897,14 +938,14 @@ de Carlos). Sin acceso, trabaja sobre una copia de `fase-1` y lo integra despué
 | # | Hueco | Cambio | Archivos (C = compartido por muchos paquetes) | Riesgo |
 |---|---|---|---|---|
 | a1 | No hay origen para asientos ni facturas de verticales (F6, F26) | `VERTICAL` en el enum (migración **sola**); otra migración con `JournalEntry.sourceModule`, `Invoice.sourceModule`, `Invoice.sourceId` y el índice `[companyId, sourceModule, sourceId]` | `prisma/schema.prisma` (C), 2 migraciones | Medio |
-| a2 | `post` no conoce `sourceModule` | `PostEntryInput.sourceModule?`; reglas de §3.2 y de `journalType`/`type` **solo cuando** `sourceType = VERTICAL`. Nada cambia para los demás llamadores | `src/posting/posting.service.ts` (C) | Medio |
+| a2 | `post` no conoce `sourceModule` | `PostEntryInput.sourceModule?`; reglas de §3.2 y de `journalType`/`type` **solo cuando** `sourceType = VERTICAL`. Nada cambia para los demás llamadores. **Si N1 ya está fusionado**, también hace que el reverso de `voidEntry` copie `sourceModule` (si V1a va primero, lo hace N1) | `src/posting/posting.service.ts` (C) | Medio |
 | a3 | El endpoint de asientos anula cualquier origen (F5) | `voidJournalEntry` rechaza `VERTICAL` con 422 «corrígelo desde el documento» | `src/modules/accounting/accounting.service.ts` | Bajo |
 | a4 | No se puede facturar en la transacción de otro módulo (F9) | `createInTx(tx, input, user)` con `sourceModule`/`sourceId`; `create` lo llama | `src/invoicing/invoicing.service.ts` (C) | Medio |
 | a5 | No hay lectura por origen (M6) | `InvoicingService.findBySource` y `PostingService.findBySource` (§4.4) | mismos archivos | Bajo |
 | a6 | Numeración cerrada (F12) | `nextFor(tx, companyId, docId, defaultPrefix)` | `document-sequences.service.ts` | Bajo |
 | a7 | No hay versión ni registro (F23) | §4.7.1: `contract-version.ts`, `vertical-manifest.ts`, `verticals.registry.ts` (solo datos), `vertical-registry.module.ts` (global), `verticals.module.ts`; comprobación al arrancar | `src/verticals/*` (nuevo), `src/app.module.ts` (C) | Bajo |
 | a8 | `createApp` no admite módulos ni manifiestos de prueba (F20) | `createApp({ silent?, extraModules?, extraManifests? })`; producción sin cambios | `src/app.setup.ts` | Bajo |
-| a9 | El origen nuevo no se ve | `ledger-detail` con `sourceModule`; `SOURCE_DOC.VERTICAL = 'Módulo de negocio'`; `shared/vertical-sources.ts`; enlaces en `entry-detail.ts` y `reports.ts`; en `invoice-detail` el aviso y «Ver <documento>» de §3.6; en `document-sequences.ts`, sin «Editar» para filas de verticales | backend 1 archivo; frontend `labels.ts` (C), 4 archivos + 1 nuevo | Bajo |
+| a9 | El origen nuevo no se ve | `ledger-detail` con `sourceModule`; `SOURCE_DOC.VERTICAL = 'Módulo de negocio'`; `shared/vertical-sources.ts`; enlaces en `entry-detail.ts` y `reports.ts`; en el asiento de una factura (`INVOICE`, donde `JournalEntry.sourceModule` está vacío) el enlace «Ver <documento>» sale de `Invoice.sourceModule`/`sourceId`: el detalle del asiento (`GET /accounting/journal-entries/:id`) devuelve además `invoiceSource { sourceModule, sourceId }` cuando el origen es `INVOICE`; en `invoice-detail` el aviso y «Ver <documento>» de §3.6; en `document-sequences.ts`, sin «Editar» para filas de verticales | backend 1 archivo; frontend `labels.ts` (C), 4 archivos + 1 nuevo | Bajo |
 
 Pruebas de V1a: `test/vertical-hooks.e2e-spec.ts` con un módulo y manifiesto de prueba (a8): asiento `VERTICAL` que
 cuadra, en mayor, balanza y estados, con `AuditLog`; descuadrado 422; período cerrado 422; `sourceModule` no registrado
@@ -918,7 +959,7 @@ paralelo; arranque rechaza un manifiesto incompatible; **toda** la suite actual 
 |---|---|---|---|
 | b1 | `post` valida, para **todos** los orígenes, que `partnerId` y `costCenterId` sean **de la empresa** (sin exigir «activo») | `posting.service.ts` (C) | **Alto** (lo usan todos) |
 | b2 | Con `VERTICAL`: rechazar cuentas de impuestos, con `subledger` `RECEIVABLE`/`PAYABLE`, y las de CxC, CxP y anticipos de `AccountingSettings` | `posting.service.ts` (C) | Medio |
-| b3 | `InvoicingService.build` valida `costCenterId` de la empresa en borrador y al emitir (F30) | `invoicing.service.ts` (C) | Bajo |
+| b3 | `InvoicingService.build` valida que `costCenterId` sea **de la empresa** en borrador y al emitir (F30); que esté **activo** solo al crear o editar el borrador, no al emitir ni al corregir (misma idea que el cliente en `post`) | `invoicing.service.ts` (C) | Bajo |
 | b4 | **Solo si Carlos elige la opción 2 de §4.3.8:** `PaymentsService.createInTx` y cobro desde una cuenta indicada | `payments.service.ts` | Medio |
 | b5 | **Opcionales, si el socio los pide (P10):** API de centros de costo; exportar `FILE_STORAGE` | `src/masters/*`, `attachments.module.ts` | Bajo |
 
@@ -928,8 +969,11 @@ tesorería y cierre de año sin cambios.
 
 ### 7.3 V4 — Activación por empresa
 §3.5: tabla `CompanyVertical` + historial (migración propia), mecanismo de activación según P4, `@VerticalKey`,
-`VerticalEnabledGuard`, `GET /verticals/active`, rechazo en `post`/`createInTx`/`nextFor`, `NavGroup.vertical`, filtro del
-menú, `verticalGuard`, módulos activos visibles en «Empresa», e2e (activa/inactiva, 404, menú) y su ayuda.
+`VerticalEnabledGuard`, `@AllowWhenInactive()`, `GET /verticals/active`, rechazo en `createInTx`/`nextFor` (no en `post`
+ni en `voidEntry`), `NavGroup.vertical`, filtro del menú, `verticalGuard` (con `data.verticalInactiveOk`), módulos activos
+visibles en «Empresa», e2e (activa/inactiva, 404, menú, **corregir un documento existente con la vertical apagada**) y
+su ayuda. **Si V2 ya está fusionado**, V4 agrega a la plantilla `@VerticalKey`, los guardas y `verticalGuard` (si V4
+llega primero, lo hace V2).
 
 ### 7.4 Lo que **no** se construye
 Exportar `TaxRatesService`; un quinto padre en `Attachment`; columnas nuevas en `AccountingSettings` o claves nuevas en
@@ -940,11 +984,11 @@ Exportar `TaxRatesService`; un quinto padre en `Attachment`; columnas nuevas en 
 ## 8. Qué piden los paquetes V (y otras fichas afectadas)
 
 ### 8.1 V1a
-Construye a1–a9 (§7.1). Nivel N1, tamaño **L**, ola 1, depende de **V0**; **no** espera a N1 (no toca `voidEntry`).
+Construye a1–a9 (§7.1). **Claude-servidor**. Nivel N1, tamaño **L**, ola 1, depende de **V0**; **no** espera a N1 (solo toca `voidEntry` si N1 ya está, para copiar `sourceModule`).
 Toca `posting.service.ts` e `invoicing.service.ts` (del socio): aviso antes de fusionar. Seguridad revisa.
 
 ### 8.2 V1b
-Construye b1–b3 y, según decisiones, b4–b5 (§7.2). Nivel N1, tamaño **M**, ola 2, depende de **N1 y V1a**: b1 cambia
+Construye b1–b3 y, según decisiones, b4–b5 (§7.2). **Claude-PC**. Nivel N1, tamaño **M**, ola 2, depende de **N1 y V1a**: b1 cambia
 `post`, que N1 usa para el reverso, y la prueba «anular la factura de un cliente desactivado» solo tiene sentido con el
 reverso real. Seguridad revisa y confirma §9.1.
 
@@ -953,11 +997,10 @@ Copia la forma de §5 con un documento genérico (`PlantillaDocumento`). Cambios
 V0); ubicación `src/verticals/_plantilla/` y `frontend/src/app/features/verticals/_plantilla/`; manifiesto fuera de
 `VERTICALS`, registrado en su e2e con `createApp({ extraModules, extraManifests })`; su tabla llega vacía a producción
 (se dice en el PR); archivo de rutas `plantilla.rutas.ts` para que `verificar-ayuda` no exija entradas, con la
-instrucción de renombrarlo al copiar; usa `findBySource` para el estado de sus facturas; usa los decoradores de V4 cuando
-exista (antes, marcados como pendientes); `docs/plantilla-vertical.md` sigue §6.3.
+instrucción de renombrarlo al copiar; usa `findBySource` para el estado de sus facturas; si V4 ya está fusionado usa sus decoradores y guardas; si no, los deja marcados y **V4 los agrega** al fusionarse (§7.3); `docs/plantilla-vertical.md` sigue §6.3.
 
 ### 8.4 V3 — Pruebas de contrato
-Depende de **V1b, V2 y V4**; ola 2–3. Adaptador:
+**Claude-PC**. Depende de **V1b, V2 y V4** (V1a llega con ellos); ola 2. Adaptador:
 ```ts
 export interface VerticalContractAdapter {
   key: string; routePrefix: string; writeRoles: UserRole[];
@@ -979,14 +1022,15 @@ tocan tablas y tipos con prefijo; los manifiestos no importan módulos; **falla 
 `_plantilla`**; todo controlador con `@VerticalKey` y `VerticalEnabledGuard`; toda ruta del frontend con `verticalGuard`.
 
 ### 8.5 V4 — Activación por empresa (paquete nuevo)
-§7.3. Nivel N1 (permisos y aislamiento), tamaño **M**, ola 1–2, depende de **V1a** y de la decisión **P4** de Carlos.
+§7.3. **Claude-PC**. Nivel N1 (permisos y aislamiento), tamaño **M**, ola 1, depende de **V1a** y de la decisión **P4** de Carlos.
 Ficha nueva `docs/paquetes/V4.md`.
 
 ### 8.6 Otras fichas
-- **N1:** el reverso copia `sourceModule`; la lista de permitidos de `voidJournalEntry` no incluye `VERTICAL`; se conserva
+- **N1:** el reverso copia `sourceModule` (si V1a ya está fusionado; si N1 va primero, lo agrega V1a, §7.1 a2); la lista de permitidos de `voidJournalEntry` no incluye `VERTICAL`; se conserva
   el 422 de asientos conciliados; e2e «anular la factura (y el pago) de un cliente desactivado sigue funcionando».
-- **S2:** detecta los modelos con `companyId` desde el cliente de Prisma (no una lista fija); si existe b5, incluye los
-  archivos de tablas `<Clave>Archivo`.
+- **S2:** registro explícito (`export-registry.ts`) con prueba de cobertura contra `Prisma.ModelName`; las verticales
+  agregan sus entradas (§4.6.5). Los patrones de seguridad reconocen archivos por la columna `fileUrl` y secretos por el
+  sufijo `Enc`; las verticales deben respetar esos nombres (§4.6.2-8).
 - **Tablero:** V1 se reemplaza por V1a y V1b; V4 nuevo; V2 depende de V1a; V3 de V1b, V2 y V4.
 
 ---
@@ -1030,7 +1074,7 @@ verticales.
 | P5 | Socio | ¿Cuál es el nicho y su nombre corto? | Una palabra en español y minúsculas (`alquiler`, `taller`, `clinica`) |
 | P6 | Socio → Carlos decide | ¿Bastan los permisos que existen (administrador, contador, aprobador, solo lectura) o el negocio necesita una persona que solo use la vertical? | Empezar con los existentes; un permiso nuevo es otro trabajo con su costo |
 | P7 | Carlos | ¿Dónde va la vertical en el menú? | Justo después de «Panel» |
-| P8 | Socio | ¿Aceptas conectar los asientos cuando esté V1a (≈ fin de octubre), mostrar la vertical cuando esté V4 (≈ inicio de noviembre) y pasar las pruebas finales con V3 (≈ fin de noviembre)? Mientras tanto avanzas con tablas, pantallas y cálculos | Sí: así no se construye sobre atajos que luego habría que deshacer |
+| P8 | Socio | ¿Aceptas conectar los asientos cuando esté V1a (≈ 7 de noviembre), mostrar la vertical en pruebas cuando esté V4 (≈ 16 de noviembre) y pasar las pruebas finales con V3 (≈ 11 de diciembre), con una semana de margen en cada fecha? Mientras tanto avanzas con tablas, pantallas y cálculos | Sí: así no se construye sobre atajos que luego habría que deshacer |
 | P9 | Carlos con la contadora | El depósito en garantía, ¿se trata como un anticipo del cliente o como dinero por devolver en una cuenta propia? ¿Se podrá usar para pagar una factura atrasada? | Cuenta propia, si la contadora confirma que una garantía no es un anticipo; aplicarla a facturas cuesta 1 a 2 días más (§4.3.8) |
 | P10 | Socio | ¿Tu negocio necesita repartir ingresos y gastos por sucursal, equipo u obra, o guardar archivos en documentos que todavía no tienen factura? | Si no, no se construye ahora |
 
@@ -1053,6 +1097,7 @@ verticales.
 | Versión | Fecha | Cambio |
 |---|---|---|
 | Documento 1.0 (borrador) | 2026-10-12 | Primera versión (V0), verificada contra `fase-1` @ `20613ae` |
-| Documento 1.1 (borrador) | 2026-10-12 | Cambios del revisor-crítico (tabla «Qué cambió»). Pendiente: Carlos |
+| Documento 1.1 (borrador) | 2026-10-12 | Cambios del revisor-crítico (tabla «Qué cambió») |
+| Documento 1.2 (borrador) | 2026-10-12 | Cambios menores de la revisión de comprobación (P1–P7, A1). Pendiente: Carlos |
 | Contrato 1.0 | (al fusionar V1a y V4) | `VERTICAL` + `sourceModule`, origen en facturas, `createInTx`, `findBySource`, `nextFor`, registro, activación |
 | Contrato 1.1 | (al fusionar V1b) | Validaciones de empresa en `post` y `build`, cuentas prohibidas con `VERTICAL` |
