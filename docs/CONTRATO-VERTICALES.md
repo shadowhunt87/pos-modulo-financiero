@@ -893,6 +893,11 @@ Dos empresas con sufijo, 4 roles, `createApp({ silent: true })`, alquiler **acti
 
 ### 6.2 Calendario estimado
 
+> **Nota (2026-10-13, propuesta pendiente de Carlos):** la vertical real del socio es el **taller**, una aplicación aparte
+> que se integra por API. Para el taller, este calendario y los paquetes V2, V3 y V4 quedan **reemplazados** por
+> `docs/INTEGRACION-TALLER.md` (§3 dice qué partes de este contrato siguen valiendo y §6 sus fechas). Este contrato se
+> conserva para futuras verticales construidas dentro del núcleo.
+
 Supuestos (PAQUETES §3.1): **V1a** lo hace **Claude-servidor**, intercalado con N1 (los dos van primero en su lista);
 **V4, V2, V1b y V3** los hace **Claude-PC**, uno tras otro, **antes** que N4, N5, N6, E1b, E1c, E2 y el resto de su cola,
 en cuanto termine lo que ya tiene en curso (A1, E3-back, E4-a, S5, D3). Las dos sesiones pueden compartir el mismo cupo
