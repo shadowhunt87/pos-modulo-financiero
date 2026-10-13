@@ -1,9 +1,9 @@
 ID,Titulo,Carril,Nivel IA,Asignado a (provisional),Tamano,Ola,Depende de,Rama,Espera humana,Plan
 S0,Anexo de diseño de 2FA y exportación completa,S,N1,Claude-servidor,M,0,Plan v0.3 aprobado,wp/S0-anexo-2fa,Carlos aprueba plan,v0.3 0.5
-S1,2FA en el backend,S,N1,Claude-servidor,L,1,S0,wp/S1-2fa,,v0.3 3.1
-S2,Exportación completa por empresa,S,N1,Claude-servidor,L,2,S0,wp/S2-exportacion,,v0.3 3.2
-S3,Copia de respaldo externa cifrada,S,N2,Claude-PC,M,2,,wp/S3-copia-externa,D17 y D18 de Carlos,v0.3 3.3
-S4,Pantallas de 2FA y exportación,S,N2,Claude-PC,M,3,S1;S2,wp/S4-pantallas,,v0.3 3.4
+S1,2FA en el backend,S,N1,Claude-servidor,L,1,S0,wp/S1-2fa,D44 (librería QR),v0.3 3.1
+S2,Exportación completa por empresa,S,N1,Claude-servidor,L,2,S0;S1,wp/S2-exportacion,D44 (librería ZIP); D47 antes de fusionar A1,v0.3 3.2
+S3,Copia de respaldo externa cifrada,S,N2,Claude-PC,M,2,,wp/S3-copia-externa,D17 y D18 (con D42) de Carlos,v0.3 3.3
+S4,Pantallas de 2FA y exportación,S,N2,Claude-PC,M,3,S1;S2,wp/S4-pantallas,D41 solo para encender la política (no bloquea),v0.3 3.4
 S5,Seguridad pendiente Fase 1 (cabeceras SEG-7),S,N2,Claude-PC,S,1,,wp/S5-cabeceras,,Informe seguridad Fase 1
 N1,Corregir sin borrar (reverso) y nota de crédito,N,N1,Claude-servidor,L,1,,wp/N1-reverso,D34,v0.3 Fase 1
 N2a,Parámetros fiscales con vigencia y ficha,N,N1,Claude-servidor,M,1,,wp/N2a-parametros,Plan aprobado,v0.3 2.1
