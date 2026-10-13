@@ -465,7 +465,7 @@ export class FiscalYearService {
         Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${'opening:' + user.companyId}))`,
       );
       const existing = await tx.journalEntry.findFirst({
-        where: { companyId: user.companyId, type: JournalEntryType.OPENING, status: { not: JournalEntryStatus.VOIDED } },
+        where: { companyId: user.companyId, type: JournalEntryType.OPENING, status: { not: JournalEntryStatus.VOIDED }, reversedBy: { is: null } },
       });
       if (existing) {
         throw new ConflictException(
@@ -486,7 +486,7 @@ export class FiscalYearService {
 
   async getOpeningBalances(user: AuthUser) {
     const entry = await this.prisma.journalEntry.findFirst({
-      where: { companyId: user.companyId, type: JournalEntryType.OPENING, status: { not: JournalEntryStatus.VOIDED } },
+      where: { companyId: user.companyId, type: JournalEntryType.OPENING, status: { not: JournalEntryStatus.VOIDED }, reversedBy: { is: null } },
       include: {
         lines: { include: { account: { select: { code: true, name: true, type: true } } }, orderBy: { id: 'asc' } },
       },

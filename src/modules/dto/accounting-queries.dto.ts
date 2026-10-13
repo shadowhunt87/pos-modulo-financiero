@@ -38,6 +38,12 @@ export class ListJournalEntriesQuery extends DateRangeQuery {
   @IsEnum(JournalEntryStatus)
   status?: JournalEntryStatus;
 
+  // true: solo los reversados; false: solo los que no lo están
+  @IsOptional()
+  @Transform(toBool)
+  @IsBoolean()
+  reversed?: boolean;
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

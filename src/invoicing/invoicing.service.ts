@@ -462,6 +462,18 @@ export class InvoicingService {
       if (!inv) throw new NotFoundException('Factura no encontrada');
       if (inv.status === InvoiceStatus.DRAFT) throw new UnprocessableEntityException('Un borrador se elimina, no se anula');
       if (inv.status === InvoiceStatus.VOIDED) throw new ConflictException('La factura ya está anulada');
+      // R2/D34: un e-CF o una factura de un mes cerrado no se anulan; se corrigen con nota de crédito
+      if (inv.ncf?.startsWith('E')) {
+        throw new UnprocessableEntityException(
+          'Esta factura es electrónica (e-CF). No se anula: corrígela con una nota de crédito (Ley 32-23, art. 7)',
+        );
+      }
+      try {
+        await this.posting.assertPeriodOpen(tx, user.companyId, inv.issueDate);
+      } catch (e) {
+        if (!(e instanceof UnprocessableEntityException)) throw e;
+        throw new UnprocessableEntityException('Esta factura es de un mes cerrado. No se anula: corrígela con una nota de crédito');
+      }
       const allocations = await tx.paymentAllocation.count({ where: { invoiceId: id, payment: { status: { not: 'VOIDED' } } } });
       if (inv.amountPaid.gt(0) || allocations > 0) {
         throw new UnprocessableEntityException('Tiene pagos aplicados: anula primero los pagos');

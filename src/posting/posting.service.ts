@@ -4,7 +4,7 @@ import {
   AuditAction, FiscalPeriodStatus, JournalEntryStatus, JournalEntryType, JournalType, SourceDocumentType,
 } from '../generated/prisma/enums.js';
 import type { AuthUser } from '../auth/types/auth-user.js';
-import { writeAudit } from '../common/audit.js';
+import { isUniqueViolation, writeAudit } from '../common/audit.js';
 import { JournalsService } from '../masters/journals/journals.service.js';
 
 type Tx = Prisma.TransactionClient;
@@ -133,18 +133,97 @@ export class PostingService {
     return entry;
   }
 
-  /** Anula un asiento (mismas reglas que /accounting/journal-entries/:id/void). */
-  async voidEntry(tx: Tx, user: AuthUser, entryId: string, reason: string) {
-    const entry = await tx.journalEntry.findFirst({ where: { id: entryId, companyId: user.companyId } });
+  /**
+   * Corrige un asiento contabilizado sin borrarlo (R2): crea su reverso (débito y crédito
+   * intercambiados) y el original queda POSTED con los datos de la anulación.
+   * El asiento de cierre de año (CLOSING) conserva su flujo: se marca VOIDED (los reportes lo excluyen).
+   * El reverso lleva la fecha del original, o `reverseOn` si quien llama lo indica.
+   */
+  async voidEntry(tx: Tx, user: AuthUser, entryId: string, reason: string, opts?: { reverseOn?: Date }) {
+    const entry = await tx.journalEntry.findFirst({ where: { id: entryId, companyId: user.companyId }, include: { lines: true } });
     if (!entry) throw new NotFoundException('Asiento no encontrado');
     if (entry.reconciled) throw new UnprocessableEntityException('No se puede anular un asiento conciliado');
-    await this.periodFor(tx, user.companyId, entry.date);
 
-    const res = await tx.journalEntry.updateMany({
-      where: { id: entryId, companyId: user.companyId, status: { not: JournalEntryStatus.VOIDED } },
-      data: { status: JournalEntryStatus.VOIDED, voidedAt: new Date(), voidedById: user.id, voidReason: reason },
+    if (entry.type === JournalEntryType.CLOSING) {
+      await this.periodFor(tx, user.companyId, entry.date);
+      const res = await tx.journalEntry.updateMany({
+        where: { id: entryId, companyId: user.companyId, status: { not: JournalEntryStatus.VOIDED } },
+        data: { status: JournalEntryStatus.VOIDED, voidedAt: new Date(), voidedById: user.id, voidReason: reason },
+      });
+      if (res.count === 0) throw new ConflictException('El asiento ya está anulado');
+      await writeAudit(tx, user, 'JournalEntry', entryId, AuditAction.VOID, { reason });
+      return null;
+    }
+
+    if (entry.type === JournalEntryType.REVERSAL) {
+      throw new UnprocessableEntityException('Un reverso no se reversa; registra el asiento de nuevo');
+    }
+    if (entry.status === JournalEntryStatus.VOIDED) throw new ConflictException('El asiento ya está anulado');
+    if (entry.status !== JournalEntryStatus.POSTED) {
+      throw new UnprocessableEntityException('Solo se reversan asientos contabilizados; un borrador se rechaza');
+    }
+
+    const date = opts?.reverseOn ?? entry.date;
+    if (date.toISOString().slice(0, 10) < entry.date.toISOString().slice(0, 10)) {
+      throw new UnprocessableEntityException('La fecha del reverso no puede ser anterior a la del asiento original');
+    }
+    const period = await this.periodFor(tx, user.companyId, date);
+    const number = entry.journalId ? await this.journals.nextEntryNumber(tx, user.companyId, entry.journalId) : null;
+
+    // Mismo diario, documento, tercero y centro de costo; débito y crédito intercambiados.
+    // No se revalida que cuentas, tercero o centro de costo sigan activos: el reverso deshace lo ya contabilizado.
+    let reversal;
+    try {
+      reversal = await tx.journalEntry.create({
+        data: {
+          companyId: user.companyId,
+          number,
+          journalId: entry.journalId,
+          fiscalPeriodId: period?.id,
+          type: JournalEntryType.REVERSAL,
+          date,
+          description: `Reverso de ${entry.number ?? 'asiento'}: ${entry.description}`,
+          reference: entry.reference,
+          sourceType: entry.sourceType,
+          sourceId: entry.sourceId,
+          currency: entry.currency,
+          exchangeRate: entry.exchangeRate,
+          status: JournalEntryStatus.POSTED,
+          postedAt: new Date(),
+          createdById: user.id,
+          reversalOfId: entry.id,
+          lines: {
+            create: entry.lines.map((l) => ({
+              accountId: l.accountId,
+              debit: l.credit,
+              credit: l.debit,
+              partnerId: l.partnerId,
+              costCenterId: l.costCenterId,
+              description: l.description,
+              currency: l.currency,
+              exchangeRate: l.exchangeRate,
+              amountForeign: l.amountForeign?.neg() ?? null,
+            })),
+          },
+        },
+      });
+    } catch (e) {
+      // reversalOfId es único: si dos reversos chocan, solo uno queda
+      if (isUniqueViolation(e)) throw new ConflictException('Este asiento ya fue reversado');
+      throw e;
+    }
+
+    await tx.journalEntry.update({
+      where: { id: entryId, companyId: user.companyId },
+      data: { voidedAt: new Date(), voidedById: user.id, voidReason: reason },
     });
-    if (res.count === 0) throw new ConflictException('El asiento ya está anulado');
-    await writeAudit(tx, user, 'JournalEntry', entryId, AuditAction.VOID, { reason });
+    const total = entry.lines.reduce((s, l) => s.plus(l.debit), new Prisma.Decimal(0));
+    await writeAudit(tx, user, 'JournalEntry', entryId, AuditAction.VOID, {
+      reason, reversalId: reversal.id, reversalNumber: number,
+    });
+    await writeAudit(tx, user, 'JournalEntry', reversal.id, AuditAction.POST, {
+      number, source: entry.sourceType, sourceId: entry.sourceId ?? null, total: total.toString(), reversalOf: entry.id,
+    });
+    return reversal;
   }
 }

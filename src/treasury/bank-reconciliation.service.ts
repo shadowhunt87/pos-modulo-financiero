@@ -93,7 +93,17 @@ export class BankReconciliationService {
     const lines = await this.prisma.journalEntryLine.findMany({
       where: {
         accountId: acc.glAccountId, bankMatches: { none: {} },
-        journalEntry: { companyId: user.companyId, status: JournalEntryStatus.POSTED, date: { gte: from, lte: to } },
+        journalEntry: {
+          companyId: user.companyId, status: JournalEntryStatus.POSTED, date: { gte: from, lte: to },
+          // Original reversado + su reverso se cancelan solos: no son candidatos si ninguno está enlazado
+          NOT: {
+            lines: { none: { bankMatches: { some: {} } } },
+            OR: [
+              { reversedBy: { is: { lines: { none: { bankMatches: { some: {} } } } } } },
+              { reversalOf: { is: { lines: { none: { bankMatches: { some: {} } } } } } },
+            ],
+          },
+        },
       },
       include: { journalEntry: { select: { id: true, number: true, date: true, description: true, reference: true } } },
     });
@@ -174,11 +184,11 @@ export class BankReconciliationService {
     });
     const unmatchedSum = unmatched.reduce((s, t) => s.plus(t.amount), ZERO);
 
-    // Enlaces a asientos que se anularon después
+    // Enlaces a asientos que se anularon o reversaron después
     const voidedLinks = await this.prisma.bankMatch.count({
       where: {
         bankTransaction: { bankAccountId, date: { lte: end }, status: BankTransactionStatus.MATCHED },
-        journalEntryLine: { journalEntry: { status: { not: JournalEntryStatus.POSTED } } },
+        journalEntryLine: { journalEntry: { OR: [{ status: { not: JournalEntryStatus.POSTED } }, { reversedBy: { isNot: null } }] } },
       },
     });
 
@@ -187,7 +197,7 @@ export class BankReconciliationService {
     const blockers: string[] = [];
     if (!difference.isZero()) blockers.push(`Diferencia de ${difference.toFixed(2)} entre el extracto y los libros`);
     if (unmatched.length) blockers.push(`${unmatched.length} movimiento(s) del banco sin enlazar o categorizar`);
-    if (voidedLinks) blockers.push(`${voidedLinks} movimiento(s) enlazados a asientos anulados: deshaz el enlace`);
+    if (voidedLinks) blockers.push(`${voidedLinks} movimiento(s) enlazados a asientos anulados o reversados: deshaz el enlace`);
 
     return {
       statementDate, statementBalance, bookBalance, depositsInTransit, outstandingPayments, outstandingNet,

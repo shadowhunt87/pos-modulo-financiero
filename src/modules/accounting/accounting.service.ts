@@ -14,6 +14,7 @@ import {
   JournalEntryStatus,
   JournalEntryType,
   JournalType,
+  SourceDocumentType,
   UserRole,
 } from '../../generated/prisma/enums.js';
 import type { AuthUser } from '../../auth/types/auth-user.js';
@@ -22,6 +23,7 @@ import { CreateAccountDto } from '../dto/create-account.dto.js';
 import { UpdateAccountDto } from '../dto/update-account.dto.js';
 import { CreateJournalEntryDto, UpdateJournalEntryDto } from '../dto/create-journal-entry.dto.js';
 import { JournalsService } from '../../masters/journals/journals.service.js';
+import { PostingService } from '../../posting/posting.service.js';
 import { CreateFiscalPeriodDto } from '../dto/create-fiscal-period.dto.js';
 import {
   DateRangeQuery,
@@ -44,12 +46,17 @@ const endOfDay = (s: string) => {
   return d;
 };
 const isUniqueViolation = (e: unknown) => (e as { code?: string })?.code === 'P2002';
+// Lo que se corrige desde el endpoint de asientos; lo demás, desde su documento
+const VOIDABLE_SOURCES: SourceDocumentType[] = [
+  SourceDocumentType.MANUAL, SourceDocumentType.BANK_TRANSACTION, SourceDocumentType.OTHER,
+];
 
 @Injectable()
 export class AccountingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly journals: JournalsService,
+    private readonly posting: PostingService,
   ) {}
 
   // ------------------------------------------------------------------
@@ -540,7 +547,11 @@ export class AccountingService {
     });
   }
 
-  async voidJournalEntry(id: string, reason: string, user: AuthUser) {
+  /**
+   * Corrige un asiento contabilizado con su reverso (R2). Solo los que no vienen de un documento:
+   * manuales (incluida la apertura) y de tesorería. Facturas y pagos se corrigen desde su documento.
+   */
+  async voidJournalEntry(id: string, reason: string, user: AuthUser, reverseOn?: string) {
     return this.prisma.$transaction(async (tx) => {
       const entry = await tx.journalEntry.findFirst({
         where: { id, companyId: user.companyId },
@@ -558,20 +569,21 @@ export class AccountingService {
           'El asiento de cierre solo se anula reabriendo el año fiscal (POST /fiscal-years/:id/reopen)',
         );
       }
-      await this.assertPeriodOpen(tx, user.companyId, entry.date);
+      if (!VOIDABLE_SOURCES.includes(entry.sourceType)) {
+        throw new UnprocessableEntityException('Este asiento viene de un documento: corrígelo desde la factura o el pago');
+      }
+      // Período del original cerrado: el reverso solo va en un mes abierto que el usuario elija
+      if (!reverseOn) {
+        try {
+          await this.assertPeriodOpen(tx, user.companyId, entry.date);
+        } catch (e) {
+          if (!(e instanceof UnprocessableEntityException)) throw e;
+          throw new UnprocessableEntityException(`${e.message}: elige la fecha del reverso (reverseOn) dentro de un mes abierto`);
+        }
+      }
 
-      // Condición de estado en el WHERE: dos anulaciones simultáneas no pasan ambas
-      const res = await tx.journalEntry.updateMany({
-        where: { id, companyId: user.companyId, status: { not: JournalEntryStatus.VOIDED } },
-        data: { status: JournalEntryStatus.VOIDED },
-      });
-      if (res.count === 0) throw new ConflictException('El asiento ya está anulado');
-
-      await this.audit(tx, user, 'JournalEntry', id, AuditAction.VOID, {
-        reason,
-        previousStatus: entry.status,
-      });
-      return tx.journalEntry.findUniqueOrThrow({ where: { id }, include: { lines: true } });
+      await this.posting.voidEntry(tx, user, id, reason, { reverseOn: reverseOn ? new Date(reverseOn) : undefined });
+      return tx.journalEntry.findUniqueOrThrow({ where: { id }, include: { lines: true, reversedBy: { select: { id: true, number: true } } } });
     });
   }
 
@@ -590,12 +602,13 @@ export class AccountingService {
       companyId: user.companyId,
       status: q.status,
       date: this.dateFilter(q),
+      ...(q.reversed !== undefined && { reversedBy: q.reversed ? { isNot: null } : { is: null } }),
     };
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.journalEntry.findMany({
         where,
-        include: { lines: true },
+        include: { lines: true, reversedBy: { select: { id: true, number: true } } },
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
@@ -608,7 +621,11 @@ export class AccountingService {
   async getJournalEntry(id: string, user: AuthUser) {
     const entry = await this.prisma.journalEntry.findFirst({
       where: { id, companyId: user.companyId },
-      include: { lines: { include: { account: { select: { code: true, name: true } } } } },
+      include: {
+        lines: { include: { account: { select: { code: true, name: true } } } },
+        reversedBy: { select: { id: true, number: true } },
+        reversalOf: { select: { id: true, number: true } },
+      },
     });
     if (!entry) throw new NotFoundException('Asiento no encontrado');
     return entry;

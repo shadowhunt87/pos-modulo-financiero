@@ -139,7 +139,7 @@ export class AccountingController {
     @Body() dto: VoidJournalEntryDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.accounting.voidJournalEntry(id, dto.reason, user);
+    return this.accounting.voidJournalEntry(id, dto.reason, user, dto.reverseOn);
   }
 
   // ---- Reportes base ----
