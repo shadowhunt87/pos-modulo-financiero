@@ -327,7 +327,9 @@ describe('Contabilidad (e2e)', () => {
       await api('post', `/accounting/journal-entries/${id}/void`, 'appr').send({}).expect(400);
       const res = await api('post', `/accounting/journal-entries/${id}/void`, 'appr')
         .send({ reason: 'Monto equivocado' }).expect(201);
-      expect(res.body.status).toBe('VOIDED');
+      // R2 (N1): el original sigue contabilizado y queda enlazado a su reverso
+      expect(res.body.status).toBe('POSTED');
+      expect(res.body.reversedBy?.id).toBeTruthy();
       await api('post', `/accounting/journal-entries/${id}/void`, 'admin').send({ reason: 'otra vez' }).expect(409);
     });
 
@@ -351,14 +353,16 @@ describe('Contabilidad (e2e)', () => {
         .send({ reason: 'x' }).expect(422);
     });
 
-    it('trial balance: cuadra y excluye los asientos anulados', async () => {
+    it('trial balance: cuadra y los asientos anulados se cancelan con su reverso', async () => {
       const res = await api('get', '/accounting/trial-balance', 'view').expect(200);
       expect(res.body.balanced).toBe(true);
       expect(Number(res.body.totalDebit)).toBe(Number(res.body.totalCredit));
 
       const caja = res.body.lines.find((l: any) => l.code === '1101');
-      // 100 (10-mar) + 0.1 (0.1+0.2 caja) + 100 (1-abr) + 100 (15-mar) + 100 (2-jun conciliado) = 400.1; el de 777 está anulado
-      expect(Number(caja.debit)).toBeCloseTo(400.1, 4);
+      // 100 (10-mar) + 0.1 (0.1+0.2 caja) + 100 (1-abr) + 100 (15-mar) + 100 (2-jun conciliado) = 400.1 de saldo.
+      // El de 777 y el de la carrera (100, 3-jun) están reversados: su débito sigue en la columna y su reverso lo acredita.
+      expect(Number(caja.debit)).toBeCloseTo(400.1 + 777 + 100, 4);
+      expect(Number(caja.credit)).toBeCloseTo(777 + 100, 4);
       expect(Number(caja.balance)).toBeCloseTo(400.1, 4);
     });
 
@@ -382,9 +386,12 @@ describe('Contabilidad (e2e)', () => {
       expect(res.body.data.length).toBeLessThanOrEqual(2);
       expect(res.body.total).toBeGreaterThan(2);
 
+      // R2 (N1): los reversados siguen POSTED; se listan con ?reversed=true
+      const reversed = await api('get', '/accounting/journal-entries?reversed=true', 'view').expect(200);
+      expect(reversed.body.data.every((e: any) => e.status === 'POSTED' && e.reversedBy?.id)).toBe(true);
+      expect(reversed.body.total).toBe(2);
       const voided = await api('get', '/accounting/journal-entries?status=VOIDED', 'view').expect(200);
-      expect(voided.body.data.every((e: any) => e.status === 'VOIDED')).toBe(true);
-      expect(voided.body.total).toBe(2);
+      expect(voided.body.total).toBe(0);
 
       const other = await api('get', '/accounting/journal-entries', 'adminb').expect(200);
       expect(other.body.total).toBe(0);

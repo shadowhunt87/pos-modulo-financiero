@@ -249,11 +249,17 @@ describe('Aprobación de asientos (e2e)', () => {
     await api('post', `/accounting/journal-entries/${pending.id}/approve`, 'appr').expect(201);
   });
 
-  it('un asiento contabilizado se sigue anulando como antes', async () => {
+  it('un asiento contabilizado se sigue anulando (ahora con reverso: el saldo neto de caja vuelve a lo de antes)', async () => {
+    const cajaNet = async () => {
+      const tb = (await api('get', '/accounting/trial-balance', 'view').expect(200)).body;
+      const l = tb.lines.find((x: { code: string }) => x.code === '1101');
+      return l ? Number(l.balance) : 0;
+    };
+    const before = await cajaNet();
     const e = await create('acct', 4);
-    const before = await cajaDebit();
+    expect(await cajaNet()).toBe(before + 4);
     await api('post', `/accounting/journal-entries/${e.id}/void`, 'appr').send({ reason: 'error' }).expect(201);
-    expect(await cajaDebit()).toBe(before - 4);
+    expect(await cajaNet()).toBe(before);
     await api('post', `/accounting/journal-entries/${e.id}/void`, 'appr').send({ reason: 'otra' }).expect(409);
   });
 });

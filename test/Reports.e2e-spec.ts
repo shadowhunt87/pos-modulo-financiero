@@ -57,6 +57,9 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
 
   const n = (x: unknown) => Number(x);
 
+  // R2 (N1): el asiento anulado sigue en los libros junto con su reverso (misma fecha); los saldos no cambian
+  const REV = expect.stringMatching(/^Reverso de .*: Venta anulada$/);
+
   beforeAll(async () => {
     app = await createApp({ silent: true });
     await app.init();
@@ -131,7 +134,7 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
 
   // ------------------------------------------------------------------
   describe('libro diario', () => {
-    it('orden cronológico por fecha del asiento (el atrasado va en su lugar) y sin anulados', async () => {
+    it('orden cronológico por fecha del asiento (el atrasado va en su lugar); el anulado aparece con su reverso', async () => {
       const res = await get('/reports/journal-book', 'view').expect(200);
       expect(res.body.data.map((e: any) => e.description)).toEqual([
         'Venta 1',
@@ -139,14 +142,17 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
         'Gasto 1',
         'Venta 2',
         'Depósito',
+        'Venta anulada',
+        REV,
       ]);
-      expect(res.body.total).toBe(5);
+      expect(res.body.total).toBe(7);
     });
 
     it('totales de débito y crédito cuadran, por asiento y en general', async () => {
       const res = await get('/reports/journal-book', 'view').expect(200);
-      expect(n(res.body.totalDebit)).toBe(2050);
-      expect(n(res.body.totalCredit)).toBe(2050);
+      // 2050 + 999 del anulado + 999 de su reverso
+      expect(n(res.body.totalDebit)).toBe(4048);
+      expect(n(res.body.totalCredit)).toBe(4048);
       for (const e of res.body.data) {
         expect(n(e.totalDebit)).toBe(n(e.totalCredit));
       }
@@ -173,19 +179,19 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
 
     it('rango con from y to', async () => {
       const res = await get('/reports/journal-book?from=2027-02-01&to=2027-02-28', 'view').expect(200);
-      expect(res.body.data.map((e: any) => e.description)).toEqual(['Venta 2', 'Depósito']);
-      expect(n(res.body.totalDebit)).toBe(700);
+      expect(res.body.data.map((e: any) => e.description)).toEqual(['Venta 2', 'Depósito', 'Venta anulada', REV]);
+      expect(n(res.body.totalDebit)).toBe(2698);
     });
 
     it('paginación: sin repetir ni saltar asientos, y los totales son del rango completo', async () => {
       const seen: string[] = [];
-      for (const page of [1, 2, 3]) {
+      for (const page of [1, 2, 3, 4]) {
         const res = await get(`/reports/journal-book?limit=2&page=${page}`, 'view').expect(200);
-        expect(res.body.total).toBe(5);
-        expect(n(res.body.totalDebit)).toBe(2050);
+        expect(res.body.total).toBe(7);
+        expect(n(res.body.totalDebit)).toBe(4048);
         seen.push(...res.body.data.map((e: any) => e.description));
       }
-      expect(seen).toEqual(['Venta 1', 'Retiro atrasado', 'Gasto 1', 'Venta 2', 'Depósito']);
+      expect(seen).toEqual(['Venta 1', 'Retiro atrasado', 'Gasto 1', 'Venta 2', 'Depósito', 'Venta anulada', REV]);
     });
 
     it('400 con fechas al revés, límite fuera de rango o página 0', async () => {
@@ -204,26 +210,26 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
       const res = await get('/reports/general-ledger', 'view').expect(200);
       const caja = line(res.body, '1101');
       expect(caja).toMatchObject({ nature: 'DEBIT', type: 'ASSET' });
-      expect([n(caja.openingBalance), n(caja.debit), n(caja.credit), n(caja.closingBalance)]).toEqual([0, 1500, 550, 950]);
+      expect([n(caja.openingBalance), n(caja.debit), n(caja.credit), n(caja.closingBalance)]).toEqual([0, 2499, 1549, 950]);
 
       const ventas = line(res.body, '4101');
       expect(ventas.nature).toBe('CREDIT');
-      // Ingreso: el saldo sale positivo del lado crédito (1000 + 500; el anulado no cuenta)
+      // Ingreso: el saldo sale positivo del lado crédito (1000 + 500; el anulado y su reverso se cancelan)
       expect(n(ventas.closingBalance)).toBe(1500);
 
       expect(n(line(res.body, '5101').closingBalance)).toBe(300);
       expect(n(line(res.body, '1102').closingBalance)).toBe(250);
-      expect(n(res.body.totalDebit)).toBe(2050);
-      expect(n(res.body.totalCredit)).toBe(2050);
+      expect(n(res.body.totalDebit)).toBe(4048);
+      expect(n(res.body.totalCredit)).toBe(4048);
     });
 
     it('con `from`: saldo inicial = todo lo anterior; cuentas sin movimiento pero con saldo siguen apareciendo', async () => {
       const res = await get('/reports/general-ledger?from=2027-02-01', 'view').expect(200);
       const caja = line(res.body, '1101');
-      expect([n(caja.openingBalance), n(caja.debit), n(caja.credit), n(caja.closingBalance)]).toEqual([650, 500, 200, 950]);
+      expect([n(caja.openingBalance), n(caja.debit), n(caja.credit), n(caja.closingBalance)]).toEqual([650, 1499, 1199, 950]);
 
       const ventas = line(res.body, '4101');
-      expect([n(ventas.openingBalance), n(ventas.credit), n(ventas.closingBalance)]).toEqual([1000, 500, 1500]);
+      expect([n(ventas.openingBalance), n(ventas.credit), n(ventas.closingBalance)]).toEqual([1000, 1499, 1500]);
 
       const gastos = line(res.body, '5101'); // sin movimiento en febrero, pero arrastra 300
       expect([n(gastos.openingBalance), n(gastos.debit), n(gastos.closingBalance)]).toEqual([300, 0, 300]);
@@ -258,7 +264,7 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
 
   // ------------------------------------------------------------------
   describe('mayor general (detalle de una cuenta) y drill-down', () => {
-    it('movimientos en orden cronológico con saldo corrido; el anulado no aparece', async () => {
+    it('movimientos en orden cronológico con saldo corrido; el anulado aparece con su reverso', async () => {
       const res = await get(`/reports/general-ledger/${acc.caja}`, 'view').expect(200);
       expect(res.body.account).toMatchObject({ code: '1101', nature: 'DEBIT' });
       expect(res.body.movements.map((m: any) => m.description)).toEqual([
@@ -267,36 +273,38 @@ describe('Reportes: libro diario y mayor general (e2e)', () => {
         'Gasto 1',
         'Venta 2',
         'Depósito',
+        'Venta anulada',
+        REV,
       ]);
-      expect(res.body.movements.map((m: any) => n(m.balance))).toEqual([1000, 950, 650, 1150, 950]);
+      expect(res.body.movements.map((m: any) => n(m.balance))).toEqual([1000, 950, 650, 1150, 950, 1949, 950]);
       expect(n(res.body.openingBalance)).toBe(0);
-      expect(n(res.body.totalDebit)).toBe(1500);
-      expect(n(res.body.totalCredit)).toBe(550);
+      expect(n(res.body.totalDebit)).toBe(2499);
+      expect(n(res.body.totalCredit)).toBe(1549);
       expect(n(res.body.closingBalance)).toBe(950);
-      expect(res.body.total).toBe(5);
+      expect(res.body.total).toBe(7);
     });
 
     it('con `from`: parte del saldo inicial y el saldo final coincide con el último movimiento', async () => {
       const res = await get(`/reports/general-ledger/${acc.caja}?from=2027-02-01`, 'view').expect(200);
       expect(n(res.body.openingBalance)).toBe(650);
-      expect(res.body.movements.map((m: any) => n(m.balance))).toEqual([1150, 950]);
+      expect(res.body.movements.map((m: any) => n(m.balance))).toEqual([1150, 950, 1949, 950]);
       expect(n(res.body.closingBalance)).toBe(950);
     });
 
     it('el saldo corrido NO se reinicia al paginar', async () => {
       const balances: number[] = [];
-      for (const page of [1, 2, 3]) {
+      for (const page of [1, 2, 3, 4]) {
         const res = await get(`/reports/general-ledger/${acc.caja}?limit=2&page=${page}`, 'view').expect(200);
-        expect(res.body.total).toBe(5);
+        expect(res.body.total).toBe(7);
         balances.push(...res.body.movements.map((m: any) => n(m.balance)));
       }
-      expect(balances).toEqual([1000, 950, 650, 1150, 950]);
+      expect(balances).toEqual([1000, 950, 650, 1150, 950, 1949, 950]);
     });
 
     it('cuenta de naturaleza crédito: el saldo corrido sube con los créditos', async () => {
       const res = await get(`/reports/general-ledger/${acc.ventas}`, 'view').expect(200);
       expect(res.body.account.nature).toBe('CREDIT');
-      expect(res.body.movements.map((m: any) => n(m.balance))).toEqual([1000, 1500]);
+      expect(res.body.movements.map((m: any) => n(m.balance))).toEqual([1000, 1500, 2499, 1500]);
       expect(n(res.body.closingBalance)).toBe(1500);
     });
 

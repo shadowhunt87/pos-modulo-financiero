@@ -196,7 +196,9 @@ describe('Facturación + Pagos (e2e)', () => {
       expect(res.body.status).toBe('VOIDED');
       const inv = await invoice(s1);
       expect([inv.status, num(inv.balance)]).toEqual(['PARTIALLY_PAID', 680]);
-      expect(await prisma.journalEntry.count({ where: { sourceId: pay2, status: 'VOIDED' } })).toBe(1);
+      // R2 (N1): el asiento del cobro sigue contabilizado y tiene su reverso, con el mismo documento de origen
+      expect(await prisma.journalEntry.count({ where: { sourceId: pay2, type: 'REVERSAL', status: 'POSTED' } })).toBe(1);
+      expect(await prisma.journalEntry.count({ where: { sourceId: pay2, status: 'POSTED', reversedBy: { isNot: null } } })).toBe(1);
       await api('post', `/payments/${pay2}/void`, 'appr').send({ reason: 'otra vez' }).expect(409);
       await api('post', `/payments/${pay2}/void`, 'acct').send({ reason: 'x' }).expect(403);
     });
