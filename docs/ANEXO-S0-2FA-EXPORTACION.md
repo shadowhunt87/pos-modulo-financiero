@@ -1,12 +1,28 @@
 # Anexo S0 — Verificación en dos pasos (2FA) y exportación completa de datos
 
-> **Versión 1.1 · 2026-10-12 · Autor: Arquitecto · Estado: corregido tras dos revisiones** (revisor-critico: aprobar
-> con cambios; seguridad: programable con cambios). Falta la aprobación de Carlos. Paquete S0 (`docs/paquetes/S0.md`),
+> **Versión 1.2 · 2026-10-12 · Autor: Arquitecto · Estado: corregido tras la revisión de comprobación** (v1.0: revisor-critico
+> «aprobar con cambios», seguridad «programable con cambios»; v1.1: «aprobar con cambios menores»). Falta la aprobación de Carlos. Paquete S0 (`docs/paquetes/S0.md`),
 > tarea 0.5 de `docs/PLAN-v0.3.md`.
 > **Manda sobre las fichas S1, S2, S3 y S4.** Si una ficha y el anexo no coinciden, vale el anexo. Si el anexo no dice
 > algo, el desarrollador **para y pregunta** (PAQUETES-DE-TRABAJO §1, regla 10). Nada se programa antes de la
 > aprobación.
 > Documentos que mandan: `CLAUDE.md`, `docs/GUIA-PRODUCTO.md` (P7, P10), `docs/GUIA-CONTABLE-FISCAL.md` (R3, R5, R12).
+
+## Qué cambió (v1.1 → v1.2)
+
+| # | Hallazgo (verificado) | Cambio | Dónde |
+|---|---|---|---|
+| N1 | E9 y el rescate quitaban el 2FA y abrían la ventana de 72 h **sin cambiar la clave**: si hubo bloqueos, el atacante ya la tiene y podía inscribir su teléfono | E9 y el rescate fijan **una clave nueva en la misma acción** (E9 la escribe el ADMIN; el rescate la genera y la muestra una vez a Carlos). Prueba: la clave vieja deja de servir | 3.7, 3.10, 6.2 |
+| N2 | Con la clave, un atacante gastaba los intentos de TOTP y de recuperación y bloqueaba al dueño sin fin | Los códigos de recuperación (80 bits) **no tienen bloqueo por usuario**: solo la regla por IP. Se quitan `recoveryFailures` y `recoveryLockedUntil` | 3.2, 3.6, 3.11 |
+| N3 | `register` de un usuario **no** ADMIN no pedía confirmación: con un token robado se creaba un ACCOUNTANT con clave del atacante | Confirmación reforzada en **todo** `register`. Cambia `test/auth.e2e-spec.ts:116`. Se corrigen §0 y §9.1: la confirmación reduce mucho el daño de un token robado, no lo elimina | 0, 3.10b, 9.1 |
+| N4 | La regla «sin secretos en `changes`» no tenía guardia; el socio copia DTOs con `JSON.parse(JSON.stringify(dto))` en 10 lugares (verificado) | `writeAudit` limpia `changes`: quita las claves con nombre de secreto (patrón de 4.4), salvo valores booleanos (`passwordReset: true`). Prueba | 3.12, 6.2 |
+| A1 (SEG) | Faltaba su fila en la tabla de la v1.1 | Era el mismo hallazgo que G1 (límite saltable con peticiones simultáneas); **se resolvió junto con G1 en la v1.1** (reserva atómica en la base). Se agrega la fila abajo | Tabla v1.1 |
+| N5 | 50 peticiones desde 127.0.0.1 agotan las reglas por IP (40) y dan 429 al resto del archivo | Las pruebas de concurrencia usan una app con `TRUST_PROXY=1` (como `proxyApp` en `security.e2e-spec.ts`) e IP propias. Si la reserva en la base falla, **se devuelve** la regla por IP | 3.11, 6.2 |
+| N6 | 6.2 y la ficha S1 olvidaban las listas de «Política de rutas» (`security.e2e-spec.ts:349`, `:356` y `:361`) | Lista completa de pruebas del socio que cambian | 6.2, 7, S1 |
+| N7 | El registro de la exportación es explícito: A1, A4, N2a, N3 y las verticales deben registrar sus modelos o la suite queda en rojo | Dicho en 4.2 y 11; anotado en las fichas A1, A4 y N2a (N3 aún no tiene ficha); `CONTRATO-VERTICALES.md` §4.6.5 debe alinearse | 4.2, 11 |
+| N8 | El comando de exportación escribe el ZIP en la salida estándar y el registro de Nest también escribe ahí | El comando manda **todo** el registro a la salida de errores; prueba del comando real (los primeros bytes son `PK` y `yauzl` lo abre) | 4.8, 6.3 |
+| N9 | El semáforo es global: una empresa con un cliente lento lo ocupa hasta 45 min, 3 veces por hora | Anotado como riesgo con su mitigación | 9.1 |
+| V1 | Las verticales del socio también crean modelos, y los patrones de 4.4 estaban solo en inglés | Términos en español (`contrasena`, `clave`, `secreto`, `archivo`…) y nombres fijos obligatorios para verticales (`fileUrl`/`…FileUrl` para archivos, sufijo `Enc` para cifrados) | 4.2, 4.4 |
 
 ## Qué cambió (v1.0 → v1.1)
 
@@ -15,6 +31,7 @@ Cada punto se verificó en el código antes de aplicarlo. RC = revisor-critico, 
 | # | Hallazgo (verificado) | Cambio | Dónde |
 |---|---|---|---|
 | G1 (RC) | `AttemptLimiter` revisa al empezar (`check`) y suma al final (`recordFailure`), después de un `await`: peticiones simultáneas se saltan el límite. La cuenta de 6·10⁻⁵/día no valía | Reserva **antes** de verificar y devolución si acierta: `consume`/`refund` en memoria para la IP, y contadores **en la base** para el usuario | 3.11 |
+| A1 (SEG) | Igual que G1: el límite se saltaba con peticiones simultáneas | Resuelto con G1 (fila agregada en la v1.2) | 3.11 |
 | A2 (SEG) | El contador del 2FA vivía en memoria (se borra al reiniciar) | Contadores del 2FA en `UserTwoFactor`, con actualización atómica y bloqueo creciente; en memoria solo la regla por IP, con IPv6 agrupado por /64 | 3.2, 3.11 |
 | G1b (RC) | El mismo fallo existe en el login y en el cambio de clave (`auth.service.ts`, `users.service.ts`) | S1 los pasa a `consume`/`refund` en un commit aparte, con aviso al socio | 3.11, 7 |
 | G2 (RC) | Con un token de ADMIN robado se puede crear otro ADMIN (`RegisterDto.role`), ascender a alguien (`UpdateUserDto.role`) o cambiar una clave sin confirmar nada | Confirmación reforzada (clave y, si lo tiene, código) en crear ADMIN, ascender a ADMIN, cambiar el correo de un ADMIN, `reset-password`, E9 y la exportación. Bitácora y vista «Cambios de seguridad». Ascender cierra las sesiones del ascendido | 3.10b, 3.12, 5 |
@@ -62,10 +79,13 @@ Cada punto se verificó en el código antes de aplicarlo. RC = revisor-critico, 
    30 segundos en una aplicación gratuita del teléfono (Google Authenticator, Microsoft Authenticator…). Si le roban
    la clave, no pueden entrar sin el teléfono. Al activarla recibe **10 códigos de emergencia** de un solo uso. Si
    los pierde también, **otro ADMIN** de su empresa le restablece el 2FA. Si es el **único ADMIN**, lo restableces tú
-   desde el servidor con un comando, y queda anotado.
-2. **Acciones delicadas con confirmación.** Crear o ascender un administrador, cambiar la clave de otro, quitarle el
-   2FA o descargar todos los datos piden **la clave y el código** de quien lo hace. Así, alguien que robe una sesión
-   abierta no puede adueñarse de la empresa.
+   desde el servidor con un comando, y queda anotado. En los dos casos la persona recibe **una clave nueva**: quien
+   provocó bloqueos con la clave vieja ya no puede usarla.
+2. **Acciones delicadas con confirmación.** Crear cualquier usuario, ascender a administrador, cambiar la clave de
+   otro, quitarle el 2FA o descargar todos los datos piden **la clave y el código** de quien lo hace. Así, alguien
+   que robe una sesión abierta no puede crear cuentas propias, quedarse con la de otro ni llevarse los datos. Lo que
+   no impide: que use esa sesión mientras dure (máximo 8 h) para lo que el ADMIN hace a diario (por ejemplo, anular
+   documentos). Todo queda en la bitácora.
 3. **Exportación completa.** El ADMIN descarga en un `.zip` **todos** los datos de su empresa: una hoja CSV (se abre
    en Excel) por tabla, todos los adjuntos y, cuando existan, los XML de las facturas electrónicas. Trae un índice con
    huellas digitales (SHA-256) para comprobar que nada se alteró. Nunca incluye claves ni datos de otra empresa.
@@ -147,12 +167,12 @@ validación de seguridad. Todo esto requiere el visto bueno de Carlos (D44).
 |---|---|---|---|---|
 | 1 | Método y librería | TOTP; SMS; correo; passkeys (WebAuthn) | **TOTP RFC 6238, propio** | Gratis, sin proveedor ni servidor de correo (no existen) y funciona sin señal. SMS: costo y robo de SIM. Passkeys: lo más fuerte, pero más difícil de recuperar; queda para después |
 | 2 | Secreto | Texto plano; llave derivada de `JWT_SECRET`; **llave propia**; servicio de llaves externo | **AES-256-GCM con `TWO_FACTOR_ENCRYPTION_KEY`**, formato `v1:<kid>:…`, AAD por usuario | Texto plano viola R12. Atarla a `JWT_SECRET` dejaría a todos sin 2FA al rotarla. Un servicio externo es desproporcionado |
-| 3 | Códigos de recuperación | Cortos con bcrypt; **largos con SHA-256**; ninguno | **10 × 80 bits, SHA-256, uso único atómico, límite propio** | 80 bits no se adivinan; verificación instantánea |
+| 3 | Códigos de recuperación | Cortos con bcrypt; **largos con SHA-256**; ninguno | **10 × 80 bits, SHA-256, uso único atómico, sin bloqueo por usuario (solo regla por IP)** | 80 bits no se adivinan; si tuvieran bloqueo, un atacante con la clave podría dejar al dueño fuera |
 | 4 | Token intermedio | JWT con `typ` y `JWT_SECRET`; token opaco en BD; reenviar la clave; **JWT con otra llave** | **Desafío JWT firmado con `Buffer.from(hkdfSync(…))`**; 5 min (`login`) o 10 min (`enroll`); verifica `aud`, `typ` y `sub` | `JwtStrategy` no puede aceptarlo como sesión, sin tocar ese archivo; no hace falta una tabla |
 | 5 | Límite de intentos | Solo `AttemptLimiter` como está; **reserva antes de verificar** | **Contadores en `UserTwoFactor`** (reserva atómica, 5 → 15 min, 10 al día → bloqueo hasta cumplir 24 h) **+ IP en memoria con `consume`** (40 / 15 min, IPv6 por /64) | `check` + `recordFailure` se puede saltar con peticiones simultáneas (G1). En la base, el contador sobrevive a un reinicio |
 | 6 | Reuso y reloj | Sin control; **último paso usado** | **±1 paso de 30 s; `lastUsedStep` atómico; al cambiar de secreto se fija sin comparar** | Tolera relojes un poco desfasados; ningún código sirve dos veces |
 | 7 | ¿Obligatorio para ADMIN? | Voluntario; ADMIN; todos | **Pregunta D41** (recomiendo ADMIN). Variable `TWO_FACTOR_REQUIRED_ROLES`, vacía por defecto | No decido por Carlos; las e2e del socio siguen entrando solo con clave |
-| 8 | Restablecer por el ADMIN | Sin restablecimiento; sin confirmación; **con confirmación** | **E9** con clave (y código) del ADMIN: misma empresa, no a sí mismo, cierra las sesiones del usuario, abre una ventana de inscripción de 72 h, limpia contadores, bitácora. Único ADMIN: comando de Carlos | Sin confirmación, un token robado bastaría |
+| 8 | Restablecer por el ADMIN | Sin restablecimiento; sin confirmación; **con confirmación** | **E9** con clave (y código) del ADMIN **y una clave nueva para el usuario**: misma empresa, no a sí mismo, cierra sesiones, abre 72 h de inscripción, limpia contadores, bitácora. Único ADMIN: comando de Carlos, que también cambia la clave | Sin confirmación, un token robado bastaría |
 | 9 | Dónde se guarda | Columnas en `User`; **tablas aparte** | **`UserTwoFactor` y `UserRecoveryCode`**, con relación y cascada (2 líneas en `User`) | `User` casi no cambia y ninguna consulta actual puede devolver un secreto |
 | 10 | Acciones de bitácora | Valores nuevos; **reutilizar** | **`UPDATE`, `LOGIN`, `CREATE` + `changes.event`** | Convención del socio; sin migración `ADD VALUE` |
 | 11 | «Política de rutas» | Poner los 4 roles; **lista explícita** | **Lista explícita**: rutas propias bajo `/users/me/two-factor/…`; login bajo `/auth/login/…` | Poner todos los roles equivale a no poner ninguno |
@@ -179,8 +199,6 @@ validación de seguridad. Todo esto requiere el visto bueno de Carlos (D44).
 | `totpLockedUntil` | DateTime? | Bloqueado hasta |
 | `totpDayFailures` | Int @default(0) | Reservas en la ventana de 24 h |
 | `totpDayStart` | DateTime? | Inicio de esa ventana |
-| `recoveryFailures` | Int @default(0) | Reservas de códigos de recuperación |
-| `recoveryLockedUntil` | DateTime? | Bloqueo de códigos de recuperación |
 | `createdAt`, `updatedAt` | DateTime | |
 
 **`UserRecoveryCode`**: `id` uuid; `userId` (relación, cascada, índice); `codeHash` String **@unique** (SHA-256 hex);
@@ -244,8 +262,8 @@ validación de seguridad. Todo esto requiere el visto bueno de Carlos (D44).
   `updateMany({ where: { id, usedAt: null }, … })`; 0 filas = incorrecto.
 - Se entregan **una sola vez** (activar, regenerar, inscripción en el login) con `Cache-Control: no-store`.
 - Regenerar borra todos los anteriores y crea 10 nuevos, en una transacción.
-- Sirven donde se pide un código: 6 dígitos = TOTP; cualquier otra entrada = código de recuperación. **Límite propio**
-  (3.11).
+- Sirven donde se pide un código: 6 dígitos = TOTP; cualquier otra entrada = código de recuperación. **Sin bloqueo por
+  usuario**: solo la regla por IP (3.11).
 
 ### 3.7 Endpoints
 
@@ -271,7 +289,7 @@ confirma con tu clave (y el código de tu aplicación, si la tienes activada).»
 | E6 | `POST /users/me/two-factor/enable` | JWT, cualquier rol | `{ code }` | `{ access_token, recoveryCodes }`; `passwordChangedAt = now`; `enabledIp` | 422 «No hay una activación en curso o ya venció. Empieza de nuevo desde «Activar».»; 422 código; 429 |
 | E7 | `POST /users/me/two-factor/disable` | JWT, cualquier rol | `{ password, code }` | `{ access_token }`; `passwordChangedAt = now` | 422 «Tu rol exige la verificación en dos pasos: no se puede desactivar. Si cambiaste de teléfono, usa «Cambiar de teléfono».»; 422 si no está activo; 422 confirmación; 429 |
 | E8 | `POST /users/me/two-factor/recovery-codes` | JWT, cualquier rol | `{ password, code }` | `{ recoveryCodes }` | 422; 429 |
-| E9 | `POST /users/:id/reset-two-factor` | JWT + `@Roles(ADMIN)` | `{ confirmPassword, confirmCode? }` | `{ ok: true }` | 404 otra empresa; 422 «No puedes restablecer tu propia verificación: usa «Seguridad de mi cuenta».»; 422 «Este usuario no tiene activada la verificación en dos pasos.»; 422 confirmación; 429; 403 a otros roles |
+| E9 | `POST /users/:id/reset-two-factor` | JWT + `@Roles(ADMIN)` | `{ confirmPassword, confirmCode?, newPassword }` (`newPassword` 8–72, como `ResetPasswordDto`) | `{ ok: true }` | 404 otra empresa; 422 «No puedes restablecer tu propia verificación: usa «Seguridad de mi cuenta».»; 422 «Este usuario no tiene activada la verificación en dos pasos.»; 422 confirmación; 429; 403 a otros roles |
 | E10 | `GET /users`, `GET /users/:id` (existen) | Sin cambios | — | + `twoFactorEnabled: boolean` | — |
 | E11 | `GET /users/security-events?days=30` | JWT + `@Roles(ADMIN)` | `days` 1–90 | Eventos de la empresa (3.12, marcados «visible»), con nombre del actor y del afectado, fecha, IP y `via` | 403 a otros roles |
 
@@ -327,21 +345,29 @@ mismo Base32, en grupos de 4.
 
 **E9:**
 - Confirmación del ADMIN (3.10b).
-- En una transacción: `findFirst({ where: { id, companyId } })` (404 si no existe o es de otra empresa). Borrar
+- **Siempre fija una clave nueva** (N1). Si hubo bloqueos, quien los provocó ya conoce la clave vieja: sin cambiarla,
+  podría inscribir su propio teléfono en la ventana de 72 h. El ADMIN escribe la clave temporal y se la dice al usuario
+  por teléfono (como en `reset-password`). El manual le pide al usuario cambiarla al entrar.
+- En una transacción: `findFirst({ where: { id, companyId } })` (404 si no existe o es de otra empresa). Guardar el
+  hash de `newPassword` en `password`. Borrar
   códigos con `deleteMany({ where: { userId: id, user: { companyId: actor.companyId } } })`. Dejar la fila de 2FA
   **sin secreto** (`secretEnc`, `enabledAt`, `pending*`, `lastUsedStep` en nulo), con contadores en cero y
   `enrollAllowedUntil = now + 72 h` (`updateMany` con `user: { companyId }`). `user.updateMany({ where: { id,
-  companyId }, data: { passwordChangedAt: now } })`. Bitácora visible. Limpiar en memoria las reglas por IP no hace
-  falta.
-- Efecto: se cierran todas las sesiones del usuario. Si su rol está en la política, en las próximas 72 h se inscribe
-  al entrar.
+  companyId }, data: { passwordChangedAt: now } })`. Bitácora visible (`TWO_FACTOR_RESET` y `PASSWORD_RESET_BY_ADMIN`). Limpiar
+  en memoria las reglas por IP no hace falta.
+- Efecto: la clave vieja deja de servir y se cierran todas las sesiones del usuario. Si su rol está en la política, en
+  las próximas 72 h se inscribe al entrar **con la clave nueva**.
 - **Recomendación** (manual): cada empresa con **dos ADMIN** con 2FA.
 
 **Rescate del único ADMIN** (perdió el teléfono y los códigos):
 - Lo ejecuta **Carlos por SSH** (Claude saldrá del servidor): `docker compose -p financiero-pruebas -f
   docker-compose.prod.yml -f docker-compose.pruebas.yml --env-file .env.production run --rm --no-deps -T api node
   dist/cli/two-factor-reset.js --email <correo> --motivo "<texto obligatorio>"`.
-- Hace lo mismo que E9. **Antes**, si la empresa tiene **otro ADMIN activo**, se niega: «Esta empresa tiene otro
+- Hace lo mismo que E9, **incluida la clave nueva**: el comando genera una clave temporal de 16 caracteres (80 bits,
+  alfabeto Crockford) y la muestra **una sola vez** en la terminal de Carlos (salida de errores). **Nunca** la escribe
+  en `financiero-ops.log` ni en la bitácora. Carlos se la dicta al usuario por el teléfono del contrato (D43); el
+  usuario la cambia al entrar.
+- **Antes**, si la empresa tiene **otro ADMIN activo**, se niega: «Esta empresa tiene otro
   administrador activo (correo): que lo restablezca desde la aplicación.». Con `--forzar` lo hace igual y queda
   anotado.
 - Bitácora con actor = el propio usuario (la columna exige un usuario) y `changes: { event: 'TWO_FACTOR_RESET', via:
@@ -358,7 +384,7 @@ Aplica a:
 
 | Acción | Cuándo |
 |---|---|
-| `POST /auth/register` | Si `role` es ADMIN |
+| `POST /auth/register` | **Siempre** (cualquier rol; N3) |
 | `PATCH /users/:id` | Si pasa el rol a ADMIN, o cambia el correo de un usuario que es ADMIN |
 | `POST /users/:id/reset-password` | Siempre |
 | E9 | Siempre |
@@ -367,8 +393,9 @@ Aplica a:
 - Campos nuevos opcionales en los DTOs: `confirmPassword` (≤ 72) y `confirmCode` (≤ 32). El servicio exige
   `confirmPassword` en los casos de la tabla, y `confirmCode` si el ADMIN que actúa tiene 2FA. Si falta o no sirve →
   **422**. Límites: `consume` de `passwordRules(actor.id)` y la reserva de 3.11 sobre el 2FA del actor.
-- `reset-password`: cambian `test/users-company.e2e-spec.ts:177–178` (se agrega `confirmPassword`). `register` y
-  `PATCH` de las pruebas del socio no usan el rol ADMIN (verificado): no cambian.
+- Pruebas del socio que cambian por esto: `test/users-company.e2e-spec.ts:177–178` (`reset-password`) y
+  `test/auth.e2e-spec.ts:116` (el `body` de `register` suma `confirmPassword`; las 6 pruebas de ese bloque siguen
+  esperando lo mismo). Los `PATCH` de las pruebas del socio no usan el rol ADMIN (verificado): no cambian.
 - **Ascender a ADMIN** pone `passwordChangedAt = now` al ascendido (vuelve a entrar y, si hay política, se inscribe
   en las 72 h de `enrollAllowedUntil`). Bitácora `ADMIN_GRANTED` visible.
 - `reset-password` del ADMIN, además: limpia los contadores del 2FA del usuario y abre `enrollAllowedUntil = now +
@@ -387,9 +414,9 @@ sentencia** atómica (`$queryRaw` con `Prisma.sql`, como `lockActiveAdmins`) que
 Si no actualiza ninguna fila → 429 con `Retry-After` hasta el bloqueo.
 - **Acierto:** en la misma transacción del éxito, `totpFailures = 0`, `totpLockedUntil = null` y
   `totpDayFailures = greatest(totpDayFailures − 1, 0)` (devolución).
-- **Recuperación:** lo mismo con `recoveryFailures`/`recoveryLockedUntil`: **10 por hora**, bloqueo de 1 h. Es un
-  límite **aparte**: si un atacante agota los intentos de TOTP, el dueño todavía entra con un código de recuperación
-  (M7).
+- **Recuperación: sin bloqueo por usuario** (N2). Un código tiene 80 bits: no se puede adivinar, y un bloqueo por
+  usuario solo serviría para que un atacante con la clave deje al dueño fuera. Solo aplica la regla por IP (b). Si un
+  atacante agota los intentos de TOTP, el dueño **siempre** puede entrar con un código de recuperación (M7).
 - **Limpian los contadores:** E9, `reset-password` del ADMIN y el rescate.
 - **Probabilidad con este diseño:** como mucho 10 intentos de TOTP por cuenta y por día, **aunque sean simultáneos**;
   cada intento acierta con probabilidad ≤ 3·10⁻⁶ (3 pasos válidos). Resultado: ≤ 3·10⁻⁵ por día, **≈1 % por año** de
@@ -403,7 +430,9 @@ Si no actualiza ninguna fila → 429 con `Retry-After` hasta el bloqueo.
 - `check`/`recordFailure` quedan como están (las usan las pruebas del socio).
 
 Regla `2fa:ip:<ip>`, 40 / 15 min, con IPv6 agrupado por **/64** (`ipKey(ip)`). Se aplica en E2, E3 y en las
-verificaciones con sesión. Se refunde si acierta.
+verificaciones con sesión. **Orden:** primero `consume` de la IP; después la reserva en la base. Si la reserva falla
+(usuario bloqueado → 429), **se devuelve** la regla por IP, porque no se probó ningún código. Si el código acierta,
+también se devuelve.
 
 **c) Login y cambio de clave (G1b): conviene, y va en S1.** `login` y `change-password` pasan de
 `check`/`recordFailure` a `consume`/`refund`, con las mismas reglas y límites. El comportamiento visible no cambia (5
@@ -422,8 +451,12 @@ usuario y la IP (o su /64), sin códigos, claves ni correos completos.
 
 - **`writeAudit` con `meta` opcional** (`{ ipAddress?, userAgent? }`, `userAgent` recortado a 300 caracteres). Las
   llamadas nuevas lo pasan siempre.
-- **Regla:** `changes` **nunca** lleva secretos, códigos, claves, hashes ni el desafío. La prueba lo verifica (6.2) y
-  la exportación lo da por hecho (4.2).
+- **Regla:** `changes` **nunca** lleva secretos, códigos, claves, hashes ni el desafío. **Guardia en `writeAudit`
+  (N4):** antes de guardar, recorre `changes` (objetos y listas, a cualquier profundidad) y **quita** toda clave cuyo
+  nombre coincida con el patrón de secretos de 4.4, **salvo** que su valor sea booleano (así se conservan
+  `passwordReset: true` y `passwordChanged: true`, que ya usa el socio). Lo que quita lo anota en el log del servidor
+  (solo el nombre del campo y la entidad, nunca el valor). Hace falta porque el socio guarda DTOs enteros con
+  `JSON.parse(JSON.stringify(dto))` en 10 lugares (verificado). La exportación lo da por hecho (4.2).
 - **Migración `<fecha>_auditlog_no_update`:** una función y un disparador `BEFORE UPDATE ON "AuditLog"` que lanza un
   error. El DELETE **no** se bloquea: 19 archivos de e2e del socio limpian `AuditLog` con `deleteMany` (deuda 9.2).
   Prisma no administra disparadores y no los borra.
@@ -500,6 +533,12 @@ secretos. Hacer obligatorio el 2FA por defecto. Volver a mostrar los códigos.
 - El filtro de un `CHILD` se escribe como objeto tipado `Prisma.<Modelo>WhereInput`: TypeScript comprueba que la
   relación existe. La e2e lo ejecuta contra la base.
 
+**Quién edita el registro (N7, V1):** es explícito. **Todo paquete que cree un modelo lo registra en
+`src/data-export/export-registry.ts` en su propio PR**: A1, A4, N2a, N3, N5 y **también las verticales del socio**
+(contrato de verticales). Si no lo hace, la prueba de cobertura deja la suite en rojo y el PR no se fusiona.
+**Nombres fijos para modelos nuevos** (verticales incluidas): una columna con un archivo se llama `fileUrl` o termina
+en `FileUrl`; una columna cifrada termina en `Enc`. Así la prueba de 4.4 las reconoce sin depender del idioma.
+
 Cada modelo aparece **una vez**, con una clase:
 
 | Clase | Filtro | Modelos |
@@ -575,11 +614,15 @@ Falla, diciendo qué falta y que se agregue al registro, si:
 1. Un nombre de `Prisma.ModelName` no está en el registro, o el registro nombra un modelo inexistente.
 2. Un `COMPANY` o `ROW_FILTERED` no tiene `companyId` en su `ScalarFieldEnum`.
 3. Una columna cuyo nombre coincide con
-   `/password|secret|hash|token|credential|enc$|apikey|privatekey|p12|certificate/i` no está en `excludedColumns` ni en
+   `/password|secret|hash|token|credential|enc$|apikey|privatekey|p12|certificate|contrasena|contraseña|clave|secreto|credencial|certificado|cifrad/i`
+   (inglés y español, V1) no está en `excludedColumns` ni en
    **`ALLOWED_LOOKALIKES`**. Esa lista empieza con: `User.passwordChangedAt` — «fecha del último cambio de clave; no
    es un secreto». Con el esquema de hoy coinciden solo `User.password`, `User.passwordChangedAt` y
-   `BankConnection.credentialsEnc` (verificado).
-4. Una columna que coincide con `/fileurl|filekey|storagekey|xmlfile/i` no está en `files`.
+   `BankConnection.credentialsEnc` (verificado). **Ojo:** `clave` también aparece en nombres que no son secretos (por
+   ejemplo, una «clave de producto»); esos van a `ALLOWED_LOOKALIKES` con su motivo, igual que `passwordChangedAt`. El
+   mismo patrón lo usa la guardia de `writeAudit` (3.12).
+4. Una columna que coincide con `/fileurl|filekey|storagekey|xmlfile|archivo|adjunto|ruta/i` no está en `files` (o en
+   `ALLOWED_LOOKALIKES` con motivo, p. ej. un `nombreArchivo` que solo guarda el nombre).
 5. Una columna `excludedColumns` o `jsonColumns` no existe (detecta renombres).
 6. **Lectura de `prisma/schema.prisma` (solo en la prueba):** se recorren los bloques `model X { … }` y falla si un
    campo de tipo `Json`/`Json?` no está en `jsonColumns`, o si la primera relación de un `CHILD` no es un campo del
@@ -660,7 +703,9 @@ activa.)
      ~/financiero-exportaciones/<RNC>-<fecha>.zip`.
 
    `run --rm` crea **otro contenedor**, con su propio tope de 768 MB, que no le quita memoria a la API en uso. El ZIP
-   va a la salida estándar y los mensajes a la de errores. La bitácora lleva `via: 'operator-cli'` y el motivo.
+   va a la salida estándar, y **todo** lo demás a la de errores (N8): el comando crea el contexto de Nest con un
+   registrador propio que escribe solo en `process.stderr`, sin registros de Prisma por la salida estándar y sin
+   `console.log`. Un solo byte ajeno en la salida estándar corrompería el ZIP. La bitácora lleva `via: 'operator-cli'` y el motivo.
    También queda una línea en `financiero-ops.log`.
 3. Se entrega por el canal que decida Carlos (D48) y **se borra del servidor** al confirmar la entrega. El documentador
    escribe el paso a paso sin asumir conocimientos.
@@ -703,9 +748,10 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
    mostrar». Nada en `localStorage`.
 7. **Usuarios (ADMIN)** (`features/admin/users.ts`):
    - columna «Verificación en dos pasos»;
-   - «Restablecer verificación» con diálogo de confirmación reforzada;
-   - **la misma confirmación** al crear un ADMIN, al ascender a ADMIN, al cambiar el correo de un ADMIN y al
-     restablecer una clave;
+   - «Restablecer verificación» con diálogo de confirmación reforzada **y el campo «Clave nueva para el usuario»**
+     (explica que hay que dársela por teléfono y que la cambie al entrar);
+   - **la misma confirmación** al crear **cualquier** usuario, al ascender a ADMIN, al cambiar el correo de un ADMIN y
+     al restablecer una clave;
    - bloque «Cambios de seguridad (últimos 30 días)» con E11, que muestra el rescate como «operador del sistema».
 8. **«Exportar todos mis datos»** (Configuración, solo ADMIN; `features/admin/admin.routes.ts` con
    `roleGuard('ADMIN')`; entrada en `layout/nav.ts`):
@@ -758,6 +804,10 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
   - el mismo código con un desafío nuevo → 401;
   - reloj: T−1 no usado → 200; T−2 → 401; T+1 → 200; T+2 → 401;
   - vencido (+6 min) → 401 «venció»; clave cambiada o usuario o empresa desactivados entre los pasos → 401.
+- **Cómo se arman las pruebas de concurrencia (N5):** una app aparte con `TRUST_PROXY=1` (como `proxyApp` en
+  `security.e2e-spec.ts`) y una IP propia por prueba con `X-Forwarded-For` (p. ej. `198.51.100.<n>`); para medir el
+  límite por usuario, las 50 peticiones salen de IP distintas. Así no se agotan las reglas por IP (40) de 127.0.0.1 y
+  el resto del archivo no recibe 429.
 - **Límites (G1/A2):**
   - **50 peticiones simultáneas con códigos malos → como mucho 5 respuestas 401 y el resto 429**;
   - después, el código correcto → 429;
@@ -765,7 +815,9 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
   - 10 fallos en el día → bloqueado aunque pasen 15 min, hasta cumplir 24 h;
   - un acierto devuelve la reserva;
   - con TOTP bloqueado, un código de recuperación correcto **entra** (M7);
-  - 10 códigos de recuperación malos en una hora → 429;
+  - 30 códigos de recuperación malos desde IP distintas **no** bloquean al dueño: su código correcto entra (N2);
+  - con la cuenta bloqueada (429 por la base), la regla por IP **se devuelve**: desde esa IP, otra cuenta todavía puede
+    intentar (N5);
   - una sola bitácora `TWO_FACTOR_LOCKED_OUT` por bloqueo y una línea en el log;
   - regla por IP: 40 fallos desde la misma /64 → 429 para otra cuenta.
 - **Login y cambio de clave (G1b):** 50 logins simultáneos con la clave mala → como mucho 5 respuestas 401;
@@ -780,13 +832,15 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
 - **`change-password` (M2s):** con 2FA y sin código → 422; con código → 201; clave actual mala → 422 sin cerrar la
   sesión.
 - **E9:**
-  - ADMIN de A sobre un usuario de A, con confirmación → 200: el usuario entra solo con clave, sus tokens viejos → 401,
+  - ADMIN de A sobre un usuario de A, con confirmación y `newPassword` → 200: **la clave vieja → 401 en el login**, la
+    nueva entra (solo con clave, o con inscripción si su rol está en la política); sus tokens viejos → 401;
+    **un atacante con la clave vieja ya no puede inscribir su teléfono** (N1);
     contadores en cero, `enrollAllowedUntil` ≈ ahora + 72 h, bitácora visible en E11;
-  - usuario de B → 404; ACCOUNTANT, APPROVER y VIEWER → 403; a sí mismo → 422; sin confirmación → 422; usuario sin
-    2FA → 422;
+  - usuario de B → 404; ACCOUNTANT, APPROVER y VIEWER → 403; a sí mismo → 422; sin confirmación → 422; sin
+    `newPassword` → 400; usuario sin 2FA → 422;
   - `reset-password` sobre un usuario con 2FA **no** quita el 2FA, sí limpia sus contadores.
-- **Camino completo con token robado (G2):** con solo el token de un ADMIN (sin clave ni código) → 422 en:
-  `register` con rol ADMIN, `PATCH` a ADMIN, `PATCH` del correo de un ADMIN, `reset-password`, E9, E5 y
+- **Camino completo con token robado (G2, N3):** con solo el token de un ADMIN (sin clave ni código) → 422 en:
+  `register` con **cualquier** rol (ACCOUNTANT incluido), `PATCH` a ADMIN, `PATCH` del correo de un ADMIN, `reset-password`, E9, E5 y
   `POST /data-export`. Con la confirmación correcta → funcionan, el ascendido pierde sus sesiones y queda
   `ADMIN_GRANTED` en E11.
 - **Política** (`vi.spyOn(twoFactorService, 'requiredRoles').mockReturnValue(['ADMIN'])`):
@@ -807,8 +861,13 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
   - ningún cuerpo de respuesta contiene `secretEnc`, `pendingSecretEnc`, `codeHash`, `lastUsedStep`, `totpFailures` ni
     `v1:`;
   - ningún `AuditLog.changes` contiene el secreto, un código, un hash o un desafío.
-- **`security.e2e-spec.ts`** en verde con las listas de 3.14. Pruebas del socio que cambian, y nada más:
-  `users-company.e2e-spec.ts:177–178` (confirmación) y `:188`, `security.e2e-spec.ts:233` (401 → 422).
+- **Guardia de `writeAudit` (N4, unidad):** `changes = { password: 'x', nested: { secretEnc: 'y', claveAcceso: 'z' },
+  codeHash: 'h', passwordReset: true, name: 'Ana' }` se guarda como `{ nested: {}, passwordReset: true, name: 'Ana' }`.
+  También funciona dentro de listas. Un `PATCH` real de un maestro (que copia el DTO) sigue dejando sus campos normales.
+- **Pruebas del socio que cambian (lista completa, N6), y nada más:**
+  - `test/security.e2e-spec.ts`: las tres listas de «Política de rutas» (líneas 349, 356 y 361; anexo 3.14) y `:233` (401 → 422);
+  - `test/users-company.e2e-spec.ts`: `:177–178` (confirmación en `reset-password`) y `:188` (401 → 422);
+  - `test/auth.e2e-spec.ts`: `:116` (`confirmPassword` en el `body` de `register`).
 
 ### 6.3 `test/data-export.e2e-spec.ts` (S2)
 - **Permisos:** sin token → 401; ACCOUNTANT, APPROVER y VIEWER → 403; sin confirmación → 422; ADMIN con 2FA sin código
@@ -846,7 +905,10 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
   - `process.memoryUsage()` cada 50 ms;
   - con 30 000 líneas de asiento y 24 adjuntos de 5 MB, el pico de `rss + arrayBuffers` sube menos de **100 MB**;
   - el valor medido va en el PR, junto con una medición manual en pruebas con `docker stats` y ≈1 GB ficticio.
-- **CLI:** la función del comando produce el mismo contenido (salvo `generatedBy`) y exige `--motivo`.
+- **CLI (N8):** se ejecuta **el comando compilado de verdad** (`node dist/cli/data-export.js …` como proceso hijo,
+  contra la base de pruebas): la salida estándar empieza por `PK`, `yauzl` la abre, el contenido es el mismo que el de
+  la API (salvo `generatedBy`), la salida de errores trae los mensajes, y sin `--motivo` termina con error sin escribir
+  nada en la salida estándar.
 
 ### 6.4 S4 (manual y de unidad)
 - Activar, salir y entrar con código; entrar con un código de emergencia.
@@ -869,11 +931,12 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
 | `src/auth/attempt-limiter.ts` | S1 | `consume`, `refund`, `ipKey` (/64) | Medio |
 | `src/auth/strategies/jwt.strategy.ts`, `types/auth-user.ts` | — | **Sin cambios** | — |
 | `src/users/users.service.ts`, `users.controller.ts`, `dto/users.dto.ts` | S1 | E9, E11, `twoFactorEnabled`, confirmación en `update`/`resetPassword`, `change-password` (código, 422, `consume`) | **Alto** |
-| `src/common/audit.ts` | S1 | `meta` opcional | Bajo |
+| `src/common/audit.ts` | S1 | `meta` opcional; guardia que quita secretos de `changes` (afecta a todas las llamadas) | Medio |
 | `src/config/env.validation.ts` | S1 | 3 variables | Bajo |
 | `docker-compose.prod.yml`, `env.production.example`, `env.test.example` | S1 | Variables; comentario de `TRUST_PROXY=2` en pruebas | Bajo |
 | `test/security.e2e-spec.ts` (**caliente**) | S1, S2 | Listas de 3.14 y 4.6; `:233` 401 → 422 | Medio |
 | `test/users-company.e2e-spec.ts` | S1 | `:177–178` confirmación; `:188` 401 → 422 | Bajo |
+| `test/auth.e2e-spec.ts` | S1 | `:116` `confirmPassword` en `register` | Bajo |
 | `package.json`/`package-lock.json` | S1, S2 | `qrcode-generator`, `yazl`; desarrollo: `yauzl`, `@types/yazl`, `@types/yauzl` | Bajo |
 | `src/app.module.ts` (**caliente**) | S2 | Una línea | Bajo |
 | `src/attachments/attachments.module.ts`, `attachments.service.ts` | S2 | Exportar `FILE_STORAGE`; patrón exacto en `download` | Medio |
@@ -908,13 +971,14 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
 | El 2FA deja a todos fuera | Grave | Política vacía por defecto; activación acompañada; comando de estado; códigos de emergencia; E9; rescate |
 | El desafío se acepta como sesión | Grave | Llave HKDF con `Buffer.from`, `aud`/`typ`/`sub`; pruebas en ambos sentidos |
 | Adivinar el código con peticiones simultáneas | Grave | Reserva atómica en la base; prueba de 50 simultáneas |
-| Token de ADMIN robado (XSS; el token vive en `localStorage`) | Alto | Confirmación reforzada en las 5 acciones de 3.10b; E11 visible. Sigue abierto: lo que un ADMIN puede hacer sin esas 5 acciones (p. ej. anular documentos) |
+| Token de ADMIN robado (XSS; el token vive en `localStorage`) | Alto | Confirmación reforzada en las acciones de 3.10b (crear **cualquier** usuario, ascender, cambiar correos de ADMIN, cambiar claves, quitar 2FA, exportar); E11 visible. **No lo elimina:** mientras dure la sesión (máx. 8 h) el intruso puede hacer lo que un ADMIN hace a diario sin confirmación (p. ej. anular documentos, cambiar datos de la empresa). Todo queda en la bitácora |
 | Un intruso con la clave inscribe su teléfono primero | Alto | Activación acompañada; ventana de 72 h solo para cuentas nuevas o restablecidas; fecha e IP visibles. Para roles **no** obligados sigue siendo posible: el dueño lo ve y pide E9 |
 | Se pierde la llave | Alto | Códigos de recuperación y rescate sin llave; 503, no 500; copia (D42) |
 | Reloj desfasado | Alto | ±30 s; NTP verificado |
 | Fuga entre empresas o de papeles de auditoría | Grave | Registro, prueba genérica, patrón exacto de claves, D47 |
 | Tabla o secreto nuevo sin clasificar | Alto | Prueba de cobertura |
 | Memoria | Alto | Flujo, semáforo global, topes, prueba medida |
+| Semáforo global ocupado (N9): una empresa con un cliente lento lo retiene hasta 45 min, y hasta 3 veces por hora; las demás reciben 429 «Ya hay una exportación en curso» | Medio | Corte a los 60 s si el cliente no lee; tope de 45 min; el 429 dice cuándo reintentar. Es aceptable mientras haya pocos clientes. Si molesta: semáforo de 2, o exportaciones por turno en segundo plano (deuda) |
 | Copias en disco en nginx/NPM | Medio | `X-Accel-Buffering`, bloque nginx, revisión de NPM por devops |
 | `TRUST_PROXY` mal puesto | Medio | Verificación en el paso 1 del despliegue |
 | ZIP del operador olvidado en el servidor | Medio | Carpeta 700, `umask 077`, borrado al entregar, línea en `financiero-ops.log` |
@@ -954,15 +1018,22 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
 
 ## 11. Pendientes y hallazgos
 
-- **Aprobación:** revisor-critico y seguridad revisaron la v1.0. Esta v1.1 incorpora sus cambios y conviene una
-  **lectura de confirmación** de ambos antes de presentársela a Carlos. No la apruebo yo.
+- **Aprobación:** revisor-critico y seguridad revisaron la v1.0; la v1.1 pasó la revisión de comprobación con «aprobar
+  con cambios menores», que esta v1.2 aplica. Sigue faltando la aprobación de Carlos (y, si el coordinador lo pide, una
+  última lectura de los cambios N1–N9). No la apruebo yo.
 - **Tarea 0.3 de `docs/PLAN-v0.2.md`:** sin modificar (requiere visto bueno). Texto propuesto: «| 0.3 | devops |
   **Respaldos** (11.2): servicio y restauración ensayada (hechos, `2672217`). **Cifrado, copia externa y aviso de
   fallo pasan a la Fase 3 de la v0.3 (tarea 3.3, paquete S3)**; esperan D17 y D18 | L |».
 - **Fichas A1 y A3 (auditoría):** el aviso de la cuenta auditora (PLAN-v0.2 §5.6) debe incluir `TWO_FACTOR_RESET` y
-  `ADMIN_GRANTED`. Las tablas `Audit*` deben entrar en el registro de la exportación según D47. Anotado; no modifiqué
-  esas fichas.
-- **Fichas actualizadas en esta versión:** S1, S2, S3 y S4 (alcance, archivos y criterios) y `docs/tablero-paquetes.csv`
+  `ADMIN_GRANTED` (anotado en A1; **A3 queda pendiente**, no la modifiqué).
+- **Registro de la exportación (N7):** anotado en las fichas **A1** (`AuditEngagement`, `AuditWorkpaper`,
+  `AuditProcedure`, `AuditFinding`), **A4** (`AuditCheckmark`, `AuditFile`) y **N2a** (sus modelos). **N3** todavía no
+  tiene ficha: quien la escriba debe incluir `EcfDocument` (con `xmlFileUrl` en `files`) y, en la Fase 7,
+  `EcfConnection` con sus credenciales excluidas. **N5** (`Holiday`, `FiscalObligation`) igual.
+- **`docs/CONTRATO-VERTICALES.md` §4.6.5** dice que la exportación «detecta» los modelos desde el cliente de Prisma.
+  Con este anexo la **detección** la hace la prueba de cobertura, pero el **registro** es explícito: cada vertical edita
+  `src/data-export/export-registry.ts` y usa los nombres fijos de 4.2. Hay que alinear ese párrafo (no lo modifiqué).
+- **Fichas actualizadas:** v1.2: S1, S2, S4, A1, A4 y N2a. v1.1: S1, S2, S3 y S4 (alcance, archivos y criterios) y `docs/tablero-paquetes.csv`
   (S2 depende de S1; esperas humanas D44, D47, D41).
 - D33 sigue pendiente aparte. Los números D41–D48 se renumeran si ya estaban usados.
 
@@ -974,14 +1045,14 @@ Con el kit propio (`styles.css`, `shared/ui`), **sin Tailwind ni librerías de U
 |---|---|---|---|
 | 1 | Método | TOTP RFC 6238 propio; plan B `otpauth` | 2.1, 3.4 |
 | 2 | Secreto | AES-256-GCM, llave propia, AAD por usuario, `v1:<kid>`; sin rotación por ahora; `kid` desconocido = 503 | 3.5 |
-| 3 | Recuperación | 10 × 80 bits, SHA-256, uso único, límite propio | 3.6, 3.11 |
+| 3 | Recuperación | 10 × 80 bits, SHA-256, uso único; sin bloqueo por usuario, solo regla por IP | 3.6, 3.11 |
 | 4 | Desafío | JWT con `Buffer.from(hkdfSync())`, `aud`/`typ`/`sub`, 5 o 10 min, sin `jti` | 3.8 |
 | 5 | Límites | Reserva atómica en `UserTwoFactor` (5 → 15 min; 10/día) + IP en memoria con `consume` (/64); login y cambio de clave también con `consume` | 3.11 |
 | 6 | Reuso y reloj | ±1 paso; `lastUsedStep` atómico; se fija sin comparar al cambiar de secreto | 3.4 |
 | 7 | Obligatorio | D41; variable vacía por defecto; activación acompañada y comando de estado antes de encenderla; inscripción en el login solo con ventana de 72 h | 3.3, 3.8, 8 |
-| 8 | Restablecer | E9 con confirmación reforzada, ventana de 72 h, contadores en cero; rescate de Carlos con `--motivo` | 3.10 |
+| 8 | Restablecer | E9 con confirmación reforzada **y clave nueva**, ventana de 72 h, contadores en cero; rescate de Carlos con `--motivo` y clave temporal mostrada una vez | 3.10 |
 | 9 | Almacenamiento | `UserTwoFactor` y `UserRecoveryCode` | 3.2 |
-| 10 | Bitácora | Acciones existentes + `changes.event`; `meta`; sin secretos en `changes`; disparador contra UPDATE; E11 | 3.12 |
+| 10 | Bitácora | Acciones existentes + `changes.event`; `meta`; guardia en `writeAudit` que quita secretos de `changes`; disparador contra UPDATE; E11 | 3.12 |
 | 11 | Política de rutas | Listas explícitas; 422 para confirmaciones con sesión | 3.7, 3.14 |
 | 12 | QR y CSP | SVG `data:` desde el backend | 3.15 |
 | 13 | Qué se exporta | Todo lo de la empresa, sin secretos ni papeles de la auditora (D47) | 4.1, 4.2 |
