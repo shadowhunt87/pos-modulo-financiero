@@ -33,11 +33,29 @@ A4,Marcas archivos e informe,A,N2,Claude-PC,L,2,A1,wp/A4-marcas-informe,,v0.2 6.
 A5,Pantallas de auditoría II,A,N2,Claude-PC,L,3,A4,wp/A5-pantallas,,v0.2 6.6
 V0,Contrato de integración para verticales,V,N1,Claude-servidor,M,0,Plan v0.3 aprobado,wp/V0-contrato,Carlos aprueba,Nuevo
 V1a,Enganches para verticales (origen VERTICAL; createInTx; findBySource; nextFor; registro),V,N1,Claude-servidor,L,1,V0,wp/V1a-enganches,,Contrato verticales §7.1
-V1b,Validaciones de empresa y cuentas en post y build,V,N1,Claude-PC,M,2,N1;V1a,wp/V1b-validaciones,P9 de Carlos (solo para b4),Contrato verticales §7.2
-V4,Activación de verticales por empresa,V,N1,Claude-PC,M,1,V1a,wp/V4-activacion,P4 de Carlos (quién activa),Contrato verticales §3.5 y §7.3
-V2,Plantilla de módulo vertical,V,N2,Claude-PC,M,1,V1a,wp/V2-plantilla,,Contrato verticales §8.3
-V3,Pruebas de contrato de verticales,V,N1,Claude-PC,L,2,V1b;V2;V4,wp/V3-contrato-tests,,Contrato verticales §8.4
+V1b,Validaciones de empresa y cuentas en post y build (sin prisa; no depende de T3a),V,N1,Claude-PC,M,2,N1;V1a,wp/V1b-validaciones,P9 de Carlos (solo para b4),Contrato verticales §7.2
+V4,Activación de verticales por empresa (EN PAUSA D-T5),V,N1,Claude-PC,M,1,V1a,wp/V4-activacion,P4 de Carlos (quién activa); D-T5,Contrato verticales §3.5 y §7.3
+V2,Plantilla de módulo vertical (EN PAUSA D-T5),V,N2,Claude-PC,M,1,V1a,wp/V2-plantilla,,Contrato verticales §8.3
+V3,Pruebas de contrato de verticales (EN PAUSA D-T5),V,N1,Claude-PC,L,2,V1b;V2;V4,wp/V3-contrato-tests,,Contrato verticales §8.4
 D1,Manual y ayuda de pantallas existentes,D,N3+N2,Ollama,M,0,,wp/D1-manual,,v0.2 4.4
 D2,Manual y ayuda de cada paquete al cerrarse,D,N3+N2,Ollama,M,4,paquete correspondiente,wp/D2-manual-paquete,,v0.2 y v0.3 manuales
 D3,Valores fiscales con fuente para el cargador,D,N2,Claude-PC,M,0,,wp/D3-valores-fiscales,Documentos DGII de Carlos,v0.3 0.1
 D4,Notas de versión dentro del sistema,D,N3,Ollama,S,5,cierre de versión,wp/D4-notas,,v0.2 7.3
+T0,Aprobación de INTEGRACION-TALLER; acuerdo con el socio a más tardar 23-oct; DNS,V,—,Carlos,—,0,,—,Carlos y socio,INTEGRACION-TALLER §6
+T0b,Base del taller = main + arreglos de qa con su migración y fotos en disco,V,N1,Socio o Claude-PC,L,1,T0,wp/T0b-base-taller,Acuerdo con el socio (D-T4; D-T7),INTEGRACION-TALLER §4.10
+T1,Ambiente 3 integrado vacío (integrado-pruebas),V,N2,Claude-servidor,M,1,Aprobación,—,Carlos aprueba; DNS,INTEGRACION-TALLER §5
+T1s,Semilla coherente del ambiente 3 y prueba de humo,V,N2+N3,Claude-servidor + Ollama,M,1,T1,—,,INTEGRACION-TALLER §5.7
+T3a,Núcleo: origen en factura con índice único parcial; externalRef en cobro; versión; Swagger,V,N1,Claude-servidor,M,1,Aprobación,wp/T3a-origen-idempotencia,Aviso al socio (archivos calientes),INTEGRACION-TALLER §4.4 y §4.11
+T2a,Adaptador del taller (backend) con llave natural,V,N1,Claude-PC,L,2,T0b;T3a,taller: integracion/nucleo,,INTEGRACION-TALLER §4.10
+T2b,Pantallas del taller en modo integrado,V,N2,Claude-PC,M,2,T2a,taller: integracion/nucleo,,INTEGRACION-TALLER §4.10
+T2d,Cotización congelada (copia de líneas; cotización complementaria),V,N2,Claude-PC,M,2,T0b,taller: integracion/nucleo,,INTEGRACION-TALLER §4.12
+T2c,Recorrido mínimo en el ambiente 3 (sin retenciones),V,N2,Claude-servidor (qa) + contadora,M,2,T1s;T2a;T2b;T3a,—,Contadora mira el asiento,INTEGRACION-TALLER §6
+T3b,Revisor periódico; POR_REVISAR; estado vale/no vale,V,N1,Claude-PC,M,3,T2c,taller: integracion/nucleo,,INTEGRACION-TALLER §4.4 y §4.6
+T3c,Pruebas de contrato por HTTP del taller,V,N1,Claude-PC,M,3,T3b,taller: integracion/nucleo,,INTEGRACION-TALLER §3
+T3d,Aviso «Viene de la orden» en el detalle de factura de Finanzas,V,N2,Claude-PC,S,2,T3a,wp/T3d-aviso-origen,,INTEGRACION-TALLER §4.11
+T4,Correcciones de Finanzas vistas desde el taller,V,N2,Claude-PC,S,3,N1;T3b,taller: integracion/nucleo,,INTEGRACION-TALLER §4.6
+T5a,Seguridad del taller que qa no cubre (usuario activo y rol actual; límite en cotización pública),V,N1,Claude-PC,S,2,T0b,taller: integracion/nucleo,,INTEGRACION-TALLER §4.10
+T5b,Llave de servicio con alcance en el núcleo,V,N1,Claude-servidor,L,3,T3a,wp/T5b-llave-servicio,Antes de D41 si incluye ACCOUNTANT,INTEGRACION-TALLER §4.7
+T5q,Auditoría de seguridad de la integración,Q,N1,Claude-servidor,M,3,T5a;T5b,—,,INTEGRACION-TALLER §7.1
+T6,Estado e-CF del núcleo visto desde el taller,V,N2,Claude-PC,S,5,N3,taller: integracion/nucleo,N7 para emitir,INTEGRACION-TALLER §4.13
+TD,Manual «Facturar y cobrar desde el taller»,D,N3+N2,Ollama,M,3,T2b,—,,INTEGRACION-TALLER §6

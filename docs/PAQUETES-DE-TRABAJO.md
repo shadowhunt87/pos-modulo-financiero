@@ -115,13 +115,13 @@ desbloquea a los demás. Claude-PC lleva el resto del trabajo de programación. 
 
 1. **Ahora, sin esperar a nadie:** **A1** (Auditoría base), **E3-back** (semáforo), **E4-a** (crea el componente de estado vacío que Ollama necesita), **S5** (cabeceras), **D3** (valores fiscales con la contadora).
 2. **Cuando termine N2a:** **N2b** (cargador).
-3. **Verticales, en cuanto termine V1a (lo que espera el socio; van antes que el resto de la cola):** **V4** → **V2** →
-   **V1b** (cuando estén N1 y V1a) → **V3**. Fechas estimadas en `docs/CONTRATO-VERTICALES.md` §6.2 (V4 ≈ 9–13 nov,
-   V2 ≈ 16–20 nov, V1b ≈ 23–27 nov, V3 ≈ 30 nov–11 dic).
+3. **Taller integrado (propuesto en `docs/INTEGRACION-TALLER.md` v1.1, pendiente de Carlos; reemplaza a V4 → V2 → V1b → V3,
+   que quedan en pausa por D-T5):** **T0b** (si no la hace el socio) → **T2a** → **T2b** y **T2d** → **T3d** → **T3b** →
+   **T3c** → **T4** → **T5a**. Fechas en INTEGRACION-TALLER §6 (primer recorrido ≈ 10–13 nov). V1b queda sin prisa al final.
 4. **Después:** **A2, E1a, E3-front, A3, A4**, y luego **N4, N5, E1b, E1c, S3, S4, A5, E2**, y al final **N6, E4-e**.
 
-**Costo de este orden:** adelantar el carril V corre unas 3–4 semanas lo que estaba antes en la cola (A2, E1a, E3-front,
-A3, A4 y siguientes). Carlos puede invertirlo; entonces las fechas que se le dan al socio se corren lo mismo.
+**Costo de este orden:** el taller suma ≈10–11 días de trabajo a Claude-PC y la pausa de V2, V3 y V4 le quita ≈4,5: la cola
+crece ≈5–6 días netos y corre lo que estaba detrás (A2, E1a, E3-front, A3, A4 y siguientes). Carlos puede invertirlo.
 
 Ollama arranca con **D1**, y con **E4-b, E4-c y E4-d** cuando exista E4-a. Cada pantalla de E4 es un encargo aparte y pequeño.
 
@@ -292,7 +292,7 @@ Nunca incluyas claves, .env ni datos reales. Si algo contradice el plan o las gu
 No se delegan a N3. Se corren en este orden y cada una puede devolver el paquete:
 
 1. **QA** (N2): suite completa, casos límite, pantallas contra el checklist (sección 6 de la Guía de producto).
-2. **Seguridad** (N1): obligatoria para los paquetes que tocan permisos, migraciones, archivos subidos, tokens, dinero o aislamiento entre empresas. Lista: N1, N2a–c, N3, N5, N6, S1–S3, A1, A2, E1c, V1a, V1b, V4.
+2. **Seguridad** (N1): obligatoria para los paquetes que tocan permisos, migraciones, archivos subidos, tokens, dinero o aislamiento entre empresas. Lista: N1, N2a–c, N3, N5, N6, S1–S3, A1, A2, E1c, V1a, V1b, V4, **T2a, T3a, T5a, T5b** (taller integrado).
 3. **Revisor crítico** (N1): al cerrar cada fase y cada versión, contra las dos guías y el plan.
 4. **Documentación** (N3 + revisión): el manual del paquete está en el PR.
 5. **Revisión humana**: Carlos aprueba la fusión; si el PR toca archivos del socio (`posting`, `invoicing`), se le avisa a él.
@@ -307,6 +307,7 @@ No se delegan a N3. Se corren en este orden y cada una puede devolver el paquete
   **10 a 14 semanas** para tener todo menos N7. La fecha depende de la capacidad de revisión, no de programar.
 - **No se acorta:** la validación de las contadoras, los documentos de la DGII, la documentación del proveedor de
   e-CF (N7 suma unas 3 semanas desde que llegue) ni las decisiones de Carlos.
-- **La vertical del socio** puede empezar en cuanto Carlos apruebe V0 (contrato): tablas, pantallas y cálculos no
-  esperan a nadie. Conecta asientos con V1a (≈ 7 nov), se ve en pruebas con V4 (≈ 16 nov) y pasa las pruebas finales
-  con V3 (≈ 11 dic). Lo que sí debe esperar para producción: S1–S3 (datos reales) y N1 (corregir sin borrar).
+- **La vertical del socio es el taller**, una aplicación aparte que se integra por API (`docs/INTEGRACION-TALLER.md` v1.1,
+  pendiente de Carlos). Fechas propuestas: ambiente integrado con semilla ≈ 27 oct; primer recorrido orden → factura →
+  asiento ≈ 10–13 nov; integración robusta ≈ 24 nov; lado de la integración listo para la puerta de datos reales ≈ 5–9 dic.
+  Para producción espera además S1–S3 (datos reales), N1 y, para e-CF, N3 y N7.
