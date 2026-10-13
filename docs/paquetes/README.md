@@ -50,9 +50,11 @@ Las fichas **N3** y **N7** (facturación electrónica) no existen: las hace Clau
 | A4 | Marcas, archivos e informe | N2 | 2 | [A4](A4.md) |
 | A5 | Pantallas de auditoría II | N2 | 3 | [A5](A5.md) |
 | V0 | Contrato de integración para verticales | N1 | 0 | [V0](V0.md) |
-| V1 | Puntos de enganche mínimos para verticales | N1 | 1 | [V1](V1.md) |
+| V1a | Enganches para verticales | N1 | 1 | [V1](V1.md) |
+| V1b | Validaciones de empresa y cuentas (después de N1) | N1 | 2 | [V1](V1.md) |
 | V2 | Plantilla de módulo vertical | N2 | 1 | [V2](V2.md) |
 | V3 | Pruebas de contrato de verticales | N1 | 2 | [V3](V3.md) |
+| V4 | Activación de verticales por empresa | N1 | 1 | [V4](V4.md) |
 | D1 | Manual y ayuda de pantallas existentes | N3+N2 | 0 | [D1](D1.md) |
 | D2 | Manual y ayuda de cada paquete al cerrarse | N3+N2 | 4 | [D2](D2.md) |
 | D3 | Valores fiscales con fuente para el cargador | N2 | 0 | [D3](D3.md) |

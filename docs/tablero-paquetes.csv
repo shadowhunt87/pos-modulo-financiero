@@ -1,41 +1,43 @@
 ID,Titulo,Carril,Nivel IA,Asignado a (provisional),Tamano,Ola,Depende de,Rama,Espera humana,Plan
-S0,Anexo de diseño de 2FA y exportación completa,S,N1,Claude,M,0,Plan v0.3 aprobado,wp/S0-anexo-2fa,Carlos aprueba plan,v0.3 0.5
-S1,2FA en el backend,S,N1,IA-S,L,1,S0,wp/S1-2fa,,v0.3 3.1
-S2,Exportación completa por empresa,S,N1,IA-S,L,2,S0,wp/S2-exportacion,,v0.3 3.2
-S3,Copia de respaldo externa cifrada,S,N2,IA-S,M,2,,wp/S3-copia-externa,D17 y D18 de Carlos,v0.3 3.3
-S4,Pantallas de 2FA y exportación,S,N2,IA-S,M,3,S1;S2,wp/S4-pantallas,,v0.3 3.4
-S5,Seguridad pendiente Fase 1 (cabeceras SEG-7),S,N2,IA-S,S,1,,wp/S5-cabeceras,,Informe seguridad Fase 1
-N1,Corregir sin borrar (reverso) y nota de crédito,N,N1,IA-N,L,1,,wp/N1-reverso,D34,v0.3 Fase 1
-N2a,Parámetros fiscales con vigencia y ficha,N,N1,IA-N,M,1,,wp/N2a-parametros,Plan aprobado,v0.3 2.1
-N2b,Cargador del catálogo fiscal,N,N1,IA-N,L,1,N2a,wp/N2b-cargador,Valores de la contadora,v0.3 2.2-2.3
-N2c,build() con tasa y base del parámetro y trazabilidad,N,N1,IA-N,M,2,N2a,wp/N2c-calculo,D37,v0.3 2.4
-N2d,Enlace de impuestos y pantallas fiscales,N,N2,IA-N,L,2,N2c,wp/N2d-enlace,,v0.3 2.5 y 2.7
-N3,e-CF mínimo e importación de XML,N,N1,Claude,L,3,N1;N2a,wp/N3-ecf-importacion,D36 y D40,v0.3 Fase 4
-N4,"Ajustes 606/607/608, cuadres y pantalla Revisión del mes",N,N1,IA-N,L,3,N2c,wp/N4-cuadres,D35,v0.3 4.3
-N5,Calendario fiscal y bloqueo de comprobantes B,N,N1,IA-N,L,3,N1;N2a,wp/N5-calendario,Feriados de Carlos,v0.3 Fase 5
-N6,609 IT-1 e IR-17 asistidos,N,N1,IA-N,L,4,N4;N5,wp/N6-declaraciones,Casillas validadas,v0.3 Fase 6
-N7,e-CF con el proveedor,N,N1,Claude,L,5,Documentación del proveedor,wp/N7-ecf-proveedor,BLOQUEADO,v0.3 Fase 7
-E1a,Guía de arranque y flujos (backend),E,N2,IA-E,M,1,,wp/E1a-guidance,,v0.2 2.1 2.4 2.5
-E1b,Plantilla de plan de cuentas e impuestos base,E,N1,IA-E,L,2,N2c,wp/E1b-plantilla,Contadoras D14,v0.2 2.2
-E1c,Datos de ejemplo borrables,E,N1,IA-E,L,2,E1b,wp/E1c-ejemplo,,v0.2 2.3
-E2,Asistente de arranque y cierre guiado (pantallas),E,N2,IA-E,L,3,E1a;E1b,wp/E2-asistente,,v0.2 2.6-2.8
-E3-back,Semáforo financiero (backend),E,N2,IA-E,L,0,,wp/E3-semaforo-back,Contadoras D5,v0.2 3.1-3.4
-E3-front,Semáforo y tendencia (pantallas),E,N2,IA-E,L,2,E3-back,wp/E3-semaforo-front,,v0.2 3.5-3.6
-E4-a,Pantallas guiadas Ventas,E,N3+N2,IA-local,L,0,,wp/E4a-ventas,,v0.2 4.1-4.3
-E4-b,Pantallas guiadas Contabilidad,E,N3+N2,IA-local,L,0,E4-a,wp/E4b-contabilidad,,v0.2 4.1-4.3
-E4-c,Pantallas guiadas Bancos,E,N3+N2,IA-local,L,0,E4-a,wp/E4c-bancos,,v0.2 4.1-4.3
-E4-d,Pantallas guiadas Reportes y Configuración,E,N3+N2,IA-local,L,0,E4-a,wp/E4d-reportes-config,,v0.2 4.1-4.3
-E4-e,Pantallas guiadas fiscales,E,N2,IA-E,L,4,N2d;N5,wp/E4e-fiscales,,v0.2 4.1-4.3
-A1,Rol Auditor modelos y encargos,A,N1,IA-A,L,0,,wp/A1-auditor-base,Plantillas validadas,v0.2 5.1-5.3
-A2,Hallazgos y pruebas de restricciones,A,N1,IA-A,L,1,A1,wp/A2-hallazgos,,v0.2 5.4-5.5
-A3,Pantallas de auditoría I,A,N2,IA-A,L,2,A1;A2,wp/A3-pantallas,,v0.2 5.6-5.7
-A4,Marcas archivos e informe,A,N2,IA-A,L,2,A1,wp/A4-marcas-informe,,v0.2 6.1-6.5
-A5,Pantallas de auditoría II,A,N2,IA-A,L,3,A4,wp/A5-pantallas,,v0.2 6.6
-V0,Contrato de integración para verticales,V,N1,Claude,M,0,Plan v0.3 aprobado,wp/V0-contrato,Carlos aprueba,Nuevo
-V1,Puntos de enganche mínimos para verticales,V,N1,IA-N,M,1,V0,wp/V1-enganches,,Nuevo
-V2,Plantilla de módulo vertical,V,N2,IA-E,M,1,V0,wp/V2-plantilla,,Nuevo
-V3,Pruebas de contrato de verticales,V,N1,IA-N,M,2,V1,wp/V3-contrato-tests,,Nuevo
-D1,Manual y ayuda de pantallas existentes,D,N3+N2,IA-local,M,0,,wp/D1-manual,,v0.2 4.4
-D2,Manual y ayuda de cada paquete al cerrarse,D,N3+N2,IA-local,M,4,paquete correspondiente,wp/D2-manual-paquete,,v0.2 y v0.3 manuales
-D3,Valores fiscales con fuente para el cargador,D,N2,IA-N,M,0,,wp/D3-valores-fiscales,Documentos DGII de Carlos,v0.3 0.1
-D4,Notas de versión dentro del sistema,D,N3,IA-local,S,5,cierre de versión,wp/D4-notas,,v0.2 7.3
+S0,Anexo de diseño de 2FA y exportación completa,S,N1,Claude-servidor,M,0,Plan v0.3 aprobado,wp/S0-anexo-2fa,Carlos aprueba plan,v0.3 0.5
+S1,2FA en el backend,S,N1,Claude-servidor,L,1,S0,wp/S1-2fa,,v0.3 3.1
+S2,Exportación completa por empresa,S,N1,Claude-servidor,L,2,S0,wp/S2-exportacion,,v0.3 3.2
+S3,Copia de respaldo externa cifrada,S,N2,Claude-PC,M,2,,wp/S3-copia-externa,D17 y D18 de Carlos,v0.3 3.3
+S4,Pantallas de 2FA y exportación,S,N2,Claude-PC,M,3,S1;S2,wp/S4-pantallas,,v0.3 3.4
+S5,Seguridad pendiente Fase 1 (cabeceras SEG-7),S,N2,Claude-PC,S,1,,wp/S5-cabeceras,,Informe seguridad Fase 1
+N1,Corregir sin borrar (reverso) y nota de crédito,N,N1,Claude-servidor,L,1,,wp/N1-reverso,D34,v0.3 Fase 1
+N2a,Parámetros fiscales con vigencia y ficha,N,N1,Claude-servidor,M,1,,wp/N2a-parametros,Plan aprobado,v0.3 2.1
+N2b,Cargador del catálogo fiscal,N,N1,Claude-PC,L,1,N2a,wp/N2b-cargador,Valores de la contadora,v0.3 2.2-2.3
+N2c,build() con tasa y base del parámetro y trazabilidad,N,N1,Claude-servidor,M,2,N2a,wp/N2c-calculo,D37,v0.3 2.4
+N2d,Enlace de impuestos y pantallas fiscales,N,N2,Claude-PC,L,2,N2c,wp/N2d-enlace,,v0.3 2.5 y 2.7
+N3,e-CF mínimo e importación de XML,N,N1,Claude-servidor,L,3,N1;N2a,wp/N3-ecf-importacion,D36 y D40,v0.3 Fase 4
+N4,"Ajustes 606/607/608, cuadres y pantalla Revisión del mes",N,N1,Claude-PC,L,3,N2c,wp/N4-cuadres,D35,v0.3 4.3
+N5,Calendario fiscal y bloqueo de comprobantes B,N,N1,Claude-PC,L,3,N1;N2a,wp/N5-calendario,Feriados de Carlos,v0.3 Fase 5
+N6,609 IT-1 e IR-17 asistidos,N,N1,Claude-PC,L,4,N4;N5,wp/N6-declaraciones,Casillas validadas,v0.3 Fase 6
+N7,e-CF con el proveedor,N,N1,Claude-servidor,L,5,Documentación del proveedor,wp/N7-ecf-proveedor,BLOQUEADO,v0.3 Fase 7
+E1a,Guía de arranque y flujos (backend),E,N2,Claude-PC,M,1,,wp/E1a-guidance,,v0.2 2.1 2.4 2.5
+E1b,Plantilla de plan de cuentas e impuestos base,E,N1,Claude-PC,L,2,N2c,wp/E1b-plantilla,Contadoras D14,v0.2 2.2
+E1c,Datos de ejemplo borrables,E,N1,Claude-PC,L,2,E1b,wp/E1c-ejemplo,,v0.2 2.3
+E2,Asistente de arranque y cierre guiado (pantallas),E,N2,Claude-PC,L,3,E1a;E1b,wp/E2-asistente,,v0.2 2.6-2.8
+E3-back,Semáforo financiero (backend),E,N2,Claude-PC,L,0,,wp/E3-semaforo-back,Contadoras D5,v0.2 3.1-3.4
+E3-front,Semáforo y tendencia (pantallas),E,N2,Claude-PC,L,2,E3-back,wp/E3-semaforo-front,,v0.2 3.5-3.6
+E4-a,Pantallas guiadas Ventas,E,N3+N2,Claude-PC,L,0,,wp/E4a-ventas,,v0.2 4.1-4.3
+E4-b,Pantallas guiadas Contabilidad,E,N3+N2,Ollama,L,0,E4-a,wp/E4b-contabilidad,,v0.2 4.1-4.3
+E4-c,Pantallas guiadas Bancos,E,N3+N2,Ollama,L,0,E4-a,wp/E4c-bancos,,v0.2 4.1-4.3
+E4-d,Pantallas guiadas Reportes y Configuración,E,N3+N2,Ollama,L,0,E4-a,wp/E4d-reportes-config,,v0.2 4.1-4.3
+E4-e,Pantallas guiadas fiscales,E,N2,Claude-PC,L,4,N2d;N5,wp/E4e-fiscales,,v0.2 4.1-4.3
+A1,Rol Auditor modelos y encargos,A,N1,Claude-PC,L,0,,wp/A1-auditor-base,Plantillas validadas,v0.2 5.1-5.3
+A2,Hallazgos y pruebas de restricciones,A,N1,Claude-PC,L,1,A1,wp/A2-hallazgos,,v0.2 5.4-5.5
+A3,Pantallas de auditoría I,A,N2,Claude-PC,L,2,A1;A2,wp/A3-pantallas,,v0.2 5.6-5.7
+A4,Marcas archivos e informe,A,N2,Claude-PC,L,2,A1,wp/A4-marcas-informe,,v0.2 6.1-6.5
+A5,Pantallas de auditoría II,A,N2,Claude-PC,L,3,A4,wp/A5-pantallas,,v0.2 6.6
+V0,Contrato de integración para verticales,V,N1,Claude-servidor,M,0,Plan v0.3 aprobado,wp/V0-contrato,Carlos aprueba,Nuevo
+V1a,Enganches para verticales (origen VERTICAL; createInTx; findBySource; nextFor; registro),V,N1,Claude-servidor,L,1,V0,wp/V1a-enganches,,Contrato verticales §7.1
+V1b,Validaciones de empresa y cuentas en post y build,V,N1,Claude-PC,M,2,N1;V1a,wp/V1b-validaciones,P9 de Carlos (solo para b4),Contrato verticales §7.2
+V4,Activación de verticales por empresa,V,N1,Claude-PC,M,1,V1a,wp/V4-activacion,P4 de Carlos (quién activa),Contrato verticales §3.5 y §7.3
+V2,Plantilla de módulo vertical,V,N2,Claude-PC,M,1,V1a,wp/V2-plantilla,,Contrato verticales §8.3
+V3,Pruebas de contrato de verticales,V,N1,Claude-PC,L,2,V1b;V2;V4,wp/V3-contrato-tests,,Contrato verticales §8.4
+D1,Manual y ayuda de pantallas existentes,D,N3+N2,Ollama,M,0,,wp/D1-manual,,v0.2 4.4
+D2,Manual y ayuda de cada paquete al cerrarse,D,N3+N2,Ollama,M,4,paquete correspondiente,wp/D2-manual-paquete,,v0.2 y v0.3 manuales
+D3,Valores fiscales con fuente para el cargador,D,N2,Claude-PC,M,0,,wp/D3-valores-fiscales,Documentos DGII de Carlos,v0.3 0.1
+D4,Notas de versión dentro del sistema,D,N3,Ollama,S,5,cierre de versión,wp/D4-notas,,v0.2 7.3

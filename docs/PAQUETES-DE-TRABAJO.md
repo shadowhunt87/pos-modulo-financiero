@@ -94,53 +94,55 @@ de calidad son el cuello de botella real; abrir 15 ramas a la vez solo produce c
 
 ## 3.1 Quién hace qué (Carlos, 2026-10-12)
 
-La parte financiera la reparte Carlos entre sus IA: **IA local, Gemini, DeepSeek, Grok y Kimi K3**.
-**Claude** hace la facturación electrónica (N3 y N7). El socio de Carlos desarrolla la vertical y no entra en estos paquetes.
+Carlos cuenta con **tres herramientas**. Según lo que entiendo (si algo no es así, se corrige este cuadro):
 
-**Reparto provisional** (se confirma con la prueba de calibración, sección 3.2). Un carril = una IA, para que cada una
-conserve el contexto de su zona del código y no se pisen:
-
-| Etiqueta | Carril | IA inicial | Por qué |
+| Etiqueta | Qué es | Fortaleza | Límite |
 |---|---|---|---|
-| **IA-N** | Núcleo fiscal | DeepSeek | Es el carril de más razonamiento contable y fiscal |
-| **IA-S** | Puerta de datos reales | Gemini | Seguridad y operación; contexto grande para exportar todas las tablas |
-| **IA-E** | Experiencia guiada | Kimi K3 | Mucho frontend y backend con patrón claro |
-| **IA-A** | Auditoría | Grok | Carril casi independiente, buen candidato para correr en paralelo |
-| **IA-local** | Documentación y pantallas guiadas mecánicas | Modelo local | Trabajo acotado con ejemplo a imitar |
-| **Claude** | e-CF (N3, N7), anexo S0, contrato V0 y puertas de calidad | Claude | Ver abajo |
+| **Claude-servidor** | La sesión de Claude en el servidor (la que escribe este plan) | Máxima capacidad; ve el servidor y el ambiente de pruebas | Su cupo de uso se agota; es el recurso más escaso |
+| **Claude-PC** | Claude en la PC de Carlos | La misma calidad de modelo, trabaja en paralelo con la otra | Si es la misma cuenta, **comparte el cupo** con Claude-servidor: se gana paralelismo, no capacidad. No ve el servidor |
+| **Ollama** | Modelo local (por ejemplo qwen 9B, con Cline) | Gratis, sin límite y 100 % privado | Se equivoca fácil en código grande y en cuentas; solo trabajo mecánico, con revisión |
 
-**Esta asignación es una suposición mía.** No conozco el rendimiento actual de cada una de esas IA; la primera tabla puede
-cambiar por completo después de la calibración.
+**Regla del reparto:** Claude-servidor se queda con lo más fundamental, es decir, lo que más daño hace si sale mal y lo que
+desbloquea a los demás. Claude-PC lleva el resto del trabajo de programación. Ollama lleva solo lo mecánico.
 
-**Qué se queda Claude, además de la facturación electrónica, y por qué:**
-- **S0 y V0** (dos documentos cortos de diseño). Todo lo demás depende de ellos y los revisa el revisor crítico.
-- **Las puertas de calidad** (QA, seguridad, revisión final y fusión). Revisar cuesta mucho menos que construir. Un
-  paquete construido por otra IA y revisado por Claude suma poco a tu consumo y evita que un error de dinero, permisos o
-  seguridad llegue a producción. Si prefieres que otra IA también revise, se puede, pero no recomiendo quitar la revisión
-  de seguridad de los paquetes S1–S3, N1, N2a–c, A1 y A2.
-
-### 3.2 Prueba de calibración (antes de repartir los paquetes grandes)
-
-Para no apostar un carril entero a una IA sin conocerla, a cada una se le entregan las **mismas dos tareas pequeñas**:
-
-| Prueba | Tarea | Qué mide |
+| Quién | Paquetes | Por qué |
 |---|---|---|
-| **C1 · backend** | Paquete S5 (cabeceras de seguridad duplicadas entre helmet y nginx) | Sigue el código del socio, escribe pruebas, no rompe nada |
-| **C2 · frontend** | Una sola lista (por ejemplo «Clientes») pasada al patrón de la Fase 1: estado vacío, ayuda de campo y errores claros | Imita un patrón, respeta el checklist de pantallas |
+| **Claude-servidor** | **S0, V0** (diseños, ya hechos; falta aplicar correcciones) · **N1** corregir sin borrar · **N2a** y **N2c** parámetros fiscales y cálculo con vigencia · **S1** y **S2** verificación en dos pasos y exportación · **V1a** enganches de verticales · **N3** y **N7** facturación electrónica · **todas las puertas de calidad** | Dinero, permisos, seguridad y lo que espera el socio con su vertical |
+| **Claude-PC** | **N2b, N2d, N4, N5, N6** núcleo fiscal restante · **V1b, V4, V2, V3** verticales · **E1a, E1b, E1c, E2, E3-back, E3-front, E4-a, E4-e** experiencia · **A1 a A5** auditoría · **S3, S4, S5** puerta de datos y cabeceras · **D3** valores fiscales | Programación con un patrón definido por una ficha; es mucho trabajo, por eso va por colas (abajo) |
+| **Ollama** | **D1, D2, D4** manual y notas · **E4-b, E4-c, E4-d** pantallas guiadas de Contabilidad, Bancos, Reportes y Configuración | Mecánico con un ejemplo a imitar (lo crea E4-a) |
 
-Cada IA entrega en su propia rama. Claude revisa las cinco con la misma lista (¿compila?, ¿pasan las 370 pruebas?,
-¿tocó solo lo permitido?, ¿pruebas nuevas?, ¿errores de dinero o de permisos?) y da una nota. Con eso se fija qué IA lleva
-qué carril. Las ramas de la calibración se descartan, salvo la mejor.
+### Orden de trabajo de Claude-PC (cola, según lo que desbloquea)
 
-### 3.3 Cómo trabaja cada IA
+1. **Ahora, sin esperar a nadie:** **A1** (Auditoría base), **E3-back** (semáforo), **E4-a** (crea el componente de estado vacío que Ollama necesita), **S5** (cabeceras), **D3** (valores fiscales con la contadora).
+2. **Cuando termine N2a:** **N2b** (cargador). **Cuando termine V1a:** **V4**, **V2**.
+3. **Después:** **A2, E1a, E3-front, A3, A4**, y luego **N4, N5, E1b, E1c, S3, S4, A5, E2**, y al final **N6, E4-e, V1b, V3**.
 
-- **Una ficha por paquete** en `docs/paquetes/<ID>.md`, con lo que debe leer, los archivos que puede tocar, los criterios
-  de aceptación y los comandos de prueba. Se la pegas a la IA tal cual, junto con el archivo `AGENTS.md` de la raíz.
-- **La IA trabaja en su PC o en su herramienta**, con una copia del repositorio privado y su propia cuenta de GitHub
-  (nunca la clave del servidor). Hace su rama `wp/<ID>-…` y abre un PR.
-- **Tú me avisas el PR** («revisa el PR de N1»). Claude corre QA y, si toca dinero, permisos o archivos subidos, la revisión
-  de seguridad. Devuelve una lista de cambios para que la IA los corrija. Cuando queda aprobado, se fusiona y se despliega en pruebas.
-- **Ninguna IA hace push a la rama principal.**
+Ollama arranca con **D1**, y con **E4-b, E4-c y E4-d** cuando exista E4-a. Cada pantalla de E4 es un encargo aparte y pequeño.
+
+### Revisión (para no depender solo de Claude-servidor)
+
+- **QA** de lo que programa Ollama: lo corre **Claude-PC**.
+- **Seguridad y revisor crítico:** siguen en **Claude-servidor**, solo en los paquetes que tocan dinero, permisos, archivos subidos o aislamiento: N1, N2a–c, N3, N5, N6, S1–S3, A1, A2, E1c, V1a, V1b, V4.
+- **Pantallas y documentación** de Claude-PC: la revisión de QA basta salvo que toquen permisos.
+
+### Cómo se pasa el código a cada herramienta
+
+- **Claude-PC y Ollama necesitan el repositorio.** Dos caminos: (1) subir la rama a GitHub (requiere la autorización de Carlos) y clonar; o (2) copiar la carpeta con WinSCP. Con el segundo camino, **no copiar** `.env*`, `.credenciales-pruebas.txt`, la carpeta `financiero-backups` ni `node_modules`.
+- Las dos herramientas son de Carlos o de Anthropic: no hay un tercero nuevo, así que el riesgo de privacidad que discutimos ya no aplica.
+- Cada herramienta trabaja en su rama `wp/<ID>-…` y el trabajo se junta por GitHub o con `git bundle`. **Una sola persona (Carlos) fusiona.**
+- Cada una recibe `AGENTS.md` y la ficha del paquete.
+
+### 3.2 Calibración (reducida)
+
+Ollama hace primero **D1** en una sola sección del manual y **E4-b** en una sola pantalla (por ejemplo, la lista de
+asientos). Claude-PC revisa con la lista de siempre: ¿compila?, ¿pasan las pruebas?, ¿tocó solo lo permitido?
+Si el resultado es bueno, se le encarga el resto de su carril; si no, esos paquetes pasan a Claude-PC.
+
+### 3.3 Cómo trabaja cada una
+
+- **Una ficha por paquete** en `docs/paquetes/<ID>.md`: se pega a la herramienta junto con `AGENTS.md`.
+- **Ninguna herramienta hace push a la rama principal.**
+- Avisan el PR a Carlos («revisa el PR de N1»); la revisión sigue el cuadro anterior.
 
 ---
 

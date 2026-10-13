@@ -1,15 +1,17 @@
 # Contrato de integración para verticales
 
-> **Versión del contrato: 1.1-borrador** · 2026-10-12 · Autor: Arquitecto (paquete V0)
+> **Versión del documento: 1.1 (borrador)** · 2026-10-12 · Autor: Arquitecto (paquete V0)
+> **Versión del contrato que describe: 1.0** (`CORE_CONTRACT_VERSION`; vale desde que se fusionan V1a y V4; §4.7.2).
+> No confundir las dos: el documento cambia con cada revisión; el número del contrato solo cuando cambia lo que las verticales pueden usar.
 > **Núcleo verificado:** rama `fase-1`, commit `20613ae` («Plan v0.3 aprobado por Carlos»); `package.json` dice `0.0.1`
 > (el núcleo todavía **no tiene número de versión publicado**; ver §4.7).
 > **Estado:** v1.0-borrador **aprobado con cambios** por el revisor-crítico; esta v1.1 los incorpora, cada uno verificado
 > en el código. Falta la aprobación de Carlos. Hasta entonces V1a, V1b, V2, V3 y V4 no arrancan.
-> **Manda sobre:** las fichas `docs/paquetes/V1a.md`, `V1b.md`, `V2.md`, `V3.md` y `V4.md` (§8).
+> **Manda sobre:** las fichas `docs/paquetes/V1.md` (partida en V1a y V1b), `V2.md`, `V3.md` y `V4.md` (§8).
 > **Lo leen:** el socio, su IA y quien construya los paquetes V. Está escrito para usarse **sin preguntar**: cuando algo
 > todavía no existe en el código lo dice y nombra el paquete que lo construye.
 
-## Qué cambió (v1.0-borrador → v1.1)
+## Qué cambió (documento 1.0 → 1.1)
 
 | # | Observación del revisor | Cambio | Dónde |
 |---|---|---|---|
@@ -312,7 +314,7 @@ y devuelve el depósito con un asiento propio.
   transacción (`create` lo llama); `input` acepta montos `Prisma.Decimal | string | number` y `sourceModule`/`sourceId`
   opcionales (validados como en `post`). Devuelve el id.
 - **Lectura por origen (V1a)**, para que la vertical arme sus reportes sin leer tablas hijas del núcleo:
-  - `InvoicingService.findBySource(tx, companyId, sourceModule, sourceIds)` ⇒ por factura: `id, number, ncf, type,
+  - `InvoicingService.findBySource(tx, companyId, sourceModule, sourceIds)` (`tx` acepta también `PrismaService` fuera de una transacción) ⇒ por factura: `id, number, ncf, type,
     status, issueDate, total, balance, creditedTotal, effective`, más sus notas de crédito y débito.
   - `PostingService.findBySource(tx, companyId, sourceModule, sourceIds)` ⇒ asientos `VERTICAL` del origen con sus
     líneas (`accountId, debit, credit, partnerId, costCenterId`), `status` y, con N1, `reversedBy`.
@@ -467,3 +469,590 @@ en verde. Hitos: **1.0** = V1a + V4 fusionados (sin V4 ninguna vertical se regis
 7. Manifiesto compatible; el núcleo arranca; la vertical solo aparece en las empresas activadas.
 8. Revisión de calidad completa (PAQUETES §7) con **seguridad**, y aprobación de Carlos.
 
+---
+
+## 5. Ejemplo mínimo completo: vertical ficticia «alquiler de equipos»
+
+Caso: la empresa alquila equipos por mes. Al firmar el contrato **recibe un depósito en garantía** (asiento propio de
+la vertical, sin impuestos) y cada mes **factura el alquiler** (factura del núcleo marcada con el contrato; su asiento lo
+arma el núcleo). Usa piezas de **V1a** y **V4** (marcadas). Montos, cuentas e impuestos los elige el usuario.
+
+### 5.1 Manifiesto — `src/verticals/alquiler/alquiler.manifest.ts` (V1a; solo importa el tipo)
+```ts
+import type { VerticalManifest } from '../vertical-manifest.js';
+
+export const ALQUILER_MANIFEST: VerticalManifest = {
+  key: 'alquiler',
+  name: 'Alquiler de equipos',
+  version: '0.1.0',
+  requiresContract: { major: 1, minMinor: 0 },
+  documents: { 'alquiler.contrato': 'Contrato de alquiler' },
+  datosSensibles: false,
+};
+```
+
+### 5.2 Modelos — bloque al final de `prisma/schema.prisma`
+```prisma
+// ===== VERTICAL alquiler (contrato v1) =====
+// Cuentas propias del nicho; una fila por empresa. Se validan al guardar (empresa, activa, postable, tipo, no prohibida).
+model AlquilerAjustes {
+  id                     String   @id @default(uuid())
+  companyId              String   @unique
+  company                Company  @relation(fields: [companyId], references: [id])
+  cuentaIngresoId        String?  // INCOME: ingreso por alquiler (si falta, la de Configuración contable)
+  cuentaDepositosId      String?  // LIABILITY: depósitos de clientes por devolver
+  cuentaCobroDepositosId String?  // ASSET con subledger BANK o CASH: donde entra el depósito
+  tipoIngresoDgii        String?  // lo elige el usuario (607); nunca fijo en el código
+  updatedAt              DateTime @updatedAt
+}
+
+model AlquilerContrato {
+  id              String         @id @default(uuid())
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id])
+  numero          String         // ALQ-000001 (nextFor 'alquiler.contrato')
+  partnerId       String         // cliente del núcleo: id sin relación Prisma, validado con companyId
+  equipo          String
+  inicio          DateTime
+  precioMensual   Decimal        @db.Decimal(19, 4)
+  taxRateId       String?        // impuesto elegido por el usuario; la tasa la calcula el núcleo
+  ncfType         String?        // elegido por el usuario; si falta, el del cliente
+  deposito        Decimal        @default(0) @db.Decimal(19, 4)
+  depositoEntryId String?        // asiento del depósito, sin relación Prisma
+  estado          AlquilerEstado @default(ACTIVO)
+  anuladoMotivo   String?
+  createdById     String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  facturas AlquilerFactura[]
+
+  @@unique([companyId, numero])
+  @@unique([id, companyId])
+  @@index([companyId, estado])
+}
+
+// Solo dice a qué MES corresponde cada factura. NO guarda su estado: se lee de Invoice (findBySource).
+// Sin llave única por mes: si la factura de un mes se anula o se cubre con nota de crédito, se puede volver a facturar.
+model AlquilerFactura {
+  id         String           @id @default(uuid())
+  companyId  String
+  company    Company          @relation(fields: [companyId], references: [id])
+  contratoId String
+  contrato   AlquilerContrato @relation(fields: [contratoId, companyId], references: [id, companyId])
+  periodo    String           // "2026-11"
+  invoiceId  String           // Invoice del núcleo, sin relación Prisma
+  createdAt  DateTime         @default(now())
+
+  @@unique([companyId, invoiceId])
+  @@index([companyId, contratoId, periodo])
+}
+
+enum AlquilerEstado {
+  ACTIVO
+  CERRADO
+  ANULADO
+}
+```
+En `model Company` (único cambio en un modelo del núcleo): `alquilerAjustes AlquilerAjustes?`,
+`alquilerContratos AlquilerContrato[]`, `alquilerFacturas AlquilerFactura[]`. Migración
+`prisma/migrations/<fecha>_v_alquiler_inicial/`: solo `CREATE TYPE "AlquilerEstado"`, `CREATE TABLE "Alquiler…"`,
+índices y llaves foráneas desde esas tablas.
+
+### 5.3 Módulo y registro
+```ts
+// src/verticals/alquiler/alquiler.module.ts
+@Module({ imports: [PostingModule, MastersModule, InvoicingModule], controllers: [AlquilerController], providers: [AlquilerService] })
+export class AlquilerModule {}
+
+// src/verticals/verticals.registry.ts (V1a; SOLO datos)
+export const VERTICALS: VerticalManifest[] = [ALQUILER_MANIFEST];
+
+// src/verticals/verticals.module.ts (V1a)
+@Module({ imports: [AlquilerModule] })
+export class VerticalsModule {}
+```
+En producción la vertical se agrega a `VERTICALS` **solo cuando V4 está fusionado**; antes, solo en su rama y sus pruebas.
+
+### 5.4 DTO — `src/verticals/alquiler/dto/contrato.dto.ts`
+```ts
+const MAX_AMOUNT = 999_999_999_999_999; // mismo tope que las facturas
+
+export class CrearContratoDto {
+  @IsUUID() partnerId: string;
+  @IsString() @IsNotEmpty() @MaxLength(200) equipo: string;
+  @IsDateString() inicio: string;
+  @IsNumber({ maxDecimalPlaces: 4 }) @Min(0.01) @Max(MAX_AMOUNT) precioMensual: number;
+  @IsOptional() @IsUUID() taxRateId?: string;
+  @IsOptional() @IsString() @MaxLength(3) ncfType?: string;
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 4 }) @Min(0) @Max(MAX_AMOUNT) deposito?: number;
+}
+export class FacturarMesDto {
+  @IsString() @Matches(/^\d{4}-(0[1-9]|1[0-2])$/, { message: 'periodo: AAAA-MM' }) periodo: string;
+  @IsDateString() fecha: string;
+}
+export class AnularContratoDto {
+  @IsString() @IsNotEmpty() @MaxLength(500) motivo: string;
+}
+```
+
+### 5.5 Servicio — `src/verticals/alquiler/alquiler.service.ts`
+```ts
+import { ConflictException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Prisma } from '../../generated/prisma/client.js';
+import { AuditAction, InvoiceType, JournalType, SourceDocumentType } from '../../generated/prisma/enums.js';
+import type { AuthUser } from '../../auth/types/auth-user.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { writeAudit } from '../../common/audit.js';
+import { PostingService } from '../../posting/posting.service.js';
+import { InvoicingService } from '../../invoicing/invoicing.service.js';
+import { DocumentSequencesService } from '../../masters/sequences/document-sequences.service.js';
+import { AnularContratoDto, CrearContratoDto, FacturarMesDto } from './dto/contrato.dto.js';
+
+type Tx = Prisma.TransactionClient;
+const ZERO = new Prisma.Decimal(0);
+const DOC = 'alquiler.contrato'; // mismo identificador para origen y numeración (manifiesto)
+
+@Injectable()
+export class AlquilerService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly posting: PostingService,
+    private readonly invoicing: InvoicingService,
+    private readonly sequences: DocumentSequencesService,
+  ) {}
+
+  private async ajustes(tx: Tx, companyId: string) {
+    const a = await tx.alquilerAjustes.findUnique({ where: { companyId } });
+    if (!a?.cuentaDepositosId || !a.cuentaCobroDepositosId) {
+      throw new UnprocessableEntityException('Falta configurar las cuentas de depósitos en Ajustes del alquiler');
+    }
+    return a as typeof a & { cuentaDepositosId: string; cuentaCobroDepositosId: string };
+  }
+
+  /** Bloquea la fila del contrato hasta el fin de la transacción: dos pedidos a la vez se atienden en fila. */
+  private async bloquear(tx: Tx, id: string, companyId: string) {
+    const r = await tx.alquilerContrato.updateMany({ where: { id, companyId }, data: { updatedAt: new Date() } });
+    if (r.count === 0) throw new NotFoundException('Contrato no encontrado');
+    return tx.alquilerContrato.findFirstOrThrow({ where: { id, companyId } });
+  }
+
+  /** Contrato + (si hay depósito) su asiento: Banco/Caja al débito, Depósitos de clientes al crédito. Todo o nada. */
+  async crear(dto: CrearContratoDto, user: AuthUser) {
+    const id = await this.prisma.$transaction(async (tx) => {
+      const { companyId } = user;
+      const cliente = await tx.partner.findFirst({ where: { id: dto.partnerId, companyId, active: true } });
+      if (!cliente || cliente.type === 'SUPPLIER') throw new NotFoundException('Cliente no encontrado');
+      if (dto.taxRateId && !(await tx.taxRate.findFirst({ where: { id: dto.taxRateId, companyId, active: true } }))) {
+        throw new NotFoundException('Impuesto no encontrado');
+      }
+      const numero = await this.sequences.nextFor(tx, companyId, DOC, 'ALQ'); // V1a
+      const deposito = new Prisma.Decimal(dto.deposito ?? 0);
+      const c = await tx.alquilerContrato.create({
+        data: {
+          companyId, numero, partnerId: cliente.id, equipo: dto.equipo, inicio: new Date(dto.inicio),
+          precioMensual: new Prisma.Decimal(dto.precioMensual), taxRateId: dto.taxRateId, ncfType: dto.ncfType,
+          deposito, createdById: user.id,
+        },
+      });
+      await writeAudit(tx, user, 'AlquilerContrato', c.id, AuditAction.CREATE, { numero, deposito: deposito.toString() });
+
+      if (deposito.gt(0)) {
+        const cfg = await this.ajustes(tx, companyId);
+        const entry = await this.posting.post(tx, user, {
+          date: c.inicio,
+          description: `Depósito en garantía ${numero} - ${cliente.name}`,
+          reference: numero,
+          journalType: JournalType.BANK,
+          sourceType: SourceDocumentType.VERTICAL, // V1a
+          sourceModule: DOC,                       // V1a
+          sourceId: c.id,
+          lines: [
+            { accountId: cfg.cuentaCobroDepositosId, debit: deposito, credit: ZERO, description: 'Depósito recibido' },
+            { accountId: cfg.cuentaDepositosId, debit: ZERO, credit: deposito, partnerId: cliente.id, description: 'Depósito por devolver' },
+          ],
+        });
+        await tx.alquilerContrato.update({ where: { id: c.id, companyId }, data: { depositoEntryId: entry.id } });
+      }
+      return c.id;
+    });
+    return this.ver(id, user);
+  }
+
+  /** Factura del mes, marcada con el contrato. Un mes cuenta como facturado solo si su factura "vale" (findBySource). */
+  async facturarMes(contratoId: string, dto: FacturarMesDto, user: AuthUser) {
+    const invoiceId = await this.prisma.$transaction(async (tx) => {
+      const { companyId } = user;
+      const c = await this.bloquear(tx, contratoId, companyId);
+      if (c.estado !== 'ACTIVO') throw new UnprocessableEntityException('El contrato no está activo: no se puede facturar');
+
+      const delMes = await tx.alquilerFactura.findMany({ where: { companyId, contratoId, periodo: dto.periodo } });
+      if (delMes.length) {
+        const estado = await this.invoicing.findBySource(tx, companyId, DOC, [c.id]); // V1a
+        if (estado.some((f) => f.effective && delMes.some((m) => m.invoiceId === f.id))) {
+          throw new ConflictException(`El mes ${dto.periodo} de este contrato ya está facturado`);
+        }
+      }
+
+      const cfg = await tx.alquilerAjustes.findUnique({ where: { companyId } });
+      const invoiceId = await this.invoicing.createInTx(tx, { // V1a
+        type: InvoiceType.SALE,
+        partnerId: c.partnerId,
+        issueDate: new Date(dto.fecha),
+        ncfType: c.ncfType ?? undefined,
+        dgiiIncomeType: cfg?.tipoIngresoDgii ?? undefined,
+        notes: `Contrato ${c.numero} · ${dto.periodo}`,
+        sourceModule: DOC, sourceId: c.id,               // la factura sabe de qué contrato viene
+        lines: [{
+          description: `Alquiler de ${c.equipo} · ${dto.periodo}`,
+          quantity: 1,
+          unitPrice: c.precioMensual,                    // Decimal: no pasa por Number()
+          taxRateId: c.taxRateId ?? undefined,
+          accountId: cfg?.cuentaIngresoId ?? undefined,
+        }],
+        issueNow: true,
+      }, user);
+      const f = await tx.alquilerFactura.create({ data: { companyId, contratoId: c.id, periodo: dto.periodo, invoiceId } });
+      await writeAudit(tx, user, 'AlquilerFactura', f.id, AuditAction.CREATE, { contrato: c.numero, periodo: dto.periodo, invoiceId });
+      return invoiceId;
+    });
+    return this.invoicing.get(invoiceId, user);
+  }
+
+  /**
+   * Anular un contrato registrado POR ERROR. Solo si ninguna de sus facturas vale (anuladas o cubiertas por notas
+   * de crédito no cuentan). El asiento del depósito se corrige con voidEntry (VOIDED hoy; reverso con N1).
+   * Si ese asiento ya está conciliado con el banco, voidEntry responde 422: el usuario deshace la conciliación o,
+   * si el dinero sí entró, registra la devolución del depósito (asiento nuevo) en vez de anular.
+   */
+  async anular(contratoId: string, dto: AnularContratoDto, user: AuthUser) {
+    await this.prisma.$transaction(async (tx) => {
+      const { companyId } = user;
+      const c = await this.bloquear(tx, contratoId, companyId);
+      if (c.estado === 'ANULADO') throw new ConflictException('El contrato ya está anulado');
+      const facturas = await this.invoicing.findBySource(tx, companyId, DOC, [c.id]); // V1a
+      if (facturas.some((f) => f.effective)) {
+        throw new UnprocessableEntityException('El contrato tiene facturas vigentes: corrígelas con una nota de crédito antes de anularlo');
+      }
+      await tx.alquilerContrato.update({ where: { id: contratoId, companyId }, data: { estado: 'ANULADO', anuladoMotivo: dto.motivo } });
+      if (c.depositoEntryId) await this.posting.voidEntry(tx, user, c.depositoEntryId, `Anulación ${c.numero}: ${dto.motivo}`);
+      await writeAudit(tx, user, 'AlquilerContrato', contratoId, AuditAction.VOID, { motivo: dto.motivo });
+    });
+    return this.ver(contratoId, user);
+  }
+
+  /** Contrato con el estado REAL de sus facturas (leído del núcleo, no guardado aquí). */
+  async ver(id: string, user: AuthUser) {
+    const c = await this.prisma.alquilerContrato.findFirst({ where: { id, companyId: user.companyId }, include: { facturas: true } });
+    if (!c) throw new NotFoundException('Contrato no encontrado');
+    const estado = await this.invoicing.findBySource(this.prisma, user.companyId, DOC, [c.id]);
+    return { ...c, facturas: c.facturas.map((f) => ({ ...f, factura: estado.find((e) => e.id === f.invoiceId) ?? null })) };
+  }
+}
+```
+
+### 5.6 Controlador — `src/verticals/alquiler/alquiler.controller.ts`
+```ts
+@VerticalKey('alquiler')                                           // V4
+@UseGuards(JwtAuthGuard, RolesGuard, VerticalEnabledGuard)          // V4
+@Controller('alquiler/contratos')
+export class AlquilerController {
+  constructor(private readonly alquiler: AlquilerService) {}
+
+  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT)
+  @Post()
+  crear(@Body() dto: CrearContratoDto, @CurrentUser() user: AuthUser) { return this.alquiler.crear(dto, user); }
+
+  @Get(':id')
+  ver(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) { return this.alquiler.ver(id, user); }
+
+  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT)
+  @Post(':id/facturas')
+  facturar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: FacturarMesDto, @CurrentUser() user: AuthUser) {
+    return this.alquiler.facturarMes(id, dto, user);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.APPROVER)
+  @Post(':id/anular')
+  anular(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AnularContratoDto, @CurrentUser() user: AuthUser) {
+    return this.alquiler.anular(id, dto, user);
+  }
+}
+```
+(Faltan, por brevedad, la lista paginada y `GET`/`PUT /alquiler/ajustes` con `@Roles(UserRole.ADMIN)`.)
+
+### 5.7 Asientos que resultan (montos de prueba, con un impuesto de prueba del 10 %, no un valor fiscal)
+
+| Asiento | Origen | Débito | Crédito |
+|---|---|---|---|
+| Depósito (diario de bancos) | `VERTICAL` · `alquiler.contrato` · id del contrato | Banco 5.000 | Depósitos de clientes 5.000 (con cliente) |
+| Factura del mes (lo arma el núcleo) | `INVOICE` · id de la factura; la factura lleva `alquiler.contrato` · id del contrato | CxC 11.000 (con cliente) | Ingreso por alquiler 10.000 · Impuesto por pagar 1.000 |
+
+Si la contadora anula esa factura desde «Facturas» (o la cubre con una nota de crédito), `findBySource` la devuelve con
+`effective: false`: el contrato muestra ese mes como **no facturado** y se puede facturar de nuevo o anular el contrato.
+
+### 5.8 Frontend y ayuda
+```ts
+// features/verticals/alquiler/alquiler.routes.ts — una ruta por línea (verificar-ayuda)
+export const routes: Routes = [
+  { path: 'alquiler/contratos', loadComponent: () => import('./contratos').then((m) => m.Contratos), title: 'Contratos de alquiler', canActivate: [verticalGuard('alquiler')] },
+  { path: 'alquiler/contratos/new', loadComponent: () => import('./contrato-form').then((m) => m.ContratoForm), title: 'Nuevo contrato', canActivate: [verticalGuard('alquiler'), roleGuard('ADMIN', 'ACCOUNTANT')] },
+  { path: 'alquiler/contratos/:id', loadComponent: () => import('./contrato-detail').then((m) => m.ContratoDetail), title: 'Contrato de alquiler', canActivate: [verticalGuard('alquiler')] },
+  { path: 'alquiler/ajustes', loadComponent: () => import('./ajustes').then((m) => m.Ajustes), title: 'Ajustes del alquiler', canActivate: [verticalGuard('alquiler'), roleGuard('ADMIN')] },
+];
+```
+`nav.ts`: `{ title: 'Alquiler de equipos', vertical: 'alquiler', items: [{ label: 'Contratos', path: '/alquiler/contratos' }, { label: 'Ajustes del alquiler', path: '/alquiler/ajustes', roles: ['ADMIN'] }] }`.
+`shared/vertical-sources.ts`: `'alquiler.contrato': { label: 'Contrato de alquiler', link: (id) => ['/alquiler/contratos', id] }`.
+
+`ayuda.json` (al final de cada bloque):
+```json
+"secciones": [ …, { "slug": "alquiler", "archivo": "20-alquiler.md", "titulo": "Alquiler de equipos" } ],
+"pantallas": {
+  "/alquiler/contratos":     { "seccion": "alquiler", "ancla": "contratos", "siguiente": { "texto": "Crea tu primer contrato", "ruta": "/alquiler/contratos/new" } },
+  "/alquiler/contratos/new": { "seccion": "alquiler", "ancla": "crear-un-contrato" },
+  "/alquiler/contratos/:id": { "seccion": "alquiler", "ancla": "facturar-un-mes" },
+  "/alquiler/ajustes":       { "seccion": "alquiler", "ancla": "ajustes-del-alquiler" }
+},
+"campos": { "alquiler.deposito": { "texto": "Dinero que el cliente deja como garantía. No es un ingreso: se le devuelve al terminar el contrato.", "seccion": "alquiler", "ancla": "el-deposito" } },
+"errores": [
+  { "patron": "Falta configurar las cuentas de depósitos", "explicacion": "Antes de recibir depósitos, indica en qué cuenta entra el dinero y en cuál se registra lo que debes devolver.", "enlace": { "texto": "Ir a Ajustes del alquiler", "ruta": "/alquiler/ajustes" } },
+  { "patron": "No se puede anular un asiento conciliado", "explicacion": "Ese movimiento ya está conciliado con el estado del banco. Si el dinero sí entró, no anules: registra la devolución del depósito. Si fue un error, primero deshaz la conciliación de ese movimiento.", "enlace": { "texto": "Ir a Conciliación bancaria", "ruta": "/reconciliations" } },
+  { "patron": "tiene facturas vigentes", "explicacion": "Un contrato con facturas emitidas no se anula. Corrige cada factura con una nota de crédito y vuelve a intentarlo.", "enlace": { "texto": "Ver facturas", "ruta": "/invoices" } }
+]
+```
+Con `frontend/public/manual/20-alquiler.md` y los títulos «Contratos», «Crear un contrato», «Facturar un mes», «Ajustes
+del alquiler» y «El depósito».
+
+### 5.9 Pruebas e2e — `test/alquiler.e2e-spec.ts` (esqueleto de `test/feedback.e2e-spec.ts`)
+Dos empresas con sufijo, 4 roles, `createApp({ silent: true })`, alquiler **activo solo en la empresa A** (V4). Casos:
+1. Crear contrato con depósito 5.000 ⇒ asiento `VERTICAL`/`alquiler.contrato` cuadrado, `POSTED`, en la balanza; `AuditLog` del contrato y del asiento.
+2. Facturar `2026-11` ⇒ factura `ISSUED` con NCF, `sourceModule`/`sourceId` del contrato, en el 607; repetir ⇒ 409; **dos pedidos simultáneos del mismo mes ⇒ uno 201 y otro 409**.
+3. Anular esa factura desde «Facturas» ⇒ el contrato la muestra no vigente y el mes se puede volver a facturar.
+4. Fecha en período cerrado ⇒ 422 y no queda contrato, número ni `AuditLog`.
+5. Sin ajustes ⇒ 422 con el texto de `ayuda.json`.
+6. VIEWER ⇒ 403 en `POST`; ACCOUNTANT ⇒ 403 en `anular`.
+7. Empresa B ⇒ 404 (vertical no activa); con la vertical activa en B, el contrato de A ⇒ 404 y los ids de A en un DTO ⇒ 404.
+8. Anular con factura vigente ⇒ 422; con la factura cubierta por nota de crédito ⇒ se anula.
+9. Asiento del depósito **conciliado** ⇒ `anular` 422 «No se puede anular un asiento conciliado» y nada cambia.
+10. `POST /accounting/journal-entries/:id/void` sobre el asiento del depósito ⇒ 422.
+11. Montos 0,1 + 0,2 exactos (R7); 10 contratos en paralelo ⇒ números `ALQ-` sin huecos (R8).
+
+---
+
+## 6. Qué está estable hoy, qué cambia y cuándo
+
+### 6.1 Estabilidad por pieza
+
+| Pieza | Hoy | Cambia con | Qué toca el socio |
+|---|---|---|---|
+| Transacción, `post`, `writeAudit`, guards, `@Roles`, `companyId` | Estable | V1a (`sourceModule`), V1b (reglas de cuentas y de empresa) | Agregar `VERTICAL` + `sourceModule` |
+| Clientes, cuentas automáticas, lectura de tablas raíz | Estable | — | Nada |
+| Facturar | `create` (transacción propia, sin origen) | V1a (`createInTx` con origen, `findBySource`) | Cambiar la llamada; leer el estado con `findBySource` |
+| Impuestos de la factura | `TaxRate.rate` | N2a/N2c | Nada en backend; vista previa con N2d |
+| Numeración propia, registro y versión | No existen | V1a | Usarlos; escribir el manifiesto |
+| Activación por empresa | No existe | V4 | `@VerticalKey`, guardas, `vertical` en el menú |
+| Corregir (`voidEntry`) | Marca `VOIDED`; conciliado ⇒ 422 | N1 (reverso; conciliado sigue 422) | Nada |
+| Endpoint de asientos sobre asientos de la vertical | Los anula | V1a (los rechaza) | Nada |
+| Factura de mes cerrado o e-CF | Se anula si el período está abierto | N1 (nota de crédito) | Nada: la vertical lee el estado |
+| Depósitos aplicados a facturas, cobro en la transacción | No resuelto | Decisión P9 (+ V1b si opción 2) | Según la decisión |
+| Rol `AUDITOR` | No existe | A1 | Nada salvo datos sensibles |
+| Exportación completa | No existe | S2 | Nada si sus tablas tienen `companyId` |
+| Datos reales | Prohibido | S1, S2, S3 | — |
+
+### 6.2 Calendario estimado (semanas desde el 12-oct-2026; depende de la capacidad de revisión y del límite de 5 paquetes abiertos)
+
+| Paquete | Depende de | Fechas estimadas | Habilita |
+|---|---|---|---|
+| V0 (este contrato) | Carlos aprueba | semana del 12-oct | Todo el carril V |
+| **V1a** | V0 | 19-oct a 30-oct | Contrato 1.0 (con V4), V2, V4 |
+| **V4** | V1a | 26-oct a 6-nov | Registrar verticales en producción |
+| N1 | D34 | ≈ hasta el 2-nov (PLAN-v0.3 §15, semanas 1–3) | V1b |
+| **V1b** | N1, V1a | 3-nov a 13-nov | Contrato 1.1, V3 |
+| V2 | V1a | 2-nov a 13-nov | V3 |
+| V3 | V1b, V2, V4 | 16-nov a 27-nov | «Vertical conectada» |
+
+### 6.3 Orden recomendado para el socio (empezar ya)
+
+**Requisito previo:** acuerdo de propiedad y licencia (P1) y acceso a los repositorios (organización de GitHub, punto 2
+de Carlos). Sin acceso, trabaja sobre una copia de `fase-1` y lo integra después.
+
+1. **Ya:** nicho y clave; tablas de la vertical con las reglas §4.6 en su rama.
+2. **Ya:** pantallas con el kit y el checklist, menú, rutas, ayuda y su `.md`.
+3. **Ya:** cómo se arma cada asiento como función pura con pruebas unitarias (la usarán la vista previa y `post`).
+4. **Ya:** facturar con `InvoicingService.create` (existe) para probar el flujo, sabiendo que no queda marcado ni es atómico.
+5. **Con V1a (fin de octubre):** conectar `post` con `VERTICAL`, `createInTx` con origen, `findBySource`, `nextFor`,
+   manifiesto y registro (1 a 2 días). **No** usar `OTHER` ni `MANUAL` como atajo: V3 lo rechaza.
+6. **Con V4 (inicio de noviembre):** `@VerticalKey`, guardas y menú. Recién entonces la vertical entra en `VERTICALS` y
+   puede desplegarse en el ambiente de pruebas.
+7. **Con V1b y V2 (mediados de noviembre):** correr toda la suite; comparar con la plantilla.
+8. **Con V3 (fin de noviembre):** conectar el adaptador y corregir lo que falle.
+9. **Datos reales:** solo después de S1–S3.
+
+---
+
+## 7. Huecos del código y quién los cierra
+
+### 7.1 V1a — sin esperar a N1
+
+| # | Hueco | Cambio | Archivos (C = compartido por muchos paquetes) | Riesgo |
+|---|---|---|---|---|
+| a1 | No hay origen para asientos ni facturas de verticales (F6, F26) | `VERTICAL` en el enum (migración **sola**); otra migración con `JournalEntry.sourceModule`, `Invoice.sourceModule`, `Invoice.sourceId` y el índice `[companyId, sourceModule, sourceId]` | `prisma/schema.prisma` (C), 2 migraciones | Medio |
+| a2 | `post` no conoce `sourceModule` | `PostEntryInput.sourceModule?`; reglas de §3.2 y de `journalType`/`type` **solo cuando** `sourceType = VERTICAL`. Nada cambia para los demás llamadores | `src/posting/posting.service.ts` (C) | Medio |
+| a3 | El endpoint de asientos anula cualquier origen (F5) | `voidJournalEntry` rechaza `VERTICAL` con 422 «corrígelo desde el documento» | `src/modules/accounting/accounting.service.ts` | Bajo |
+| a4 | No se puede facturar en la transacción de otro módulo (F9) | `createInTx(tx, input, user)` con `sourceModule`/`sourceId`; `create` lo llama | `src/invoicing/invoicing.service.ts` (C) | Medio |
+| a5 | No hay lectura por origen (M6) | `InvoicingService.findBySource` y `PostingService.findBySource` (§4.4) | mismos archivos | Bajo |
+| a6 | Numeración cerrada (F12) | `nextFor(tx, companyId, docId, defaultPrefix)` | `document-sequences.service.ts` | Bajo |
+| a7 | No hay versión ni registro (F23) | §4.7.1: `contract-version.ts`, `vertical-manifest.ts`, `verticals.registry.ts` (solo datos), `vertical-registry.module.ts` (global), `verticals.module.ts`; comprobación al arrancar | `src/verticals/*` (nuevo), `src/app.module.ts` (C) | Bajo |
+| a8 | `createApp` no admite módulos ni manifiestos de prueba (F20) | `createApp({ silent?, extraModules?, extraManifests? })`; producción sin cambios | `src/app.setup.ts` | Bajo |
+| a9 | El origen nuevo no se ve | `ledger-detail` con `sourceModule`; `SOURCE_DOC.VERTICAL = 'Módulo de negocio'`; `shared/vertical-sources.ts`; enlaces en `entry-detail.ts` y `reports.ts`; en `invoice-detail` el aviso y «Ver <documento>» de §3.6; en `document-sequences.ts`, sin «Editar» para filas de verticales | backend 1 archivo; frontend `labels.ts` (C), 4 archivos + 1 nuevo | Bajo |
+
+Pruebas de V1a: `test/vertical-hooks.e2e-spec.ts` con un módulo y manifiesto de prueba (a8): asiento `VERTICAL` que
+cuadra, en mayor, balanza y estados, con `AuditLog`; descuadrado 422; período cerrado 422; `sourceModule` no registrado
+o ausente 422; `journalType` `SALES` 422; endpoint de asientos 422; `createInTx` todo o nada y con origen;
+`findBySource` con factura anulada y con nota de crédito total ⇒ `effective: false`; `nextFor` sin huecos con 10 en
+paralelo; arranque rechaza un manifiesto incompatible; **toda** la suite actual en verde.
+
+### 7.2 V1b — después de N1
+
+| # | Cambio | Archivos | Riesgo |
+|---|---|---|---|
+| b1 | `post` valida, para **todos** los orígenes, que `partnerId` y `costCenterId` sean **de la empresa** (sin exigir «activo») | `posting.service.ts` (C) | **Alto** (lo usan todos) |
+| b2 | Con `VERTICAL`: rechazar cuentas de impuestos, con `subledger` `RECEIVABLE`/`PAYABLE`, y las de CxC, CxP y anticipos de `AccountingSettings` | `posting.service.ts` (C) | Medio |
+| b3 | `InvoicingService.build` valida `costCenterId` de la empresa en borrador y al emitir (F30) | `invoicing.service.ts` (C) | Bajo |
+| b4 | **Solo si Carlos elige la opción 2 de §4.3.8:** `PaymentsService.createInTx` y cobro desde una cuenta indicada | `payments.service.ts` | Medio |
+| b5 | **Opcionales, si el socio los pide (P10):** API de centros de costo; exportar `FILE_STORAGE` | `src/masters/*`, `attachments.module.ts` | Bajo |
+
+Pruebas de V1b: cliente o centro de costo de otra empresa ⇒ 400 en `post` y en facturas; cuentas prohibidas con
+`VERTICAL` ⇒ 422; **anular la factura de un cliente desactivado sigue funcionando** (y su reverso con N1); pagos,
+tesorería y cierre de año sin cambios.
+
+### 7.3 V4 — Activación por empresa
+§3.5: tabla `CompanyVertical` + historial (migración propia), mecanismo de activación según P4, `@VerticalKey`,
+`VerticalEnabledGuard`, `GET /verticals/active`, rechazo en `post`/`createInTx`/`nextFor`, `NavGroup.vertical`, filtro del
+menú, `verticalGuard`, módulos activos visibles en «Empresa», e2e (activa/inactiva, 404, menú) y su ayuda.
+
+### 7.4 Lo que **no** se construye
+Exportar `TaxRatesService`; un quinto padre en `Attachment`; columnas nuevas en `AccountingSettings` o claves nuevas en
+`DOC_TYPES`; roles nuevos o permisos por módulo; webhooks o API pública versionada.
+
+---
+
+## 8. Qué piden los paquetes V (y otras fichas afectadas)
+
+### 8.1 V1a
+Construye a1–a9 (§7.1). Nivel N1, tamaño **L**, ola 1, depende de **V0**; **no** espera a N1 (no toca `voidEntry`).
+Toca `posting.service.ts` e `invoicing.service.ts` (del socio): aviso antes de fusionar. Seguridad revisa.
+
+### 8.2 V1b
+Construye b1–b3 y, según decisiones, b4–b5 (§7.2). Nivel N1, tamaño **M**, ola 2, depende de **N1 y V1a**: b1 cambia
+`post`, que N1 usa para el reverso, y la prueba «anular la factura de un cliente desactivado» solo tiene sentido con el
+reverso real. Seguridad revisa y confirma §9.1.
+
+### 8.3 V2 — Plantilla
+Copia la forma de §5 con un documento genérico (`PlantillaDocumento`). Cambios a su ficha: depende de **V1a** (no solo
+V0); ubicación `src/verticals/_plantilla/` y `frontend/src/app/features/verticals/_plantilla/`; manifiesto fuera de
+`VERTICALS`, registrado en su e2e con `createApp({ extraModules, extraManifests })`; su tabla llega vacía a producción
+(se dice en el PR); archivo de rutas `plantilla.rutas.ts` para que `verificar-ayuda` no exija entradas, con la
+instrucción de renombrarlo al copiar; usa `findBySource` para el estado de sus facturas; usa los decoradores de V4 cuando
+exista (antes, marcados como pendientes); `docs/plantilla-vertical.md` sigue §6.3.
+
+### 8.4 V3 — Pruebas de contrato
+Depende de **V1b, V2 y V4**; ola 2–3. Adaptador:
+```ts
+export interface VerticalContractAdapter {
+  key: string; routePrefix: string; writeRoles: UserRole[];
+  setup(ctx: ContractCtx): Promise<void>;                                  // ajustes, cuentas, activación
+  createDocument(ctx: ContractCtx, who: string, over?: { date?: string; amount?: string }): Promise<{ status: number; id?: string }>;
+  entriesOf(ctx: ContractCtx, id: string): Promise<string[]>;              // asientos que generó (propios o de factura)
+  invoicesOf?(ctx: ContractCtx, id: string): Promise<string[]>;            // facturas con su origen
+  correct?(ctx: ContractCtx, id: string, who: string): Promise<{ status: number }>;
+  cleanup(ctx: ContractCtx): Promise<void>;
+}
+```
+Comprueba: R1; R2 (sin PATCH/DELETE; reverso con N1; endpoint de asientos 422; **asiento conciliado ⇒ `correct` 422 y
+nada cambia**); R3 (período cerrado ⇒ 422 sin documento ni `AuditLog`); R4; R5 (rutas del prefijo con `@Roles`, VIEWER
+403, sin `AUDITOR` en escrituras, lecturas restringidas si `datosSensibles`); R7; R8; aislamiento; activación (empresa sin
+la vertical ⇒ 404); origen en facturas (anulada desde «Facturas» ⇒ deja de contar). **Estáticas:** ninguna escritura
+`tx.<modeloDelNúcleo>.(create|createMany|update|updateMany|upsert|delete|deleteMany)` en `src/verticals/<clave>/`; ningún
+`consumeNext(`; ningún literal de tipo NCF; todo modelo con prefijo tiene `companyId`; las migraciones `_v_<clave>_` solo
+tocan tablas y tipos con prefijo; los manifiestos no importan módulos; **falla si existe un `*.rutas.ts` fuera de
+`_plantilla`**; todo controlador con `@VerticalKey` y `VerticalEnabledGuard`; toda ruta del frontend con `verticalGuard`.
+
+### 8.5 V4 — Activación por empresa (paquete nuevo)
+§7.3. Nivel N1 (permisos y aislamiento), tamaño **M**, ola 1–2, depende de **V1a** y de la decisión **P4** de Carlos.
+Ficha nueva `docs/paquetes/V4.md`.
+
+### 8.6 Otras fichas
+- **N1:** el reverso copia `sourceModule`; la lista de permitidos de `voidJournalEntry` no incluye `VERTICAL`; se conserva
+  el 422 de asientos conciliados; e2e «anular la factura (y el pago) de un cliente desactivado sigue funcionando».
+- **S2:** detecta los modelos con `companyId` desde el cliente de Prisma (no una lista fija); si existe b5, incluye los
+  archivos de tablas `<Clave>Archivo`.
+- **Tablero:** V1 se reemplaza por V1a y V1b; V4 nuevo; V2 depende de V1a; V3 de V1b, V2 y V4.
+
+---
+
+## 9. Riesgos y deuda
+
+### 9.1 Hallazgo colateral (para seguridad)
+`post` no valida que `partnerId` y `costCenterId` sean de la empresa (F2), y `InvoicingService.build` no valida
+`costCenterId` ni en borrador ni al emitir (F30): la llave foránea acepta el id de **otra empresa**. Impacto actual bajo
+(no hay API de centros de costo), pero sería un hueco de aislamiento con verticales. Lo cierran b1 y b3.
+
+### 9.2 Riesgos
+| Riesgo | Impacto | Mitigación |
+|---|---|---|
+| b1 cambia `post`, que usan todos | Alto | Solo «de la empresa», nunca «activo»; después de N1; suite completa; aviso al socio |
+| La IA del socio programa contra algo que aún no existe | Medio | Estado marcado en cada pieza; §6.3 |
+| Una vertical asienta impuestos o cuentas de clientes por su cuenta | Alto | §3.3, b2, V3 |
+| La vertical copia el estado de una factura y se desincroniza | Alto | Regla §3.3, `findBySource`, V3 |
+| Una vertical visible para empresas que no la contrataron | Alto (comercial y de datos) | V4 obligatorio antes de registrarla en producción |
+| Dos PR (backend y frontend) fusionados por separado | Medio | Se aprueban y se unen juntos; la revisión los mira juntos |
+| Choques en archivos compartidos | Medio | Bloque propio al final; cola de fusión |
+| Datos sensibles abiertos a todos los roles | Alto (Ley 172-13) | `datosSensibles` + V3 |
+| Datos reales antes de S1–S3 | Grave | Regla de datos reales |
+
+### 9.3 Deuda aceptada
+(1) Prefijos de numeración de verticales no editables. (2) Referencias al núcleo sin llave foránea Prisma, compensadas
+con validación y V3. (3) Un solo esquema Prisma (se revisa con la segunda vertical). (4) Tabla vacía de la plantilla en
+producción. (5) La regresión de `companyId` no cubre `updateMany`/`deleteMany`/`upsert` (F19): V3 lo cubre solo para
+verticales.
+
+---
+
+## 10. Preguntas abiertas (en orden, con recomendación)
+
+| # | Para | Pregunta | Recomendación |
+|---|---|---|---|
+| P1 | Carlos y socio | **¿De quién es el código de la vertical y con qué licencia se usa junto al sistema financiero?** Va primero porque de esto dependen las demás | Dejarlo por escrito antes de unir la primera vertical. Si es de los dos, todo es más simple; si es solo del socio, que la licencia permita venderla junto al sistema y usarla si la relación termina |
+| P2 | Carlos y socio | ¿Dónde se guarda el código de la vertical? | En los **mismos dos repositorios** del sistema (servidor y pantallas). Cada cambio de la vertical serán dos pedidos de cambio que se aprueban y se unen juntos |
+| P3 | Carlos y socio | ¿Quién aprueba los cambios del socio y quién arma los cambios de la base de datos de su vertical? | Con la organización compartida de GitHub, **Carlos aprueba cada cambio del socio** (y el socio los de Carlos); Claude los revisa antes y le da a Carlos un resumen sencillo. El socio arma los cambios de la base de datos de su vertical; la revisión comprueba que no toquen tablas del sistema |
+| P4 | Carlos | ¿Quién enciende la vertical para una empresa? ¿Hace falta antes de la primera venta? | **Sí, antes de la primera venta** (y antes de mostrarla en el ambiente de pruebas). Que la encienda solo el equipo técnico con tu autorización, no el administrador del cliente, porque se vende aparte |
+| P5 | Socio | ¿Cuál es el nicho y su nombre corto? | Una palabra en español y minúsculas (`alquiler`, `taller`, `clinica`) |
+| P6 | Socio → Carlos decide | ¿Bastan los permisos que existen (administrador, contador, aprobador, solo lectura) o el negocio necesita una persona que solo use la vertical? | Empezar con los existentes; un permiso nuevo es otro trabajo con su costo |
+| P7 | Carlos | ¿Dónde va la vertical en el menú? | Justo después de «Panel» |
+| P8 | Socio | ¿Aceptas conectar los asientos cuando esté V1a (≈ fin de octubre), mostrar la vertical cuando esté V4 (≈ inicio de noviembre) y pasar las pruebas finales con V3 (≈ fin de noviembre)? Mientras tanto avanzas con tablas, pantallas y cálculos | Sí: así no se construye sobre atajos que luego habría que deshacer |
+| P9 | Carlos con la contadora | El depósito en garantía, ¿se trata como un anticipo del cliente o como dinero por devolver en una cuenta propia? ¿Se podrá usar para pagar una factura atrasada? | Cuenta propia, si la contadora confirma que una garantía no es un anticipo; aplicarla a facturas cuesta 1 a 2 días más (§4.3.8) |
+| P10 | Socio | ¿Tu negocio necesita repartir ingresos y gastos por sucursal, equipo u obra, o guardar archivos en documentos que todavía no tienen factura? | Si no, no se construye ahora |
+
+---
+
+## 11. Fuera de alcance (decide Carlos si entra después)
+
+| Tema | Por qué queda fuera | Qué hacer mientras tanto |
+|---|---|---|
+| **Moneda extranjera** en asientos propios (p. ej. depósitos en dólares) | `post` no valida la coherencia de `currency`/`amountForeign`; habría que definir tasa, diferencia cambiaria y devolución | Cobrar en dólares solo con **factura** (la factura maneja moneda y tasa); depósitos solo en pesos |
+| **Inventario** (equipos como existencias, costo, salidas) | No existe en el núcleo (Guía contable §5, v1.0) | La vertical lleva su lista de equipos sin efecto contable |
+| **Nómina** | No existe (Guía contable §9, «Después») | Fuera |
+| **Facturación recurrente o en lote automática** | El núcleo no tiene tareas programadas | Un botón «Facturar este mes» que el usuario pulsa; una transacción por contrato |
+| **Documentos no fiscales impresos** (PDF de contrato, orden, recibo) | No hay motor de documentos para verticales; las exportaciones PDF del núcleo son de reportes | Fuera; si se pide, paquete propio con la librería de PDF que ya usa el núcleo |
+
+---
+
+## 12. Historial del contrato
+
+| Versión | Fecha | Cambio |
+|---|---|---|
+| Documento 1.0 (borrador) | 2026-10-12 | Primera versión (V0), verificada contra `fase-1` @ `20613ae` |
+| Documento 1.1 (borrador) | 2026-10-12 | Cambios del revisor-crítico (tabla «Qué cambió»). Pendiente: Carlos |
+| Contrato 1.0 | (al fusionar V1a y V4) | `VERTICAL` + `sourceModule`, origen en facturas, `createInTx`, `findBySource`, `nextFor`, registro, activación |
+| Contrato 1.1 | (al fusionar V1b) | Validaciones de empresa en `post` y `build`, cuentas prohibidas con `VERTICAL` |
