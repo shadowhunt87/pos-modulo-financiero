@@ -30,4 +30,15 @@ export class RegisterDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  // Confirmación reforzada del ADMIN que crea el usuario (ANEXO-S0 3.10b)
+  @IsOptional()
+  @IsString()
+  @MaxLength(72)
+  confirmPassword?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  confirmCode?: string;
 }

@@ -41,6 +41,12 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
       UPLOADS_DIR: /data/uploads
+      # Verificación en dos pasos (ANEXO-S0 3.3). La llave va con la frase de los respaldos (D42), nunca en git.
+      TWO_FACTOR_ENCRYPTION_KEY: ${TWO_FACTOR_ENCRYPTION_KEY:-}
+      TWO_FACTOR_REQUIRED_ROLES: ${TWO_FACTOR_REQUIRED_ROLES:-}
+      TWO_FACTOR_ISSUER: ${TWO_FACTOR_ISSUER:-Finanzas}
+      # Línea de los comandos de operación (rescate del 2FA, exportación al cancelar); carpeta de operación montada aparte
+      OPS_LOG_FILE: ${OPS_LOG_FILE:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

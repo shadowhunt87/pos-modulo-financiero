@@ -113,7 +113,8 @@ describe('Auth (e2e)', () => {
   });
 
   describe('POST /auth/register', () => {
-    const body = { email: newUserEmail, password, name: 'Nuevo E2E' };
+    // confirmPassword: la clave del ADMIN que crea el usuario (ANEXO-S0 3.10b)
+    const body = { email: newUserEmail, password, name: 'Nuevo E2E', confirmPassword: password };
 
     it('401 sin token', async () => {
       await request(app.getHttpServer()).post('/auth/register').send(body).expect(401);

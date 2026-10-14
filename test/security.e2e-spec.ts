@@ -230,7 +230,7 @@ describe('Seguridad (e2e)', () => {
       const t = (await login(app, u.email, password).expect(201)).body.access_token as string;
       const change = (cur: string) =>
         request(app.getHttpServer()).post('/users/me/change-password').set('Authorization', `Bearer ${t}`).send({ currentPassword: cur, newPassword: 'Nueva-Clave-98765' });
-      for (let i = 0; i < 5; i++) await change(BAD).expect(401);
+      for (let i = 0; i < 5; i++) await change(BAD).expect(422); // 422, no 401: no cierra la sesión (ANEXO-S0 G3)
       const r = await change(password).expect(429);
       expect(Number(r.headers['retry-after'])).toBeGreaterThan(0);
     });
@@ -362,19 +362,23 @@ describe('Seguridad (e2e)', () => {
     it('toda ruta exige JWT, salvo el login', () => {
       const all = routes(app);
       expect(all.length).toBeGreaterThan(100);
-      expect(all.filter((r) => !r.guards.includes('JwtAuthGuard')).map((r) => `${r.method} ${r.path}`)).toEqual(['POST /auth/login']);
+      expect(all.filter((r) => !r.guards.includes('JwtAuthGuard')).map((r) => `${r.method} ${r.path}`).sort())
+        .toEqual(['POST /auth/login', 'POST /auth/login/2fa', 'POST /auth/login/2fa/enroll']);
       // @Roles sin RolesGuard no restringe nada: toda ruta con roles debe llevar ambos guards
       expect(all.filter((r) => r.roles && !r.guards.includes('RolesGuard')).map((r) => `${r.method} ${r.path}`)).toEqual([]);
     });
 
-    it('toda ruta que modifica datos declara roles explícitos (solo el perfil propio queda abierto)', () => {
+    it('toda ruta que modifica datos declara roles explícitos (solo el login y la cuenta propia quedan abiertos)', () => {
       const open = routes(app).filter((r) => r.method !== 'GET' && !r.roles).map((r) => `${r.method} ${r.path}`).sort();
-      expect(open).toEqual(['PATCH /users/me', 'POST /auth/login', 'POST /users/me/change-password']);
+      expect(open).toEqual([
+        'PATCH /users/me', 'POST /auth/login', 'POST /auth/login/2fa', 'POST /auth/login/2fa/enroll', 'POST /users/me/change-password',
+        'POST /users/me/two-factor/disable', 'POST /users/me/two-factor/enable', 'POST /users/me/two-factor/recovery-codes', 'POST /users/me/two-factor/setup',
+      ]);
     });
 
     it('lecturas restringidas: usuarios, comentarios recibidos y llaves de servicio son solo de ADMIN (el resto de lecturas es para cualquier rol)', () => {
       const restricted = routes(app).filter((r) => r.method === 'GET' && r.roles).map((r) => `${r.path} -> ${r.roles!.join(',')}`).sort();
-      expect(restricted).toEqual(['/feedback/ -> ADMIN', '/service-keys/ -> ADMIN', '/users/ -> ADMIN', '/users/:id -> ADMIN']);
+      expect(restricted).toEqual(['/feedback/ -> ADMIN', '/service-keys/ -> ADMIN', '/users/ -> ADMIN', '/users/:id -> ADMIN', '/users/security-events -> ADMIN']);
     });
 
     it('un VIEWER recibe 403 en cada ruta que exige un rol que no tiene (modificaciones y lecturas restringidas)', async () => {

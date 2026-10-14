@@ -7,6 +7,8 @@ import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { AttemptLimiter, TooManyAttemptsFilter } from './attempt-limiter.js';
+import { TwoFactorService } from './two-factor/two-factor.service.js';
+import { TwoFactorController } from './two-factor/two-factor.controller.js';
 
 @Module({
   imports: [
@@ -24,8 +26,8 @@ import { AttemptLimiter, TooManyAttemptsFilter } from './attempt-limiter.js';
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AttemptLimiter, { provide: APP_FILTER, useClass: TooManyAttemptsFilter }],
-  exports: [AuthService, PassportModule, AttemptLimiter],
+  controllers: [AuthController, TwoFactorController],
+  providers: [AuthService, JwtStrategy, AttemptLimiter, TwoFactorService, { provide: APP_FILTER, useClass: TooManyAttemptsFilter }],
+  exports: [AuthService, PassportModule, AttemptLimiter, TwoFactorService],
 })
 export class AuthModule {}

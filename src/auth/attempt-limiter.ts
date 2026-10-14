@@ -52,6 +52,27 @@ export class AttemptLimiter {
     if (this.hits.size > MAX_ENTRIES) this.evict(now);
   }
 
+  /**
+   * Reserva un intento ANTES de verificar (ANEXO-S0 §3.11, G1): síncrono, así dos peticiones simultáneas no se saltan el
+   * límite. Si alguna regla está en su límite devuelve los segundos de espera SIN sumar; si no, suma 1 a todas y devuelve 0.
+   */
+  consume(rules: AttemptRule[]): number {
+    const wait = this.check(rules);
+    if (wait > 0) return wait;
+    this.recordFailure(rules);
+    return 0;
+  }
+
+  /** Devuelve una reserva (acierto, o no se llegó a probar nada). */
+  refund(keys: string[]) {
+    const now = this.now();
+    for (const k of keys) {
+      const h = this.hits.get(k);
+      if (!h || h.resetAt <= now) continue;
+      if (h.count <= 1) this.hits.delete(k); else h.count--;
+    }
+  }
+
   clear(keys: string[]) {
     for (const k of keys) this.hits.delete(k);
   }
@@ -77,6 +98,20 @@ export function loginRules(email: string, ip: string): AttemptRule[] {
 }
 
 export const loginPairKey = (email: string, ip: string) => `login:pair:${email.trim().toLowerCase()}|${ip}`;
+
+/** IP para las reglas: una IPv6 se agrupa por su /64 (un atacante tiene millones de direcciones en su red). */
+export function ipKey(ip: string): string {
+  const v = ip.replace(/^::ffff:/i, '');
+  if (!v.includes(':')) return v;
+  const [head, tail = ''] = v.split('::');
+  const h = head ? head.split(':') : [];
+  const t = tail ? tail.split(':') : [];
+  const full = v.includes('::') ? [...h, ...Array(8 - h.length - t.length).fill('0'), ...t] : h;
+  return `${full.slice(0, 4).map((x) => (x || '0').toLowerCase().replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
+
+/** Regla por IP de la verificación en dos pasos: 40 en 15 min. */
+export const twoFactorIpRule = (ip: string): AttemptRule => ({ key: `2fa:ip:${ipKey(ip)}`, limit: 40 });
 
 /** Reglas para verificar la clave actual al cambiarla (por usuario). */
 export const passwordRules = (userId: string): AttemptRule[] => [{ key: `pw:user:${userId}`, limit: 5 }];

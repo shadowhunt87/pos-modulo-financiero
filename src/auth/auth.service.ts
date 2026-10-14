@@ -3,6 +3,11 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { AuditMeta } from '../common/audit.js';
+import { writeAudit } from '../common/audit.js';
+import { AuditAction } from '../generated/prisma/enums.js';
+import { TwoFactorService } from './two-factor/two-factor.service.js';
+import type { AuthUser } from './types/auth-user.js';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '../generated/prisma/enums.js';
@@ -31,13 +36,17 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly limiter: AttemptLimiter,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   /**
    * Crea un usuario dentro de la empresa del admin que lo registra.
    * `companyId` viene del JWT del admin, NUNCA del body.
    */
-  async register(dto: RegisterDto, companyId: string) {
+  async register(dto: RegisterDto, admin: AuthUser, ip: string, meta: AuditMeta) {
+    const companyId = admin.companyId;
+    // ANEXO-S0 3.10b (N3): crear CUALQUIER usuario pide la clave (y el código) del ADMIN: un token robado no basta
+    await this.twoFactor.confirmActor(admin, dto.confirmPassword, dto.confirmCode, ip, meta);
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -45,14 +54,13 @@ export class AuthService {
       throw new ConflictException('Ya existe un usuario con ese email');
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: await bcrypt.hash(dto.password, BCRYPT_ROUNDS),
-        name: dto.name,
-        role: dto.role ?? UserRole.ACCOUNTANT,
-        companyId,
-      },
+    const hash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+    const user = await this.prisma.$transaction(async (tx) => {
+      const u = await tx.user.create({
+        data: { email: dto.email, password: hash, name: dto.name, role: dto.role ?? UserRole.ACCOUNTANT, companyId },
+      });
+      if (u.role === UserRole.ADMIN) await writeAudit(tx, admin, 'User', u.id, AuditAction.CREATE, { event: 'ADMIN_GRANTED', via: 'REGISTER' }, meta);
+      return u;
     });
 
     // Solo datos públicos: sin hash y sin token (el admin no necesita el JWT
@@ -62,8 +70,9 @@ export class AuthService {
 
   async login(dto: LoginDto, ip: string) {
     // Antes de tocar la BD o bcrypt: un atacante bloqueado tampoco gasta CPU del servidor
+    // Reserva ANTES de verificar (consume/refund): ya no se salta con peticiones simultáneas (ANEXO-S0 3.11 c)
     const rules = loginRules(dto.email, ip);
-    const wait = this.limiter.check(rules);
+    const wait = this.limiter.consume(rules);
     if (wait > 0) throw new TooManyAttemptsException(wait);
 
     const user = await this.prisma.user.findUnique({
@@ -78,13 +87,32 @@ export class AuthService {
 
     // Un usuario técnico (llave de servicio) nunca entra con clave, aunque alguien se la cambie
     if (!user || !user.active || !user.company.active || !passwordMatches || user.isService) {
-      this.limiter.recordFailure(rules);
       throw new UnauthorizedException('Credenciales inválidas');
     }
+    // Acierto: se devuelve la reserva y, como antes, se reinicia el par cuenta+IP
+    this.limiter.refund(rules.map((r) => r.key));
     this.limiter.clear([loginPairKey(dto.email, ip)]);
 
+    // Con 2FA (o rol obligado): sin token todavía; sigue en /auth/login/2fa
+    const next = await this.twoFactor.afterPassword(user);
+    if (next.kind === 'challenge') {
+      const { kind: _k, ...rest } = next;
+      return rest;
+    }
     await this.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
     return this.buildAuthResponse(user);
+  }
+
+  /** Segundo paso del login (E2): código de la app o de emergencia, o la inscripción obligatoria. */
+  async loginSecondStep(challengeToken: string, code: string, ip: string, meta: AuditMeta) {
+    const { user, extra } = await this.twoFactor.verifyLogin(challengeToken, code, ip, meta);
+    return { ...this.buildAuthResponse(user), ...extra };
+  }
+
+  /** Token nuevo releyendo el usuario (tras activar o quitar el 2FA). */
+  async issueTokenFor(userId: string) {
+    const u = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    return this.buildAuthResponse(u);
   }
 
   /** Token nuevo para un usuario ya autenticado (p. ej. tras cambiar su clave). */

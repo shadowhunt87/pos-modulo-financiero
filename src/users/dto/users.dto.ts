@@ -13,7 +13,13 @@ export class ListUsersQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
 }
 
-export class UpdateUserDto {
+/** Confirmación reforzada de quien hace una acción delicada (ANEXO-S0 3.10b). */
+class Confirmation {
+  @IsOptional() @IsString() @MaxLength(72) confirmPassword?: string;
+  @IsOptional() @IsString() @MaxLength(32) confirmCode?: string;
+}
+
+export class UpdateUserDto extends Confirmation {
   @IsOptional() @IsString() @IsNotEmpty() @MaxLength(150) name?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsOptional() @IsEnum(UserRole) role?: UserRole;
@@ -25,11 +31,22 @@ export class UpdateProfileDto {
 }
 
 // bcrypt solo procesa los primeros 72 bytes de la clave
-export class ResetPasswordDto {
+export class ResetPasswordDto extends Confirmation {
   @IsString() @MinLength(8) @MaxLength(72) password: string;
 }
 
 export class ChangePasswordDto {
   @IsString() @MinLength(1) @MaxLength(72) currentPassword: string;
   @IsString() @MinLength(8) @MaxLength(72) newPassword: string;
+  // Obligatorio si el usuario tiene 2FA (ANEXO-S0 3.9)
+  @IsOptional() @IsString() @MaxLength(32) code?: string;
+}
+
+/** E9: el ADMIN quita el 2FA de otro usuario y le fija una clave nueva (N1). */
+export class ResetTwoFactorDto extends Confirmation {
+  @IsString() @MinLength(8) @MaxLength(72) newPassword: string;
+}
+
+export class SecurityEventsQuery {
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(90) days?: number;
 }

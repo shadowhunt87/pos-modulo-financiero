@@ -174,8 +174,10 @@ describe('Usuarios y empresa (e2e)', () => {
       await sleep(1100); // el iat del JWT es en segundos
       await api('post', `/users/${uid.acct2}/reset-password`, 'acct').send({ password: 'Nueva-Clave-999' }).expect(403);
       await api('post', `/users/${uid.acct2}/reset-password`, 'admin').send({ password: 'corta' }).expect(400);
-      await api('post', `/users/${uid.adminb}/reset-password`, 'admin').send({ password: 'Nueva-Clave-999' }).expect(404);
-      await api('post', `/users/${uid.acct2}/reset-password`, 'admin').send({ password: 'Nueva-Clave-999' }).expect(201);
+      // Confirmación reforzada del ADMIN (ANEXO-S0 3.10b)
+      await api('post', `/users/${uid.acct2}/reset-password`, 'admin').send({ password: 'Nueva-Clave-999' }).expect(422);
+      await api('post', `/users/${uid.adminb}/reset-password`, 'admin').send({ password: 'Nueva-Clave-999', confirmPassword: password }).expect(404);
+      await api('post', `/users/${uid.acct2}/reset-password`, 'admin').send({ password: 'Nueva-Clave-999', confirmPassword: password }).expect(201);
       await api('get', '/auth/me', 'acct2').expect(401);
       await login(email('acct2'), password).expect(401);
       const ok = await login(email('acct2'), 'Nueva-Clave-999').expect(201);
@@ -185,7 +187,7 @@ describe('Usuarios y empresa (e2e)', () => {
 
     it('cambiar la clave propia: valida la actual, devuelve token nuevo e invalida el anterior', async () => {
       await sleep(1100);
-      await api('post', '/users/me/change-password', 'view').send({ currentPassword: 'mala', newPassword: 'Otra-Clave-12345' }).expect(401);
+      await api('post', '/users/me/change-password', 'view').send({ currentPassword: 'mala', newPassword: 'Otra-Clave-12345' }).expect(422); // no cierra la sesión (G3)
       await api('post', '/users/me/change-password', 'view').send({ currentPassword: password, newPassword: password }).expect(422);
       await api('post', '/users/me/change-password', 'view').send({ currentPassword: password, newPassword: 'corta' }).expect(400);
       const old = token.view;

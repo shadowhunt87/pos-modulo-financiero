@@ -127,7 +127,8 @@ model User {
   role              UserRole  @default(ACCOUNTANT)
   active            Boolean   @default(true)
   lastLoginAt       DateTime?
-  // Los tokens emitidos antes de esta fecha dejan de servir (cambio/reseteo de clave)
+  // Los tokens emitidos antes de esta fecha dejan de servir (cambio/reseteo de clave, y también activar,
+  // cambiar o quitar el 2FA y ascender a ADMIN: "las sesiones anteriores ya no valen", ANEXO-S0 3.13)
   passwordChangedAt DateTime?
   // Usuario técnico de una llave de servicio (otro sistema): no puede iniciar sesión con clave
   isService         Boolean   @default(false)
@@ -141,6 +142,8 @@ model User {
   cashRegistersHeld      CashRegister[]       @relation("CashRegisterCustodian")
   attachmentsUploaded    Attachment[]
   auditLogs              AuditLog[]
+  twoFactor              UserTwoFactor?
+  recoveryCodes          UserRecoveryCode[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1398,4 +1401,40 @@ enum LegalForm {
 enum AccountingFramework {
   NIIF_PYMES
   NIIF_COMPLETAS
+}
+
+// ============================================================
+// VERIFICACIÓN EN DOS PASOS (ANEXO-S0 §3)
+// Nunca se devuelve ni se registra nada de estas tablas (secretos, hashes, contadores).
+// ============================================================
+
+// Una fila por usuario con 2FA activo, en activación o con ventana de inscripción. enabledAt no nulo = 2FA activo.
+model UserTwoFactor {
+  userId             String    @id
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secretEnc          String? // secreto activo cifrado (AES-256-GCM, v1:<kid>:…)
+  enabledAt          DateTime?
+  enabledIp          String?
+  pendingSecretEnc   String? // secreto en activación o cambio de teléfono
+  pendingExpiresAt   DateTime?
+  lastUsedStep       Int? // anti-reuso del código
+  enrollAllowedUntil DateTime? // ventana de 72 h para inscribirse al entrar
+  totpFailures       Int       @default(0)
+  totpLockedUntil    DateTime?
+  totpDayFailures    Int       @default(0)
+  totpDayStart       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// Códigos de emergencia (80 bits), guardados como SHA-256; uso único
+model UserRecoveryCode {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
