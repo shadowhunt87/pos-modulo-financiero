@@ -52,7 +52,7 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   company('EcfDocument', { files: [{ column: 'xmlFileUrl', folder: 'xml', pattern: ecfXml }] }),
   company('EcfImport', { jsonColumns: ['preview'], files: [{ column: 'storageKey', folder: 'xml', nameColumn: 'fileName', pattern: ecfXml }] }),
   company('ServiceKey', { excludedColumns: [{ column: 'keyHash', reason: 'Hash de la llave de servicio: nunca sale' }] }),
-  company('RatioThreshold'), company('CompanyFiscalProfile'),
+  company('RatioThreshold'), company('CompanyFiscalProfile'), company('SampleRecord'),
 
   child('JournalEntryLine', (c): Prisma.JournalEntryLineWhereInput => ({ journalEntry: { companyId: c } })),
   child('InvoiceLine', (c): Prisma.InvoiceLineWhereInput => ({ invoice: { companyId: c } })),

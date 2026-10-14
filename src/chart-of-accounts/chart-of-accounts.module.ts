@@ -8,5 +8,6 @@ import { ChartOfAccountsService } from './chart-of-accounts.service.js';
 @Module({
   controllers: [ChartOfAccountsController],
   providers: [ChartOfAccountsService, AccountClassificationService],
+  exports: [ChartOfAccountsService], // el arranque guiado (E1b) carga el catálogo estándar
 })
 export class ChartOfAccountsModule {}

@@ -55,6 +55,7 @@ model Company {
   serviceKeys         ServiceKey[]
   ratioThresholds     RatioThreshold[]
   fiscalProfile       CompanyFiscalProfile?
+  sampleRecords       SampleRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1437,4 +1438,17 @@ model UserRecoveryCode {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+// Datos de ejemplo del arranque guiado (E1c): lo único que se puede borrar de golpe es lo anotado aquí
+model SampleRecord {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  entityType String // Partner, Invoice, Payment, BankAccount, BankTransaction, NcfSequence
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([entityType, entityId])
+  @@index([companyId])
 }
