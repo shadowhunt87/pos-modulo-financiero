@@ -102,3 +102,11 @@ Todo está programado; lo que falta es **configuración** cuando se elija el pro
 
 Si el proveedor usa otra forma de autenticarse o un protocolo distinto, se agrega un adaptador en `src/ecf/providers/`
 (una clase que cumple `EcfProvider`) y una línea en `PROVIDERS` de `src/ecf/ecf-connection.service.ts`.
+
+## Contraseña olvidada (sin otro administrador que la cambie)
+
+1. Ver los correos de los usuarios: `node --env-file=.env dist/cli/password-reset.js --lista`
+   (en el servidor: `docker exec <contenedor-api> node dist/cli/password-reset.js --lista`).
+2. Poner una clave temporal: `node --env-file=.env dist/cli/password-reset.js --email <correo> --motivo "<por qué>"`.
+   La clave se muestra una sola vez en la pantalla; no queda guardada en ningún registro.
+3. Entrar con ella y cambiarla en el menú de tu nombre › «Mi perfil y clave».
