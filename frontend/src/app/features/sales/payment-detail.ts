@@ -7,7 +7,7 @@ import { errorMessage } from '../../core/errors';
 import { Notify } from '../../core/notify';
 import { clean, dec, sumDec, today } from '../../shared/format';
 import { INVOICE_TYPE, PAYMENT_DIRECTION, PAYMENT_METHOD, PAYMENT_STATUS, ENTRY_STATUS } from '../../shared/labels';
-import { AttachmentsPanel, ErrorNotice, UI } from '../../shared/ui';
+import { AttachmentsPanel, ErrorNotice, FieldHelp, UI } from '../../shared/ui';
 import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './payment-shared';
 
 interface PaymentFull {
@@ -23,7 +23,7 @@ interface PaymentFull {
 @Component({
   selector: 'app-payment-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AttachmentsPanel, ErrorNotice, ...UI],
+  imports: [RouterLink, AttachmentsPanel, ErrorNotice, FieldHelp, ...UI],
   template: `
     <div class="page">
       @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
@@ -46,7 +46,7 @@ interface PaymentFull {
         <div class="figures" style="margin-bottom:16px">
           <div class="figure"><div class="f-label">Monto</div><div class="f-value">{{ p.amount | money }}</div><div class="f-note">{{ p.currency }}@if (!dec(p.exchangeRate).eq(1)) { · tasa {{ p.exchangeRate }} }</div></div>
           <div class="figure"><div class="f-label">Aplicado a facturas</div><div class="f-value">{{ applied() | money }}</div></div>
-          <div class="figure"><div class="f-label">Anticipo sin aplicar</div><div class="f-value">{{ p.unapplied | money }}</div></div>
+          <div class="figure"><div class="f-label">Anticipo sin aplicar<app-field-help key="pago.anticipo" /></div><div class="f-value">{{ p.unapplied | money }}</div></div>
         </div>
 
         <div class="cols-2">
