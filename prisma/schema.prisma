@@ -59,6 +59,7 @@ model Company {
   auditEngagements    AuditEngagement[]
   fiscalFilings       FiscalFiling[]
   bContingencies      BContingency[]
+  ecfConnection       EcfConnection?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1180,25 +1181,36 @@ enum FeedbackStatus {
 
 // Estado e-CF de una factura. Se crea en la MISMA transacción que la factura (A9).
 model EcfDocument {
-  id           String          @id @default(uuid())
-  companyId    String
-  company      Company         @relation(fields: [companyId], references: [id])
-  invoiceId    String          @unique
-  invoice      Invoice         @relation(fields: [invoiceId], references: [id])
-  ecfType      String // "31", "34", "41"...
-  eNcf         String
-  status       EcfStatus
-  origin       EcfOrigin
-  verification EcfVerification @default(UNVERIFIED)
-  issuerRnc    String // RNC de quien emitió el e-CF (la empresa o el proveedor)
-  securityCode String?
-  xmlFileUrl   String? // clave del XML guardado (R12: se conserva el documento original)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id               String          @id @default(uuid())
+  companyId        String
+  company          Company         @relation(fields: [companyId], references: [id])
+  invoiceId        String          @unique
+  invoice          Invoice         @relation(fields: [invoiceId], references: [id])
+  ecfType          String // "31", "34", "41"...
+  eNcf             String
+  status           EcfStatus
+  origin           EcfOrigin
+  verification     EcfVerification @default(UNVERIFIED)
+  issuerRnc        String // RNC de quien emitió el e-CF (la empresa o el proveedor)
+  securityCode     String?
+  xmlFileUrl       String? // clave del XML guardado (R12: se conserva el documento original)
+  // N7: envío por el proveedor certificado (cola: el trabajador lee por status + nextAttemptAt)
+  providerCode     String?
+  trackId          String?
+  attempts         Int             @default(0)
+  nextAttemptAt    DateTime?
+  lastError        String?
+  contingencySince DateTime?
+  sentAt           DateTime?
+  resolvedAt       DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  events           EcfEvent[]
 
   // El mismo e-CF no entra dos veces, aunque lleguen dos importaciones a la vez (N7, D36)
   @@unique([companyId, issuerRnc, eNcf])
   @@index([companyId, status])
+  @@index([status, nextAttemptAt])
 }
 
 // Enum completo desde ya para no tener que ampliarlo después (ALTER TYPE)
@@ -1758,4 +1770,37 @@ model BContingency {
   createdById String
 
   @@index([companyId, endsAt])
+}
+
+// Conexión con el proveedor certificado de e-CF (PLAN-v0.3 §7.2-7.3). Credenciales CIFRADAS, nunca en respuestas.
+model EcfConnection {
+  id             String    @id @default(uuid())
+  companyId      String    @unique
+  company        Company   @relation(fields: [companyId], references: [id])
+  providerCode   String // "sandbox", "http"
+  environment    String    @default("TEST") // TEST | PROD
+  numbering      String    @default("OURS") // OURS = el sistema asigna el e-NCF; PROVIDER = lo asigna el proveedor
+  settings       Json? // URL, rutas, formato (sin secretos)
+  credentialsEnc String? // token / usuario y clave del proveedor, cifrados (ECF_ENCRYPTION_KEY)
+  ecfTypes       String[]  @default([]) // tipos que emite el sistema (E31, E32, E34…)
+  active         Boolean   @default(false)
+  lastCheckAt    DateTime?
+  lastCheckOk    Boolean?
+  updatedById    String
+  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
+}
+
+// Historial de cada e-CF (enviado, aceptado, rechazado, reintento, contingencia)
+model EcfEvent {
+  id            String      @id @default(uuid())
+  companyId     String
+  ecfDocumentId String
+  ecfDocument   EcfDocument @relation(fields: [ecfDocumentId], references: [id])
+  kind          String // SENT, ACCEPTED, ACCEPTED_CONDITIONAL, REJECTED, ERROR, CONTINGENCY, RETRY
+  message       String?     @db.VarChar(2000)
+  createdAt     DateTime    @default(now())
+
+  @@index([ecfDocumentId])
+  @@index([companyId])
 }

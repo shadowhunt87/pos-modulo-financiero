@@ -83,6 +83,22 @@ class EnvironmentVariables {
   @Matches(/^[^:]*$/, { message: 'TWO_FACTOR_ISSUER no puede llevar ":"' })
   TWO_FACTOR_ISSUER?: string;
 
+  // Facturación electrónica (N7): llave para cifrar las credenciales del proveedor (64 hex, openssl rand -hex 32)
+  @IsOptional()
+  @IsString()
+  ECF_ENCRYPTION_KEY?: string;
+
+  // "false" apaga el trabajador que envía los e-CF (p. ej. en un segundo contenedor)
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  ECF_WORKER_ENABLED?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(5000)
+  @Max(3_600_000)
+  ECF_WORKER_INTERVAL_MS?: number;
+
   // "true" publica la documentación de la API en /docs (solo para la red interna; nginx no la expone)
   @IsOptional()
   @IsIn(['true', 'false'])
@@ -117,7 +133,7 @@ export function validate(config: Record<string, unknown>) {
   }
 
   // Vacío = ausente
-  for (const k of ['TWO_FACTOR_ENCRYPTION_KEY', 'TWO_FACTOR_REQUIRED_ROLES', 'TWO_FACTOR_ISSUER'] as const) {
+  for (const k of ['TWO_FACTOR_ENCRYPTION_KEY', 'TWO_FACTOR_REQUIRED_ROLES', 'TWO_FACTOR_ISSUER', 'ECF_ENCRYPTION_KEY'] as const) {
     if (validated[k] === '') validated[k] = undefined;
   }
   const roles = (validated.TWO_FACTOR_REQUIRED_ROLES ?? '').split(',').map((r) => r.trim()).filter(Boolean);
@@ -131,6 +147,10 @@ export function validate(config: Record<string, unknown>) {
     const why = !/^[0-9a-fA-F]{64}$/.test(key) ? 'debe tener exactamente 64 caracteres hexadecimales'
       : key === validated.JWT_SECRET ? 'debe ser distinta de JWT_SECRET' : weakSecretReason(key);
     if (why) throw new Error(`Variables de entorno inválidas:\n  - TWO_FACTOR_ENCRYPTION_KEY: ${why}. Genérala con: openssl rand -hex 32`);
+  }
+
+  if (validated.ECF_ENCRYPTION_KEY && !/^[0-9a-fA-F]{64}$/.test(validated.ECF_ENCRYPTION_KEY)) {
+    throw new Error('Variables de entorno inválidas:\n  - ECF_ENCRYPTION_KEY: debe tener 64 caracteres hexadecimales. Genérala con: openssl rand -hex 32');
   }
 
   return validated;

@@ -219,6 +219,14 @@
       "seccion": "seguridad-y-exportacion", "ancla": "exportar-todos-mis-datos",
       "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
     },
+    "/ecf/inbox": {
+      "seccion": "facturas", "ancla": "facturas-electronicas-e-cf",
+      "siguiente": { "texto": "Revisa el mes antes de declarar", "ruta": "/dgii/review" }
+    },
+    "/ecf/connection": {
+      "seccion": "facturas", "ancla": "conectar-tu-proveedor-de-e-cf",
+      "siguiente": { "texto": "Mira la bandeja de e-CF", "ruta": "/ecf/inbox" }
+    },
     "/fiscal-calendar": {
       "seccion": "reportes-dgii-presupuestos", "ancla": "calendario-fiscal",
       "siguiente": { "texto": "Revisa el mes antes de declarar", "ruta": "/dgii/review" }
@@ -337,6 +345,8 @@
   },
 
   "errores": [
+    { "patron": "Tus E\\d+ se emiten desde el sistema", "explicacion": "Con la conexión activa, esos e-CF se emiten aquí: no hace falta importarlos." },
+    { "patron": "ECF_ENCRYPTION_KEY", "explicacion": "El servidor no está listo para guardar las credenciales del proveedor. Avisa al administrador del sistema." },
     { "patron": "comprobantes B ya no son válidos", "explicacion": "Tu clasificación ya no puede emitir comprobantes B: usa e-CF. Si el sistema electrónico falló, el administrador puede registrar una contingencia en Calendario fiscal.", "enlace": { "texto": "Ir al Calendario fiscal", "ruta": "/fiscal-calendar" } },
     { "patron": "La secuencia .* venció", "explicacion": "Pide una secuencia nueva en la Oficina Virtual de la DGII y cárgala.", "enlace": { "texto": "Cargar comprobantes", "ruta": "/setup/ncf" } },
     { "patron": "El encargo está cerrado", "explicacion": "Un encargo cerrado es de solo lectura. Si de verdad hay que cambiarlo, la auditora lo reabre desde el Resumen escribiendo el motivo." },

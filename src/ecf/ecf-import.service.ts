@@ -130,6 +130,11 @@ export class EcfImportService {
     const ownPurchase = own && OWN_PURCHASE_TYPES.includes(x.tipo);
     if (received && OWN_PURCHASE_TYPES.includes(x.tipo)) errors.push(`Un e-CF tipo ${x.tipo} lo emite el comprador: este no puede ser una compra tuya`);
     const side: 'SALES' | 'PURCHASES' = own && !ownPurchase ? 'SALES' : 'PURCHASES';
+    // N7 (G7, D36): con conexión, los tipos que emite el sistema no se importan (evita choques de e-NCF)
+    if (own && x.tipo) {
+      const conn = await db.ecfConnection.findUnique({ where: { companyId }, select: { active: true, ecfTypes: true } });
+      if (conn?.active && conn.ecfTypes.includes(`E${x.tipo}`)) errors.push(`Tus E${x.tipo} se emiten desde el sistema; no se importan`);
+    }
     const type = x.tipo === '34' ? InvoiceType.CREDIT_NOTE : x.tipo === '33' ? InvoiceType.DEBIT_NOTE : side === 'SALES' ? InvoiceType.SALE : InvoiceType.PURCHASE;
     const issuerRnc = x.emisor.rnc;
 

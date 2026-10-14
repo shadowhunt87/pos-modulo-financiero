@@ -151,6 +151,27 @@ proveedor e impórtala aquí. El sistema la enlaza con la factura que corrige y 
 
 [CAPTURA: pantalla "Importar facturas electrónicas" con un archivo revisado]
 
+## Facturas electrónicas (e-CF)
+
+Menú **Ventas y compras › Facturas electrónicas (e-CF)**: la bandeja con el estado de cada comprobante electrónico:
+**○ Por enviar**, **… Enviando**, **✓ Aceptado**, **✓ Aceptado condicional**, **✕ Rechazado** (con el motivo) o **! Contingencia**.
+
+- Con la conexión activa, al emitir una factura E31, E32, E34… el sistema la envía solo a tu proveedor certificado.
+- Si el proveedor o la DGII no responden, la factura queda en **contingencia**: se reintenta sola y el Panel te avisa (en rojo si pasa mucho tiempo). Puedes pulsar **Reintentar ahora**.
+- Un e-CF **rechazado** nunca tuvo validez: corrige lo que dice el motivo, **anula** esa factura y emite una nueva.
+- Un e-CF **aceptado** ya no se anula: se corrige con nota de crédito (E34).
+
+## Conectar tu proveedor de e-CF
+
+Menú **Configuración › Facturación electrónica: conexión** (solo administradores).
+
+1. Elige el **Proveedor**. **Pruebas** sirve para practicar sin enviar nada a la DGII. Para el real elige **Proveedor certificado** y pega la **configuración técnica** que te da tu proveedor (dirección, rutas y formato).
+2. Escribe el **token** que te da el proveedor: se guarda cifrado y nunca se vuelve a mostrar.
+3. Elige el **Ambiente** (Pruebas o Producción), **quién numera** los e-NCF y los **tipos** que emitirás desde el sistema.
+4. Marca **Conexión activa**, pulsa **Guardar** y luego **Probar la conexión**.
+
+Mientras no haya conexión, emite tus e-CF en el portal del proveedor e [impórtalos](/ecf/import) aquí.
+
 ## Imprimir y adjuntar archivos
 
 - **Imprimir** (arriba, en el detalle) abre la ventana de impresión del navegador.

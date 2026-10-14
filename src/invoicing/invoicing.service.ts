@@ -422,7 +422,7 @@ export class InvoicingService {
       // N5 (D24): pasado el último día de las B de la clasificación (fecha de la factura o de hoy) → solo e-CF
       if (!isElectronic(ncfType)) await this.calendar.assertBAllowed(tx, companyId, ncfType, inv.issueDate);
       ncf = isElectronic(ncfType)
-        ? this.assigned(ncfType, opts)
+        ? await this.electronicNcf(tx, companyId, ncfType, inv.issueDate, opts)
         : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else if (ncf) {
       ncfType = ncf.slice(0, 3);
@@ -436,7 +436,7 @@ export class InvoicingService {
     } else if (ncfType && SELF_ISSUED_PURCHASE_NCF.includes(ncfType)) {
       // Proveedor informal / gasto menor / pago al exterior: el comprobante lo emite la empresa
       ncf = isElectronic(ncfType)
-        ? this.assigned(ncfType, opts)
+        ? await this.electronicNcf(tx, companyId, ncfType, inv.issueDate, opts)
         : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else {
       throw new UnprocessableEntityException('Las compras requieren el NCF del proveedor (o ncfType B11/B13/B17 si lo emites tú)');
@@ -480,7 +480,30 @@ export class InvoicingService {
     await tx.invoiceLine.deleteMany({ where: { invoiceId: id } });
     await tx.invoiceWithholding.deleteMany({ where: { invoiceId: id } });
     await this.persistChildren(tx, id, built);
+    // N7 (A9): e-CF emitido desde el sistema → documento PENDING_SEND en la MISMA transacción; lo envía la cola
+    if (ncfType && isElectronic(ncfType) && !opts.assignedNcf) {
+      const company = await tx.company.findUniqueOrThrow({ where: { id: companyId }, select: { taxId: true } });
+      const conn = await tx.ecfConnection.findUnique({ where: { companyId }, select: { providerCode: true } });
+      await tx.ecfDocument.create({
+        data: {
+          companyId, invoiceId: id, ecfType: ncfType.slice(1), eNcf: ncf ?? `PEND-${id}`, status: 'PENDING_SEND', origin: 'EMITTED',
+          verification: 'VERIFIED', issuerRnc: company.taxId, providerCode: conn?.providerCode ?? null,
+        },
+      });
+    }
     await writeAudit(tx, user, 'Invoice', id, AuditAction.POST, { number, ncf, total: built.header.total.toString(), entry: entry.number });
+  }
+
+  /**
+   * e-NCF propio: el que trae la importación (emitido en el portal) o, con conexión activa con el proveedor (N7), el de
+   * nuestra secuencia E (numeración OURS) o ninguno todavía (numeración PROVIDER: llega con la respuesta).
+   */
+  private async electronicNcf(tx: Tx, companyId: string, ncfType: string, issueDate: Date, opts: IssueOptions): Promise<string | null> {
+    if (opts.assignedNcf) return this.assigned(ncfType, opts);
+    const conn = await tx.ecfConnection.findUnique({ where: { companyId } });
+    if (!conn?.active || !conn.ecfTypes.includes(ncfType)) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
+    if (conn.numbering === 'PROVIDER') return null;
+    return (await this.ncf.consumeNext(tx, companyId, ncfType, issueDate)).ncf;
   }
 
   /**
@@ -575,7 +598,9 @@ export class InvoicingService {
       if (inv.status === InvoiceStatus.DRAFT) throw new UnprocessableEntityException('Un borrador se elimina, no se anula');
       if (inv.status === InvoiceStatus.VOIDED) throw new ConflictException('La factura ya está anulada');
       // R2/D34: un e-CF o una factura de un mes cerrado no se anulan; se corrigen con nota de crédito
-      if (inv.ncf?.startsWith('E')) {
+      const ecf = inv.ncf?.startsWith('E') ? await tx.ecfDocument.findUnique({ where: { invoiceId: id }, select: { status: true } }) : null;
+      // Un e-CF RECHAZADO por la DGII nunca tuvo validez: ese sí se anula (N7)
+      if (inv.ncf?.startsWith('E') && ecf?.status !== 'REJECTED') {
         throw new UnprocessableEntityException(
           'Esta factura es electrónica (e-CF). No se anula: corrígela con una nota de crédito (Ley 32-23, art. 7)',
         );

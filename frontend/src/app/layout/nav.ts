@@ -13,6 +13,7 @@ export const NAV: NavGroup[] = [
   { title: 'Ventas y compras', items: [
     { label: 'Clientes y proveedores', path: '/partners' },
     { label: 'Facturas', path: '/invoices' },
+    { label: 'Facturas electrónicas (e-CF)', path: '/ecf/inbox' },
     { label: 'Cobros y pagos', path: '/payments' },
     { label: 'Lo que me deben y lo que debo', path: '/receivables' },
     { label: 'Importar facturas electrónicas', path: '/ecf/import' },
@@ -51,6 +52,7 @@ export const NAV: NavGroup[] = [
     { label: 'Impuestos', path: '/tax-rates' },
     { label: 'Valores fiscales', path: '/fiscal-values' },
     { label: 'Comprobantes fiscales (NCF)', path: '/ncf' },
+    { label: 'Facturación electrónica: conexión', path: '/ecf/connection', roles: ['ADMIN'] },
     { label: 'Clasificación de cuentas para reportes', path: '/account-classification' },
     { label: 'Cuentas automáticas', path: '/accounting-settings' },
     { label: 'Libros diarios', path: '/journals' },

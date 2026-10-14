@@ -82,3 +82,20 @@ o una fila que ya existe con otros datos se rechaza completo.
 
 **Primera vez:** el catálogo inicial es `docs/normativa-dgii/parametros/2026-10-14_catalogo-inicial.json`. Sin él, las facturas con
 impuestos enlazados y el 607 dan «No hay un valor vigente…».
+
+## Facturación electrónica con el proveedor certificado (N7)
+
+Todo está programado; lo que falta es **configuración** cuando se elija el proveedor:
+
+1. Genera la llave de las credenciales (no la imprimas en pantallas compartidas) y ponla en `.env.production`:
+   `ECF_ENCRYPTION_KEY=$(openssl rand -hex 32)`. Guarda una copia junto con la frase de los respaldos (como la del 2FA).
+2. Reinicia el `api`. El trabajador que envía los e-CF arranca solo (`ECF_WORKER_ENABLED=true`, cada 30 s).
+3. En la aplicación, el ADMIN de cada empresa va a **Configuración › Facturación electrónica: conexión**:
+   - primero con **Pruebas** (proveedor `sandbox`) para practicar el flujo completo sin enviar nada a la DGII;
+   - luego con **Proveedor certificado** (`http`), pegando la configuración técnica del proveedor (URL `https`, rutas de envío y de
+     estado, formato `json` o `xml`, y si hace falta los nombres de sus campos en `fields` y sus estados en `statusMap`) y su token.
+4. Carga las secuencias **E** autorizadas por la DGII en Comprobantes fiscales (si el sistema numera los e-NCF).
+5. **Probar la conexión** y emitir una factura de prueba en el ambiente de pruebas del proveedor.
+
+Si el proveedor usa otra forma de autenticarse o un protocolo distinto, se agrega un adaptador en `src/ecf/providers/`
+(una clase que cumple `EcfProvider`) y una línea en `PROVIDERS` de `src/ecf/ecf-connection.service.ts`.

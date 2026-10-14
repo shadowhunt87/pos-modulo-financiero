@@ -47,6 +47,9 @@ services:
       TWO_FACTOR_ISSUER: ${TWO_FACTOR_ISSUER:-Finanzas}
       # Línea de los comandos de operación (rescate del 2FA, exportación al cancelar); carpeta de operación montada aparte
       OPS_LOG_FILE: ${OPS_LOG_FILE:-}
+      # Facturación electrónica (N7): llave de las credenciales del proveedor y trabajador de envío
+      ECF_ENCRYPTION_KEY: ${ECF_ENCRYPTION_KEY:-}
+      ECF_WORKER_ENABLED: ${ECF_WORKER_ENABLED:-true}
     depends_on:
       migrate:
         condition: service_completed_successfully
