@@ -7,7 +7,7 @@ import { Auth } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { Lookups } from '../../core/lookups';
 import { opts, PAYMENT_DIRECTION, PAYMENT_METHOD, PAYMENT_STATUS } from '../../shared/labels';
-import { ComboOption, UI } from '../../shared/ui';
+import { ComboOption, EmptyState, UI } from '../../shared/ui';
 
 interface PaymentRow {
   id: string; number: string | null; direction: string; status: string; date: string; method: string; reference: string | null;
@@ -17,7 +17,7 @@ interface PaymentRow {
 @Component({
   selector: 'app-payments',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, EmptyState, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -33,8 +33,8 @@ interface PaymentRow {
           <select id="f-dir" class="select" formControlName="direction"><option value="">Todos</option>@for (o of dirOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
         <div class="field"><label for="f-st">Estado</label>
           <select id="f-st" class="select" formControlName="status"><option value="">Todos</option>@for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
-        <div class="field wide"><span class="label">Tercero</span>
-          <app-combobox formControlName="partnerId" [options]="partnerOptions()" placeholder="Todos los terceros" /></div>
+        <div class="field wide"><span class="label">Cliente / proveedor</span>
+          <app-combobox formControlName="partnerId" [options]="partnerOptions()" placeholder="Todos los clientes y proveedores" /></div>
         <div class="field"><label for="f-from">Desde</label><input id="f-from" class="input" type="date" formControlName="from" /></div>
         <div class="field"><label for="f-to">Hasta</label><input id="f-to" class="input" type="date" formControlName="to" /></div>
       </form>
@@ -43,7 +43,7 @@ interface PaymentRow {
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
-            <thead><tr><th>Número</th><th>Fecha</th><th>Tipo</th><th>Tercero</th><th>Método</th><th>Referencia</th><th class="num">Monto</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Número</th><th>Fecha</th><th>Tipo</th><th>Cliente / proveedor</th><th>Método</th><th>Referencia</th><th class="num">Monto</th><th>Estado</th></tr></thead>
             <tbody>
               @if (loading()) { <tr><td colspan="8"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
               @for (p of rows(); track p.id) {
@@ -58,7 +58,14 @@ interface PaymentRow {
                   <td><app-status [value]="p.status" [map]="PAYMENT_STATUS" /></td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="8" class="table-empty">No hay cobros ni pagos con esos filtros.</td></tr> }
+                @if (!loading() && !error()) {
+                  <tr><td colspan="8">
+                    <app-empty-state [filtered]="hasFilters()" (clear)="clearFilters()"
+                      [title]="hasFilters() ? 'No hay cobros ni pagos con esos filtros' : 'Todavía no hay cobros ni pagos'"
+                      text="Registra el primer cobro a un cliente o pago a un proveedor y aplícalo a sus facturas."
+                      actionLabel="Nuevo cobro o pago" actionLink="/payments/new" [canAct]="canEdit" />
+                  </td></tr>
+                }
               }
             </tbody>
           </table>
@@ -88,6 +95,7 @@ export class Payments {
   protected readonly page = signal(1);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly hasFilters = signal(false);
   protected readonly partnerOptions = computed<ComboOption[]>(() =>
     this.lookups.partners().map((p) => ({ value: p.id, label: p.name, hint: p.taxId ?? undefined })));
 
@@ -101,6 +109,7 @@ export class Payments {
     void this.load();
   }
 
+  protected clearFilters(): void { this.filters.reset(); }
   protected goTo(p: number): void { this.page.set(p); void this.load(); }
   protected open(p: PaymentRow): void { void this.router.navigate(['/payments', p.id]); }
 
@@ -108,6 +117,7 @@ export class Payments {
     this.loading.set(true);
     this.error.set('');
     const f = this.filters.getRawValue();
+    this.hasFilters.set(Object.values(f).some((v) => !!v));
     try {
       const res = await this.api.getP<Page<PaymentRow>>('/payments', {
         direction: f.direction, status: f.status, partnerId: f.partnerId, from: f.from, to: f.to, page: this.page(), limit: this.limit,
