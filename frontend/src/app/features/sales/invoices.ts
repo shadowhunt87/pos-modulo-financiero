@@ -8,14 +8,15 @@ import { Auth } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { Lookups } from '../../core/lookups';
 import { INVOICE_STATUS, INVOICE_TYPE, opts } from '../../shared/labels';
-import { ComboOption, UI } from '../../shared/ui';
+import { ComboOption, EmptyState, UI } from '../../shared/ui';
+import { resetFilterControls } from '../../shared/ui/empty-state';
 import { InvoiceRow } from './invoice-types';
 
 /** Listado de facturas (venta, compra, notas) con filtros y paginación. Lee GET /invoices. */
 @Component({
   selector: 'app-invoices',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, ...UI],
+  imports: [RouterLink, ReactiveFormsModule, EmptyState, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -23,7 +24,7 @@ import { InvoiceRow } from './invoice-types';
         @if (canEdit) { <a routerLink="/invoices/new" class="btn btn-primary">Nueva factura</a> }
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar" #bar>
         <div class="field wide"><label for="q">Buscar</label><input id="q" class="input" placeholder="Número o NCF" (input)="search$.next($any($event.target).value)" /></div>
         <div class="field"><label for="type">Tipo</label>
           <select id="type" class="select" (change)="setFilter('type', $any($event.target).value)">
@@ -33,8 +34,8 @@ import { InvoiceRow } from './invoice-types';
           <select id="st" class="select" [disabled]="overdue()" (change)="setFilter('status', $any($event.target).value)">
             <option value="">Todos</option>@for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
           </select></div>
-        <div class="field wide"><label for="partner">Tercero</label>
-          <app-combobox id="partner" [options]="partnerOptions()" placeholder="Todos los terceros" [formControl]="partnerCtl" /></div>
+        <div class="field wide"><label for="partner">Cliente / proveedor</label>
+          <app-combobox id="partner" [options]="partnerOptions()" placeholder="Todos los clientes y proveedores" [formControl]="partnerCtl" /></div>
         <div class="field"><label for="from">Desde</label><input id="from" class="input" type="date" (change)="setFilter('from', $any($event.target).value)" /></div>
         <div class="field"><label for="to">Hasta</label><input id="to" class="input" type="date" (change)="setFilter('to', $any($event.target).value)" /></div>
         <label class="check" style="height:36px"><input type="checkbox" (change)="setOverdue($any($event.target).checked)" /> Solo vencidas</label>
@@ -44,7 +45,7 @@ import { InvoiceRow } from './invoice-types';
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
-            <thead><tr><th>Número</th><th>Tipo</th><th>NCF</th><th>Tercero</th><th>Fecha</th><th>Vence</th><th class="num">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Número</th><th>Tipo</th><th>NCF</th><th>Cliente / proveedor</th><th>Fecha</th><th>Vence</th><th class="num">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead>
             <tbody>
               @if (loading()) { <tr><td colspan="9"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
               @for (r of rows(); track r.id) {
@@ -60,7 +61,14 @@ import { InvoiceRow } from './invoice-types';
                   <td><app-status [value]="r.status" [map]="INVOICE_STATUS" /></td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="9" class="table-empty">No hay facturas con esos filtros.</td></tr> }
+                @if (!loading() && !error()) {
+                  <tr><td colspan="9">
+                    <app-empty-state [filtered]="hasFilters()" (clear)="clearFilters(bar)"
+                      [title]="hasFilters() ? 'No hay facturas con esos filtros' : 'Todavía no hay facturas'"
+                      text="Aquí verás tus ventas, compras y notas de crédito o débito. Crea la primera para empezar."
+                      actionLabel="Nueva factura" actionLink="/invoices/new" [canAct]="canEdit" />
+                  </td></tr>
+                }
               }
             </tbody>
           </table>
@@ -88,6 +96,7 @@ export class Invoices {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly overdue = signal(false);
+  protected readonly hasFilters = signal(false);
   private filters: Record<string, string> = {};
   protected readonly search$ = new Subject<string>();
   protected readonly partnerCtl = new FormControl<string | null>(null);
@@ -107,11 +116,19 @@ export class Invoices {
     this.filters = { ...this.filters, overdue: on ? 'true' : '', ...(on ? { status: '' } : {}) };
     this.page.set(1); void this.load();
   }
+  protected clearFilters(bar: HTMLElement): void {
+    resetFilterControls(bar);
+    this.overdue.set(false);
+    this.filters = {};
+    this.partnerCtl.reset(null, { emitEvent: false });
+    this.page.set(1); void this.load();
+  }
   protected goTo(p: number): void { this.page.set(p); void this.load(); }
 
   private async load(): Promise<void> {
     this.loading.set(true);
     this.error.set('');
+    this.hasFilters.set(Object.values(this.filters).some((v) => !!v));
     try {
       const res = await this.api.getP<Page<InvoiceRow>>('/invoices', { ...this.filters, page: this.page(), limit: this.limit });
       this.rows.set(res.data);

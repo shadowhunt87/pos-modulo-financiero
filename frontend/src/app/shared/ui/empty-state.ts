@@ -37,3 +37,12 @@ export class EmptyState {
   readonly filtered = input<boolean>(false);
   readonly clear = output<void>();
 }
+
+/** Deja en blanco los campos de filtro (inputs y selects) de una barra de filtros; los `app-combobox` se limpian con su FormControl. */
+export function resetFilterControls(root: HTMLElement): void {
+  root.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select').forEach((el) => {
+    if (el.closest('app-combobox')) return;
+    if (el instanceof HTMLInputElement && el.type === 'checkbox') el.checked = false;
+    else el.value = '';
+  });
+}
