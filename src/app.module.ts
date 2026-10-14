@@ -23,6 +23,7 @@ import { ServiceKeysModule } from './service-keys/service-keys.module.js';
 import { FinancialAnalysisModule } from './financial-analysis/financial-analysis.module.js';
 import { FiscalModule } from './fiscal/fiscal.module.js';
 import { DataExportModule } from './data-export/data-export.module.js';
+import { AuditingModule } from './auditing/auditing.module.js';
 import { GuidanceModule } from './guidance/guidance.module.js';
 import { validate } from './config/env.validation.js';
 
@@ -54,6 +55,7 @@ import { validate } from './config/env.validation.js';
     GuidanceModule,
     FiscalModule,
     DataExportModule,
+    AuditingModule,
   ],
 })
 export class AppModule {}

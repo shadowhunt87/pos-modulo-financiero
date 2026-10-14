@@ -16,7 +16,7 @@ export class FeedbackController {
   // Cualquier usuario puede contar lo que le pasó. Roles explícitos (política de rutas);
   // AUDITOR se agrega aquí cuando exista el rol (Fase 5).
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.APPROVER, UserRole.VIEWER)
+  @Roles(UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.APPROVER, UserRole.VIEWER, UserRole.AUDITOR)
   create(
     @Body() dto: CreateFeedbackDto,
     @Headers('user-agent') userAgent: string | undefined,

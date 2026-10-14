@@ -62,6 +62,17 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   child('BankMatch', (c): Prisma.BankMatchWhereInput => ({ bankTransaction: { bankAccount: { companyId: c } } })),
   child('BudgetLine', (c): Prisma.BudgetLineWhereInput => ({ budget: { companyId: c } })),
 
+  // Auditoría (D47): el dueño recibe el encargo, los hallazgos comunicados y sus archivos; nunca los papeles de la auditora
+  { model: 'AuditEngagement', cls: 'ROW_FILTERED', where: byCompany, reason: 'Encargo completo: lo crea y lo ve el ADMIN' },
+  { model: 'AuditFinding', cls: 'ROW_FILTERED', where: (c) => ({ companyId: c, status: { not: 'DRAFT' } }), reason: 'Solo hallazgos comunicados en adelante (los borradores son de la auditora, D3)' },
+  {
+    model: 'AuditFile', cls: 'ROW_FILTERED', where: (c) => ({ companyId: c, finding: { status: { not: 'DRAFT' } } }), reason: 'Solo archivos de hallazgos comunicados',
+    files: [{ column: 'fileUrl', folder: 'adjuntos', nameColumn: 'fileName', pattern: (c) => new RegExp(`^${esc(c)}/auditing/${UUID}$`) }],
+  },
+  { model: 'AuditWorkpaper', cls: 'EXCLUDED_ROLE', reason: 'Papeles de trabajo de la auditora: el ADMIN no los ve (PLAN-v0.2 §13.1, D3, D47)' },
+  { model: 'AuditProcedure', cls: 'EXCLUDED_ROLE', reason: 'Procedimientos de la auditora: el ADMIN no los ve (D3, D47)' },
+  { model: 'AuditCheckmark', cls: 'EXCLUDED_ROLE', reason: 'Marcas de revisión de la auditora: el ADMIN no las ve (D3, D47)' },
+
   // Tablas globales y públicas (valores de la DGII con su fuente): salen enteras
   { model: 'FiscalParameter', cls: 'GLOBAL_PUBLIC', jsonColumns: ['valueJson'] },
   { model: 'FiscalParameterValidation', cls: 'GLOBAL_PUBLIC' },
@@ -78,6 +89,7 @@ export const ALLOWED_LOOKALIKES: Record<string, string> = {
   'EcfImport.fileName': 'Solo el nombre original del archivo',
   'EcfImport.sha256': 'Huella del XML importado (pública, sirve para comprobarlo)',
   'FiscalParameterLoad.sha256': 'Huella del archivo de la carga (pública)',
+  'AuditFile.fileName': 'Solo el nombre original del archivo',
 };
 
 export const FILE_NAME_PATTERN = /fileurl|filekey|storagekey|xmlfile|archivo|adjunto|ruta/i;

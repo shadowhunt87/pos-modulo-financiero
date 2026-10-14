@@ -56,6 +56,7 @@ model Company {
   ratioThresholds     RatioThreshold[]
   fiscalProfile       CompanyFiscalProfile?
   sampleRecords       SampleRecord[]
+  auditEngagements    AuditEngagement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -157,6 +158,7 @@ enum UserRole {
   ACCOUNTANT // crea/edita asientos, facturas
   APPROVER // aprueba asientos, concilia bancos
   VIEWER // solo lectura, reportes
+  AUDITOR // lee toda la contabilidad; solo escribe en su módulo /auditing (PLAN-v0.2 §5)
 }
 
 // ============================================================
@@ -1451,4 +1453,225 @@ model SampleRecord {
 
   @@unique([entityType, entityId])
   @@index([companyId])
+}
+
+// ============================================================
+// HERRAMIENTAS DEL AUDITOR (PLAN-v0.2 §5). Prefijo Audit (≠ AuditLog). Las hijas se relacionan por la
+// pareja (engagementId, companyId): la base impide mezclar empresas. Ids de usuario sin relación.
+// ============================================================
+
+model AuditEngagement {
+  id                String           @id @default(uuid())
+  companyId         String
+  company           Company          @relation(fields: [companyId], references: [id])
+  name              String           @db.VarChar(120)
+  periodStart       DateTime         @db.Date
+  periodEnd         DateTime         @db.Date
+  objective         String?
+  scope             String?          @db.VarChar(5000)
+  auditorFirm       String?          @db.VarChar(200)
+  overallConclusion String?          @db.VarChar(10000)
+  status            EngagementStatus @default(PLANNED)
+  nextFindingNumber Int              @default(1)
+  createdById       String
+  closedById        String?
+  closedAt          DateTime?
+  reopenReason      String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  workpapers AuditWorkpaper[]
+  findings   AuditFinding[]
+  checkmarks AuditCheckmark[]
+  files      AuditFile[]
+
+  @@unique([companyId, periodStart, periodEnd])
+  @@unique([id, companyId])
+  @@index([companyId, status])
+}
+
+enum EngagementStatus {
+  PLANNED
+  IN_PROGRESS
+  IN_REVIEW
+  CLOSED
+}
+
+enum AuditArea {
+  CASH_AND_BANKS
+  RECEIVABLES
+  PAYABLES
+  REVENUE
+  EXPENSES
+  TAXES
+  EQUITY
+  FIXED_ASSETS
+  INVENTORY
+  OTHER
+}
+
+model AuditWorkpaper {
+  id           String          @id @default(uuid())
+  companyId    String
+  engagementId String
+  engagement   AuditEngagement @relation(fields: [engagementId, companyId], references: [id, companyId])
+  area         AuditArea
+  reference    String          @db.VarChar(20)
+  title        String          @db.VarChar(120)
+  objective    String?
+  conclusion   String?         @db.VarChar(5000)
+  status       WorkpaperStatus @default(PENDING)
+  preparedById String?
+  preparedAt   DateTime?
+  reviewedById String?
+  reviewedAt   DateTime?
+  sortOrder    Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  procedures AuditProcedure[]
+  findings   AuditFinding[]
+  checkmarks AuditCheckmark[]
+  files      AuditFile[]
+
+  @@unique([engagementId, reference])
+  @@unique([id, companyId])
+  @@index([companyId])
+}
+
+enum WorkpaperStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+model AuditProcedure {
+  id          String         @id @default(uuid())
+  companyId   String
+  workpaperId String
+  workpaper   AuditWorkpaper @relation(fields: [workpaperId, companyId], references: [id, companyId])
+  description String         @db.VarChar(1000)
+  done        Boolean        @default(false)
+  result      String?        @db.VarChar(2000)
+  doneById    String?
+  doneAt      DateTime?
+  sortOrder   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([companyId])
+  @@index([workpaperId])
+}
+
+model AuditFinding {
+  id                 String           @id @default(uuid())
+  companyId          String
+  engagementId       String
+  engagement         AuditEngagement  @relation(fields: [engagementId, companyId], references: [id, companyId])
+  workpaperId        String?
+  workpaper          AuditWorkpaper?  @relation(fields: [workpaperId, companyId], references: [id, companyId])
+  number             Int
+  kind               FindingKind      @default(FINDING)
+  title              String           @db.VarChar(200)
+  condition          String           @db.VarChar(5000)
+  criteria           String?          @db.VarChar(5000)
+  cause              String?          @db.VarChar(5000)
+  effect             String?          @db.VarChar(5000)
+  recommendation     String?          @db.VarChar(5000)
+  severity           FindingSeverity?
+  managementResponse String?          @db.VarChar(5000)
+  actionPlan         String?          @db.VarChar(5000)
+  responsible        String?          @db.VarChar(120)
+  dueDate            DateTime?        @db.Date
+  respondedById      String?
+  respondedAt        DateTime?
+  closeNote          String?          @db.VarChar(2000)
+  status             FindingStatus    @default(DRAFT)
+  includeInReport    Boolean          @default(true)
+  amount             Decimal?         @db.Decimal(19, 4)
+  createdById        String
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  files AuditFile[]
+
+  @@unique([engagementId, number])
+  @@unique([id, companyId])
+  @@index([companyId, status])
+}
+
+enum FindingKind {
+  FINDING
+  NOTE
+}
+
+enum FindingSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FindingStatus {
+  DRAFT
+  COMMUNICATED
+  RESPONDED
+  RESOLVED
+  RISK_ACCEPTED
+}
+
+model AuditCheckmark {
+  id           String          @id @default(uuid())
+  companyId    String
+  engagementId String
+  engagement   AuditEngagement @relation(fields: [engagementId, companyId], references: [id, companyId])
+  workpaperId  String?
+  workpaper    AuditWorkpaper? @relation(fields: [workpaperId, companyId], references: [id, companyId])
+  entityType   AuditEntityType
+  entityId     String // sin llave foránea: el servicio verifica que exista y sea de la empresa
+  mark         AuditMark
+  note         String?         @db.VarChar(2000)
+  createdById  String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([engagementId, entityType, entityId])
+  @@index([companyId])
+}
+
+enum AuditEntityType {
+  JOURNAL_ENTRY
+  INVOICE
+  PAYMENT
+  BANK_RECONCILIATION
+}
+
+enum AuditMark {
+  VERIFIED
+  VOUCHED
+  RECALCULATED
+  CONFIRMED
+  EXCEPTION
+}
+
+// Soportes de la auditora: exactamente uno de workpaperId / findingId. Clave <companyId>/auditing/<uuid>
+model AuditFile {
+  id           String          @id @default(uuid())
+  companyId    String
+  engagementId String
+  engagement   AuditEngagement @relation(fields: [engagementId, companyId], references: [id, companyId])
+  workpaperId  String?
+  workpaper    AuditWorkpaper? @relation(fields: [workpaperId, companyId], references: [id, companyId])
+  findingId    String?
+  finding      AuditFinding?   @relation(fields: [findingId, companyId], references: [id, companyId])
+  fileName     String
+  fileUrl      String
+  mimeType     String
+  sizeBytes    Int
+  uploadedById String
+  uploadedAt   DateTime        @default(now())
+
+  @@index([companyId])
+  @@index([workpaperId])
+  @@index([findingId])
 }
