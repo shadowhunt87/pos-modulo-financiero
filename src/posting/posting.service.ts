@@ -103,6 +103,13 @@ export class PostingService {
       );
     }
 
+    // Centros de costo: de esta empresa y activos (mismo control que el asiento manual)
+    const costCenterIds = [...new Set(lines.map((l) => l.costCenterId).filter((x): x is string => !!x))];
+    if (costCenterIds.length) {
+      const found = await tx.costCenter.count({ where: { companyId: user.companyId, id: { in: costCenterIds }, active: true } });
+      if (found !== costCenterIds.length) throw new BadRequestException('Centro de costo no encontrado o inactivo');
+    }
+
     const journal = await this.journals.findByType(tx, user.companyId, input.journalType);
     const number = await this.journals.nextEntryNumber(tx, user.companyId, journal.id);
 

@@ -19,7 +19,8 @@ import { DGII_EXPENSE_TYPE, DGII_INCOME_TYPE, InvoiceFull, InvoiceRow, NcfType }
 type Side = 'SALES' | 'PURCHASES';
 const r2 = (d: Decimal): Decimal => d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
 /** Comprobantes que puede pedir una venta (el resto los usan notas y compras). */
-const SALES_NCF = ['B01', 'B02', 'B14', 'B15', 'B16', 'E31', 'E32', 'E44', 'E45', 'E46'];
+// Serie E fuera mientras no haya proveedor e-CF conectado: el backend la rechaza (PLAN-v0.3 §7.1)
+const SALES_NCF = ['B01', 'B02', 'B12', 'B14', 'B15', 'B16'];
 /** Cómo se nombra cada tipo de tercero en los avisos. */
 const PARTNER_TYPE_TEXT: Record<string, string> = { SUPPLIER: 'proveedor', CUSTOMER: 'cliente', BOTH: 'cliente y proveedor' };
 const NOTE_TYPES = ['CREDIT_NOTE', 'DEBIT_NOTE'];
@@ -127,7 +128,12 @@ export class InvoiceForm {
     const side = this.side();
     return this.lookups.taxRates().filter((t) => t.active && t.isWithholding && (t.appliesTo === 'BOTH' || !side || t.appliesTo === side));
   });
-  protected readonly salesNcf = computed(() => this.ncfTypes().filter((n) => SALES_NCF.includes(n.code)));
+  // Las notas solo usan su propio comprobante: crédito B04, débito B03
+  protected readonly salesNcf = computed(() => {
+    const t = this.raw().type;
+    const codes = t === 'CREDIT_NOTE' ? ['B04'] : t === 'DEBIT_NOTE' ? ['B03'] : SALES_NCF;
+    return this.ncfTypes().filter((n) => codes.includes(n.code));
+  });
 
   /** Totales en vivo (misma fórmula del backend: redondeo a 2 decimales por línea). */
   protected readonly calc = computed(() => {

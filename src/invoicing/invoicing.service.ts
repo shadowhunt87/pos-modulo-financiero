@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { writeAudit } from '../common/audit.js';
 import { startOfDay, endOfDay } from '../reports/accounting-nature.utils.js';
 import { NcfService, isValidNcfFormat } from '../masters/ncf/ncf.service.js';
+import { NCF_TYPE_REGEX } from '../masters/dto/ncf.dto.js';
 import { DocumentSequencesService, type DocType } from '../masters/sequences/document-sequences.service.js';
 import { AccountingSettingsService } from '../masters/accounting-settings/accounting-settings.service.js';
 import { PostingService, type PostLine } from '../posting/posting.service.js';
@@ -31,6 +32,22 @@ const DOC_TYPE: Record<InvoiceType, DocType> = {
 const LABEL: Record<InvoiceType, string> = {
   SALE: 'Factura de venta', PURCHASE: 'Factura de compra', CREDIT_NOTE: 'Nota de crédito', DEBIT_NOTE: 'Nota de débito',
 };
+// Comprobantes que la empresa puede emitir según el documento (Norma 06-2018 y e-CF).
+// Sin esto una venta podía gastar la secuencia de compras (B11) o una nota de crédito la de B01.
+const SALES_NCF = ['B01', 'B02', 'B12', 'B14', 'B15', 'B16', 'E31', 'E32', 'E44', 'E45', 'E46'];
+const SALES_CREDIT_NOTE_NCF = ['B04', 'E34'];
+const SALES_DEBIT_NOTE_NCF = ['B03', 'E33'];
+// Compras donde el comprobante lo emite la empresa (proveedor informal, gasto menor, pago al exterior)
+const SELF_ISSUED_PURCHASE_NCF = ['B11', 'B13', 'B17', 'E41', 'E43', 'E47'];
+/**
+ * Los e-NCF (serie E) los firma y envía a la DGII el proveedor de facturación electrónica. Sin
+ * conexión con él no se toma un e-NCF de la secuencia local: sería un número que la DGII nunca
+ * recibió (PLAN-v0.3 §7.1). Se emite en el portal del proveedor y se importa el XML.
+ */
+const isElectronic = (ncfType: string | null | undefined) => !!ncfType && ncfType.startsWith('E');
+const ECF_NOT_CONNECTED =
+  'Para emitir e-CF desde el sistema falta conectar tu proveedor de facturación electrónica. ' +
+  'Mientras tanto, emítelo en su portal e importa el XML aquí.';
 
 /**
  * Montos de entrada: number (viene del JSON del cliente) o Decimal (viene de la BD).
@@ -106,6 +123,10 @@ export class InvoicingService {
         throw new UnprocessableEntityException('La factura relacionada debe estar emitida y no anulada');
       }
       if (related.partnerId !== partner.id) throw new UnprocessableEntityException('La nota debe ser del mismo tercero que la factura relacionada');
+      // El tope "la nota no excede la factura" compara totales: solo tiene sentido en la misma moneda
+      if ((input.currency ?? company.baseCurrency) !== related.currency) {
+        throw new UnprocessableEntityException(`La nota debe estar en la misma moneda que la factura que modifica (${related.currency})`);
+      }
       side = related.type === InvoiceType.SALE ? 'SALES' : 'PURCHASES';
     }
     const okPartner = side === 'SALES'
@@ -129,6 +150,22 @@ export class InvoicingService {
     }
 
     if (input.ncf && !isValidNcfFormat(input.ncf)) throw new UnprocessableEntityException('Formato de NCF inválido');
+    if (input.ncfType && !NCF_TYPE_REGEX.test(input.ncfType)) throw new UnprocessableEntityException(`Tipo de comprobante inválido: ${input.ncfType}`);
+
+    // Cuentas y centros de costo de las líneas: de esta empresa y utilizables. Antes solo se
+    // revisaban al emitir (las cuentas) o nunca (los centros de costo, que podían ser de otra empresa).
+    const accountIds = [...new Set(input.lines.map((l) => l.accountId).filter((x): x is string => !!x))];
+    if (accountIds.length) {
+      const accounts = await tx.account.findMany({ where: { companyId, id: { in: accountIds } } });
+      if (accounts.length !== accountIds.length) throw new NotFoundException('Alguna cuenta contable de las líneas no existe');
+      const bad = accounts.filter((a) => !a.active || !a.isPostable);
+      if (bad.length) throw new UnprocessableEntityException(`Cuentas inactivas o que no admiten movimientos: ${bad.map((a) => a.code).join(', ')}`);
+    }
+    const costCenterIds = [...new Set(input.lines.map((l) => l.costCenterId).filter((x): x is string => !!x))];
+    if (costCenterIds.length) {
+      const found = await tx.costCenter.count({ where: { companyId, id: { in: costCenterIds }, active: true } });
+      if (found !== costCenterIds.length) throw new NotFoundException('Centro de costo no encontrado o inactivo');
+    }
 
     // Impuestos usados
     const taxIds = [...new Set([...input.lines.map((l) => l.taxRateId), ...input.withholdings.map((w) => w.taxRateId)].filter((x): x is string => !!x))];
@@ -310,35 +347,52 @@ export class InvoicingService {
     let ncfType = built.header.ncfType;
     if (side === 'SALES') {
       const isNote = inv.type === InvoiceType.CREDIT_NOTE || inv.type === InvoiceType.DEBIT_NOTE;
-      const electronic = inv.relatedInvoice?.ncf?.startsWith('E');
+      const relatedNcf = inv.relatedInvoice?.ncf ?? null;
+      const electronic = relatedNcf?.startsWith('E');
       ncfType ??= isNote
         ? (inv.type === InvoiceType.CREDIT_NOTE ? (electronic ? 'E34' : 'B04') : (electronic ? 'E33' : 'B03'))
         : partner.defaultNcfType;
       if (!ncfType) throw new UnprocessableEntityException('Indica el tipo de comprobante (ncfType): B01, B02...');
+      const allowed = inv.type === InvoiceType.CREDIT_NOTE ? SALES_CREDIT_NOTE_NCF
+        : inv.type === InvoiceType.DEBIT_NOTE ? SALES_DEBIT_NOTE_NCF : SALES_NCF;
+      if (!allowed.includes(ncfType)) {
+        throw new UnprocessableEntityException(`El comprobante ${ncfType} no corresponde a ${LABEL[inv.type].toLowerCase()}; usa ${allowed.join(', ')}`);
+      }
+      // Una nota modifica un comprobante de su misma serie: B04 sobre B, E34 sobre E
+      if (isNote && relatedNcf && relatedNcf[0] !== ncfType[0]) {
+        throw new UnprocessableEntityException(`La factura original tiene ${relatedNcf}: la nota debe ser de la serie ${relatedNcf[0]}`);
+      }
       if ((ncfType === 'B01' || ncfType === 'E31') && !partner.taxId) {
         throw new UnprocessableEntityException('El crédito fiscal requiere que el cliente tenga RNC/cédula');
       }
+      if (isElectronic(ncfType)) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
       ncf = (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else if (ncf) {
       ncfType = ncf.slice(0, 3);
+      if (SELF_ISSUED_PURCHASE_NCF.includes(ncfType)) {
+        throw new UnprocessableEntityException(isElectronic(ncfType) ? ECF_NOT_CONNECTED : `El ${ncfType} lo emites tú: elige el tipo y deja el NCF vacío`);
+      }
       const dup = await tx.invoice.findFirst({
         where: { companyId, partnerId: partner.id, ncf, id: { not: id }, status: { not: InvoiceStatus.VOIDED } },
       });
       if (dup) throw new ConflictException(`El NCF ${ncf} ya está registrado para este proveedor (${dup.number})`);
-    } else if (ncfType === 'B11' || ncfType === 'B13') {
-      // Proveedor informal / gasto menor: el comprobante lo emite la empresa
+    } else if (ncfType && SELF_ISSUED_PURCHASE_NCF.includes(ncfType)) {
+      // Proveedor informal / gasto menor / pago al exterior: el comprobante lo emite la empresa
+      if (isElectronic(ncfType)) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
       ncf = (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else {
-      throw new UnprocessableEntityException('Las compras requieren el NCF del proveedor (o ncfType B11/B13 si lo emites tú)');
+      throw new UnprocessableEntityException('Las compras requieren el NCF del proveedor (o ncfType B11/B13/B17 si lo emites tú)');
     }
 
     // --- Límite de crédito (ventas a crédito) ---
     if (side === 'SALES' && !reversed && partner.creditLimit) {
-      const open = await tx.invoice.aggregate({
+      // El límite está en moneda base: cada saldo se convierte con su tasa (antes se sumaban USD con DOP)
+      const open = await tx.invoice.findMany({
         where: { companyId, partnerId: partner.id, id: { not: id }, status: { in: OPEN_STATUSES }, type: { in: [InvoiceType.SALE, InvoiceType.DEBIT_NOTE] } },
-        _sum: { balance: true },
+        select: { balance: true, exchangeRate: true },
       });
-      if (D(open._sum.balance).plus(built.header.balance).gt(partner.creditLimit)) {
+      const openBase = open.reduce((s, o) => s.plus(o.balance.times(o.exchangeRate)), ZERO);
+      if (openBase.plus(built.header.balance.times(built.header.exchangeRate)).gt(partner.creditLimit)) {
         throw new UnprocessableEntityException(`Excede el límite de crédito de ${partner.name} (${partner.creditLimit.toString()})`);
       }
     }
@@ -466,7 +520,7 @@ export class InvoicingService {
       if (inv.amountPaid.gt(0) || allocations > 0) {
         throw new UnprocessableEntityException('Tiene pagos aplicados: anula primero los pagos');
       }
-      const selfIssued = ['B11', 'B13'].includes(inv.ncfType ?? '');
+      const selfIssued = SELF_ISSUED_PURCHASE_NCF.includes(inv.ncfType ?? '');
       const ownNcf = !!inv.ncf && (selfIssued || (inv.type !== InvoiceType.PURCHASE && !(await this.isSupplierNcf(tx, inv))));
       if (ownNcf && !dto.reasonCode) throw new BadRequestException('reasonCode (01-10) es obligatorio para anular un comprobante emitido');
 
