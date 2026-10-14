@@ -17,6 +17,7 @@ import { AttachmentsModule } from './attachments/attachments.module.js';
 import { ExportsModule } from './exports/exports.module.js';
 import { FeedbackModule } from './feedback/feedback.module.js';
 import { ChartOfAccountsModule } from './chart-of-accounts/chart-of-accounts.module.js';
+import { GuidanceModule } from './guidance/guidance.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -40,6 +41,7 @@ import { validate } from './config/env.validation.js';
     ExportsModule,
     FeedbackModule,
     ChartOfAccountsModule,
+    GuidanceModule,
   ],
 })
 export class AppModule {}
