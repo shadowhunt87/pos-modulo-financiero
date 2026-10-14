@@ -8,7 +8,7 @@ import {
 } from '../generated/prisma/enums.js';
 import type { AuthUser } from '../auth/types/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { writeAudit } from '../common/audit.js';
+import { isUniqueViolation, writeAudit } from '../common/audit.js';
 import { startOfDay, endOfDay } from '../reports/accounting-nature.utils.js';
 import { NcfService, isValidNcfFormat } from '../masters/ncf/ncf.service.js';
 import { NCF_TYPE_REGEX } from '../masters/dto/ncf.dto.js';
@@ -249,8 +249,27 @@ export class InvoicingService {
   // Crear / editar / eliminar borradores
   // ------------------------------------------------------------------
   async create(dto: CreateInvoiceDto, user: AuthUser) {
-    const id = await this.prisma.$transaction((tx) => this.createInTx(tx, dto, user));
-    return this.get(id, user);
+    // Mismo origen ya facturado: 409 antes de validar nada (si algo cambió entre intentos, un 422 confundiría)
+    if (dto.type === InvoiceType.SALE && dto.sourceModule && dto.sourceId) {
+      const prev = (await this.findBySource(this.prisma, user.companyId, dto.sourceModule, [dto.sourceId]))
+        .find((f) => f.type === InvoiceType.SALE && f.status !== InvoiceStatus.VOIDED);
+      if (prev) throw new ConflictException({ message: `Ya existe la factura ${prev.number} para ese origen`, existingId: prev.id });
+    }
+    try {
+      const id = await this.prisma.$transaction((tx) => this.createInTx(tx, dto, user));
+      return this.get(id, user);
+    } catch (e) {
+      // Llave natural (INTEGRACION-TALLER §4.4): el mismo origen ya tiene una venta que no está anulada.
+      // Se responde 409 con su id para que el otro sistema la lea y la tome como hecha.
+      if (dto.sourceModule && dto.sourceId && isUniqueViolation(e)) {
+        const existing = (await this.findBySource(this.prisma, user.companyId, dto.sourceModule, [dto.sourceId]))
+          .find((f) => f.type === InvoiceType.SALE && f.status !== InvoiceStatus.VOIDED);
+        if (existing) {
+          throw new ConflictException({ message: `Ya existe la factura ${existing.number} para ese origen`, existingId: existing.id });
+        }
+      }
+      throw e;
+    }
   }
 
   /**
@@ -258,12 +277,16 @@ export class InvoicingService {
    * algo más en la misma transacción (p. ej. el EcfDocument de una importación). Devuelve el id.
    */
   async createInTx(tx: Tx, dto: CreateInvoiceDto, user: AuthUser, opts: IssueOptions = {}) {
+    if (!!dto.sourceModule !== !!dto.sourceId) throw new BadRequestException('sourceModule y sourceId van juntos');
     const built = await this.build(tx, user, {
       ...dto, issueDate: new Date(dto.issueDate), dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
       withholdings: dto.withholdings ?? [],
     });
     const inv = await tx.invoice.create({
-      data: { ...built.header, companyId: user.companyId, number: `BORR-${randomUUID().slice(0, 8)}`, status: InvoiceStatus.DRAFT, createdById: user.id },
+      data: {
+        ...built.header, companyId: user.companyId, number: `BORR-${randomUUID().slice(0, 8)}`, status: InvoiceStatus.DRAFT, createdById: user.id,
+        sourceModule: dto.sourceModule ?? null, sourceId: dto.sourceId ?? null,
+      },
     });
     await this.persistChildren(tx, inv.id, built);
     await writeAudit(tx, user, 'Invoice', inv.id, AuditAction.CREATE, { type: inv.type, total: inv.total.toString() });
@@ -578,6 +601,29 @@ export class InvoicingService {
   // ------------------------------------------------------------------
   // Consultas
   // ------------------------------------------------------------------
+  /**
+   * Facturas de un origen (contrato de verticales §4.4). `effective` = la factura vale: emitida, no
+   * anulada y no cubierta por completo con notas de crédito. Así el otro sistema no guarda estado:
+   * si deja de valer, vuelve a facturar con el siguiente intento.
+   */
+  async findBySource(db: Tx | PrismaService, companyId: string, sourceModule: string, sourceIds: string[]) {
+    const rows = await db.invoice.findMany({
+      where: { companyId, sourceModule, sourceId: { in: sourceIds } },
+      select: {
+        id: true, number: true, ncf: true, type: true, status: true, issueDate: true, total: true, balance: true,
+        sourceModule: true, sourceId: true,
+        relatedDocuments: { select: { id: true, number: true, ncf: true, type: true, status: true, total: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    const live = (st: InvoiceStatus) => st !== InvoiceStatus.DRAFT && st !== InvoiceStatus.VOIDED;
+    return rows.map(({ relatedDocuments, ...inv }) => {
+      const notes = relatedDocuments.filter((n) => live(n.status));
+      const creditedTotal = notes.filter((n) => n.type === InvoiceType.CREDIT_NOTE).reduce((acc, n) => acc.plus(n.total), ZERO);
+      return { ...inv, creditedTotal, effective: live(inv.status) && creditedTotal.lt(inv.total), notes };
+    });
+  }
+
   async list(q: ListInvoicesQuery, user: AuthUser) {
     const page = q.page ?? 1;
     const limit = q.limit ?? 50;

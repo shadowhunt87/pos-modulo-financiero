@@ -6,6 +6,7 @@ import {
 import { InvoiceStatus, InvoiceType } from '../../generated/prisma/enums.js';
 
 const MAX_AMOUNT = 999_999_999_999_999;
+export const SOURCE_MODULE = /^[a-z][a-z0-9-]{1,29}\.[a-z][a-z0-9-]{1,39}$/;
 const toBool = ({ value }: { value: unknown }) =>
   value === 'true' ? true : value === 'false' ? false : value;
 
@@ -53,6 +54,16 @@ export class CreateInvoiceDto extends InvoiceBase {
   withholdings?: InvoiceWithholdingDto[];
   // Crea y emite en un solo paso
   @IsOptional() @IsBoolean() issueNow?: boolean;
+  // Origen en otro sistema (p. ej. "taller.orden" + "<id de la orden>:<intento>"). Van juntos.
+  // Una segunda venta con el mismo origen (no anulada) responde 409 con el id de la existente.
+  @IsOptional() @IsString() @Matches(SOURCE_MODULE, { message: 'sourceModule: <sistema>.<documento>, ej. taller.orden' }) sourceModule?: string;
+  @IsOptional() @IsString() @IsNotEmpty() @MaxLength(100) sourceId?: string;
+}
+
+export class BySourceQuery {
+  @IsString() @Matches(SOURCE_MODULE, { message: 'sourceModule: <sistema>.<documento>, ej. taller.orden' }) sourceModule: string;
+  // Uno o varios, separados por coma (hasta 50)
+  @IsString() @IsNotEmpty() @MaxLength(5100) sourceId: string;
 }
 
 // Solo borradores. Si envías `lines` o `withholdings`, reemplazan por completo a los anteriores.

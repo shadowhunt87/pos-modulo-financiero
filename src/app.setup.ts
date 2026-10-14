@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { json } from 'express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
+import { API_VERSION } from './meta/version.js';
 
 /**
  * ÚNICO lugar donde se crea y configura la app. main.ts y los e2e arrancan por
@@ -59,6 +61,17 @@ export async function createApp(options: { silent?: boolean } = {}): Promise<INe
       exposedHeaders: ['Content-Disposition', 'Retry-After'],
       maxAge: 600,
     });
+  }
+
+  // Documentación de la API (OpenAPI en /docs y /docs-json) para quien integra otro sistema
+  // (INTEGRACION-TALLER F5). Apagada por defecto; nginx nunca la publica hacia internet.
+  if (String(config.get('API_DOCS') ?? '') === 'true') {
+    const doc = new DocumentBuilder()
+      .setTitle('Finanzas: API').setVersion(API_VERSION)
+      .setDescription('Todas las rutas, salvo POST /auth/login, piden "Authorization: Bearer <token>". Errores: { message, error, statusCode }.')
+      .addBearerAuth().addSecurityRequirements('bearer')
+      .build();
+    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, doc));
   }
   return app;
 }

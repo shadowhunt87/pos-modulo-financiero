@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID,
+  ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID,
   Matches, Max, MaxLength, Min, ValidateNested,
 } from 'class-validator';
 import { PaymentDirection, PaymentMethod, PaymentStatus } from '../../generated/prisma/enums.js';
@@ -22,6 +22,8 @@ export class CreatePaymentDto {
   @IsOptional() @IsString() @Matches(/^[A-Z]{3}$/) currency?: string;
   @IsOptional() @IsNumber({ maxDecimalPlaces: 6 }) @Min(0.000001) exchangeRate?: number;
   @IsOptional() @IsString() @MaxLength(100) reference?: string; // nº cheque / transferencia
+  // Id del cobro en el sistema que lo registra (p. ej. el taller). Repetido => 409 con el id del existente
+  @IsOptional() @IsString() @IsNotEmpty() @MaxLength(100) externalRef?: string;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
   // Exactamente uno de los dos
   @IsOptional() @IsUUID() bankAccountId?: string;

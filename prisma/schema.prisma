@@ -640,6 +640,13 @@ model Invoice {
   createdBy   User         @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
   ecfDocument EcfDocument?
 
+  // Origen (INTEGRACION-TALLER §4.4, contrato de verticales V1a): de qué documento de otro sistema viene,
+  // p. ej. sourceModule "taller.orden" y sourceId "<id de la orden>:<intento>". Vacío si se creó en Facturas.
+  // Llave natural contra facturas duplicadas: índice único PARCIAL (empresa, origen) solo para ventas no
+  // anuladas; Prisma no lo modela, está en la migración 20261014190000_invoice_source_payment_ref.
+  sourceModule String?
+  sourceId     String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -647,6 +654,7 @@ model Invoice {
   @@index([companyId, status])
   @@index([companyId, type, issueDate])
   @@index([companyId, ncf])
+  @@index([companyId, sourceModule, sourceId])
   @@index([partnerId, status])
   @@index([dueDate])
 }
@@ -738,6 +746,10 @@ model Payment {
   createdBy   User     @relation("PaymentCreatedBy", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
 
+  // Referencia del sistema que registró el cobro (p. ej. el taller): un reintento no lo duplica
+  externalRef String?
+
+  @@unique([companyId, externalRef])
   @@index([companyId, date])
   @@index([partnerId])
   @@index([bankAccountId])

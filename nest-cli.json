@@ -4,6 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["chart-of-accounts/templates/*.json"]
+    "assets": ["chart-of-accounts/templates/*.json"],
+    "plugins": [{ "name": "@nestjs/swagger", "options": { "introspectComments": true, "classValidatorShim": true } }]
   }
 }

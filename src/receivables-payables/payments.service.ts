@@ -7,7 +7,7 @@ import {
 } from '../generated/prisma/enums.js';
 import type { AuthUser } from '../auth/types/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { writeAudit } from '../common/audit.js';
+import { isUniqueViolation, writeAudit } from '../common/audit.js';
 import { startOfDay, endOfDay } from '../reports/accounting-nature.utils.js';
 import { DocumentSequencesService } from '../masters/sequences/document-sequences.service.js';
 import { AccountingSettingsService, type SettingsKey } from '../masters/accounting-settings/accounting-settings.service.js';
@@ -130,6 +130,26 @@ export class PaymentsService {
   // Registrar cobro / pago
   // ------------------------------------------------------------------
   async create(dto: CreatePaymentDto, user: AuthUser) {
+    // Reintento del otro sistema con la misma referencia: 409 con el id del cobro que ya existe. Se mira
+    // ANTES de validar: la factura ya quedó pagada y un 422 haría creer al otro sistema que se rechazó.
+    const existing = () => dto.externalRef
+      ? this.prisma.payment.findFirst({ where: { companyId: user.companyId, externalRef: dto.externalRef }, select: { id: true, number: true } })
+      : Promise.resolve(null);
+    const conflict = (p: { id: string; number: string | null }) =>
+      new ConflictException({ message: `Ya existe el cobro o pago ${p.number} con esa referencia`, existingId: p.id });
+    const before = await existing();
+    if (before) throw conflict(before);
+    try {
+      return await this.createTx(dto, user);
+    } catch (e) {
+      // Dos pedidos simultáneos: el índice único deja pasar uno
+      const after = isUniqueViolation(e) ? await existing() : null;
+      if (after) throw conflict(after);
+      throw e;
+    }
+  }
+
+  private async createTx(dto: CreatePaymentDto, user: AuthUser) {
     const id = await this.prisma.$transaction(async (tx) => {
       const { companyId } = user;
       if (!!dto.bankAccountId === !!dto.cashRegisterId) {
@@ -171,7 +191,7 @@ export class PaymentsService {
       const pay = await tx.payment.create({
         data: {
           companyId, number, partnerId: partner.id, direction: dto.direction, amount, currency, exchangeRate: rate,
-          date, method: dto.method, reference: dto.reference, notes: dto.notes, status: PaymentStatus.POSTED,
+          date, method: dto.method, reference: dto.reference, notes: dto.notes, status: PaymentStatus.POSTED, externalRef: dto.externalRef,
           bankAccountId: dto.bankAccountId, cashRegisterId: dto.cashRegisterId, createdById: user.id,
         },
       });

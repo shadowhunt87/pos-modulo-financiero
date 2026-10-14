@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -61,6 +62,11 @@ class EnvironmentVariables {
   @Min(1)
   @Max(100)
   MAX_UPLOAD_MB?: number;
+
+  // "true" publica la documentación de la API en /docs (solo para la red interna; nginx no la expone)
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  API_DOCS?: string;
 }
 
 /** Motivo por el que un JWT_SECRET es débil, o null si está bien. */
