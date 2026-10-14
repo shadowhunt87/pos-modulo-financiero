@@ -8,11 +8,14 @@ export interface InvoiceRow {
   partner: { id: string; name: string; taxId: string | null };
 }
 export interface InvoiceLineRow {
+  /** N2: tasa usada al calcular (null en facturas viejas). */
+  appliedRate?: string | null;
   id: string; description: string; quantity: string; unitPrice: string; discount: string; taxRateId: string | null;
   taxAmount: string; total: string; accountId: string | null; costCenterId: string | null;
   taxRate: { name: string; rate: string } | null;
 }
 export interface InvoiceWithholdingRow {
+  appliedRate?: string | null;
   id: string; taxRateId: string; base: string; amount: string; taxRate: { name: string; rate: string } | null;
 }
 export interface InvoiceFull extends Omit<InvoiceRow, 'partner'> {

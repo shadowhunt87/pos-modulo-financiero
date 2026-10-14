@@ -12,8 +12,7 @@ export const LINE_BREAK = '\r\n';
 /** Máximo de registros por archivo según los instructivos. */
 export const MAX_ROWS = { '606': 10000, '607': 65000, '608': 4999 } as const;
 
-/** 607: las facturas de consumo menores a este monto no se detallan, se resumen en la Oficina Virtual. */
-export const CONSUMER_DETAIL_THRESHOLD = 250000;
+// 607: el umbral de las facturas de consumo es el parámetro fiscal F607_UMBRAL_DETALLE_CONSUMO (R9)
 
 /** 606 - Tipo de bienes y servicios comprados. */
 export const EXPENSE_TYPES: Record<string, string> = {

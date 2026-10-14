@@ -96,7 +96,7 @@
                 <td class="num">{{ l.quantity | money }}</td>
                 <td class="num">{{ l.unitPrice | money }}</td>
                 <td class="num">{{ l.discount | money: 'blank' }}</td>
-                <td>{{ l.taxRate?.name }}</td>
+                <td>{{ l.taxRate?.name }}@if (l.appliedRate) { <span class="dim"> · {{ l.appliedRate }} %</span> }</td>
                 <td class="num">{{ l.taxAmount | money: 'blank' }}</td>
                 <td class="dim">{{ accountName(l.accountId) || 'Predeterminada' }}</td>
                 <td class="num">{{ l.total | money }}</td>
@@ -109,7 +109,7 @@
             <tr><td colspan="7" class="num">Total</td><td class="num">{{ i.total | money }}</td></tr>
             @if (i.withholdings.length) {
               @for (w of i.withholdings; track w.id) {
-                <tr><td colspan="7" class="num">Retención: {{ w.taxRate?.name }} (base {{ w.base | money }})</td><td class="num">−{{ w.amount | money }}</td></tr>
+                <tr><td colspan="7" class="num">Retención: {{ w.taxRate?.name }}@if (w.appliedRate) { {{ w.appliedRate }} % } (base {{ w.base | money }})</td><td class="num">−{{ w.amount | money }}</td></tr>
               }
               <tr><td colspan="7" class="num">Neto a {{ isPurchase() ? 'pagar' : 'cobrar' }}</td><td class="num">{{ i.balance | money }}</td></tr>
             }

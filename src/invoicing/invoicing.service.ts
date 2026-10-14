@@ -16,6 +16,8 @@ import { DocumentSequencesService, type DocType } from '../masters/sequences/doc
 import { AccountingSettingsService } from '../masters/accounting-settings/accounting-settings.service.js';
 import { PostingService, type PostLine } from '../posting/posting.service.js';
 import { isMonthDeclared } from '../common/declared-month.js';
+import { FiscalParametersService } from '../fiscal/fiscal-parameters.service.js';
+import { TaxLinksService } from '../fiscal/tax-links.service.js';
 import { CreateInvoiceDto, IssueInvoiceDto, ListInvoicesQuery, UpdateInvoiceDto, VoidInvoiceDto } from './dto/invoice.dto.js';
 
 type Tx = Prisma.TransactionClient;
@@ -100,6 +102,7 @@ export class InvoicingService {
     private readonly sequences: DocumentSequencesService,
     private readonly settings: AccountingSettingsService,
     private readonly posting: PostingService,
+    private readonly fiscal: FiscalParametersService,
   ) {}
 
   // ------------------------------------------------------------------
@@ -115,6 +118,8 @@ export class InvoicingService {
 
     // Lado del documento: ventas o compras (las notas heredan el de la factura que modifican)
     let side: Side;
+    // N2: fecha de los parámetros fiscales; las notas heredan la de la factura que modifican (PLAN-v0.3 §5.2)
+    let taxDate = input.issueDate;
     if (input.type === InvoiceType.SALE) side = 'SALES';
     else if (input.type === InvoiceType.PURCHASE) side = 'PURCHASES';
     else {
@@ -133,6 +138,7 @@ export class InvoicingService {
         throw new UnprocessableEntityException(`La nota debe estar en la misma moneda que la factura que modifica (${related.currency})`);
       }
       side = related.type === InvoiceType.SALE ? 'SALES' : 'PURCHASES';
+      taxDate = related.issueDate;
     }
     const okPartner = side === 'SALES'
       ? partner.type !== PartnerType.SUPPLIER
@@ -183,6 +189,14 @@ export class InvoicingService {
       if (!t.active) throw new UnprocessableEntityException(`El impuesto "${t.name}" está inactivo`);
       if (!appliesOk(t.appliesTo)) throw new UnprocessableEntityException(`El impuesto "${t.name}" no aplica a ${side === 'SALES' ? 'ventas' : 'compras'}`);
     }
+    // N2 (R9): un impuesto enlazado toma la tasa y la base del parámetro vigente en la fecha del documento
+    const linked = new Map<string, { rate: Prisma.Decimal; base: 'ITBIS' | 'SUBTOTAL' | 'TOTAL' | null; parameterId: string }>();
+    for (const t of taxes.filter((x) => x.parameterKey)) {
+      const p = await this.fiscal.numberAt(t.parameterKey!, taxDate, tx);
+      TaxLinksService.assertCompatible(t, p);
+      linked.set(t.id, { rate: p.value, base: p.base, parameterId: p.id });
+    }
+    const rateOf = (t: { id: string; rate: Prisma.Decimal }) => linked.get(t.id)?.rate ?? t.rate;
 
     // Líneas
     let subtotal = ZERO, discountTotal = ZERO, taxTotal = ZERO;
@@ -195,12 +209,13 @@ export class InvoicingService {
       if (l.taxRateId) {
         const t = taxById.get(l.taxRateId)!;
         if (t.isWithholding) throw new UnprocessableEntityException('Las retenciones van en `withholdings`, no en las líneas');
-        taxAmount = r2(net.times(t.rate).div(100));
+        taxAmount = r2(net.times(rateOf(t)).div(100));
       }
       subtotal = subtotal.plus(net); discountTotal = discountTotal.plus(discount); taxTotal = taxTotal.plus(taxAmount);
       return {
         description: l.description, quantity: D(l.quantity), unitPrice: D(l.unitPrice), discount: r2(discount),
         taxRateId: l.taxRateId ?? null, taxAmount, total: net, // total = neto sin impuesto
+        appliedRate: l.taxRateId ? rateOf(taxById.get(l.taxRateId)!) : null, fiscalParameterId: l.taxRateId ? (linked.get(l.taxRateId)?.parameterId ?? null) : null,
         accountId: l.accountId ?? null, costCenterId: l.costCenterId ?? null,
       };
     });
@@ -210,10 +225,13 @@ export class InvoicingService {
     const withholdings = input.withholdings.map((w) => {
       const t = taxById.get(w.taxRateId)!;
       if (!t.isWithholding) throw new UnprocessableEntityException(`"${t.name}" no es una retención`);
-      const base = w.base !== undefined ? D(w.base) : t.type === 'ITBIS_WITHHOLDING' ? taxTotal : subtotal;
-      const amount = r2(base.times(t.rate).div(100));
+      const link = linked.get(t.id);
+      // Enlazado: la base la manda el parámetro (se ignora la que envía el cliente o guardó el borrador)
+      const base = link?.base === 'ITBIS' ? taxTotal : link?.base === 'SUBTOTAL' ? subtotal : link?.base === 'TOTAL' ? subtotal.plus(taxTotal)
+        : w.base !== undefined ? D(w.base) : t.type === 'ITBIS_WITHHOLDING' ? taxTotal : subtotal;
+      const amount = r2(base.times(rateOf(t)).div(100));
       withholdingTotal = withholdingTotal.plus(amount);
-      return { taxRateId: t.id, base: r2(base), amount };
+      return { taxRateId: t.id, base: r2(base), amount, appliedRate: rateOf(t), fiscalParameterId: link?.parameterId ?? null };
     });
 
     subtotal = r2(subtotal); taxTotal = r2(taxTotal);

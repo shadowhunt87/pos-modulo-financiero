@@ -94,7 +94,9 @@ describe('DGII 606/607/608 (e2e)', () => {
     await sale('S6', { type: 'CREDIT_NOTE', issueDate: '2025-03-20', relatedInvoiceId: id.S1, ncfType: undefined, dgiiIncomeType: undefined, lines: [line(200)] });
     await sale('S7', { issueDate: '2025-03-22', currency: 'USD', exchangeRate: 60, lines: [line(100)] });
     await sale('S8', { issueDate: '2025-03-25', dgiiIncomeType: undefined, lines: [line(50)] });
-    await api('post', `/invoices/${id.S5}/void`, 'admin').send({ reason: 'Error', reasonCode: '03' }).expect(201);
+    // N1: anular antes del día 15 siguiente (mes aún sin declarar): se fija el reloj al 1-abr-2025
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2025-04-01T12:00:00Z'));
+    try { await api('post', `/invoices/${id.S5}/void`, 'admin').send({ reason: 'Error', reasonCode: '03' }).expect(201); } finally { vi.useRealTimers(); }
 
     // ---------------- Compras (marzo 2025)
     await purchase('P1', { issueDate: '2025-03-04', ncf: 'B0100000101', dgiiExpenseType: '02', lines: [line(1000)] });
@@ -109,8 +111,12 @@ describe('DGII 606/607/608 (e2e)', () => {
     await purchase('P6', { type: 'CREDIT_NOTE', issueDate: '2025-03-25', relatedInvoiceId: id.P1, ncf: 'B0400000009', lines: [line(100)] });
     await purchase('P7', { issueDate: '2025-03-27', partnerId: suppInformal, ncfType: 'B11', dgiiExpenseType: '02', lines: [line(500, false)] });
     await purchase('P8', { issueDate: '2025-03-28', ncf: 'B0100000108', dgiiExpenseType: '02', lines: [line(300, false)] });
-    await api('post', `/invoices/${id.P7}/void`, 'admin').send({ reason: 'Error', reasonCode: '05' }).expect(201);
-    await api('post', `/invoices/${id.P8}/void`, 'admin').send({ reason: 'Proveedor lo anuló' }).expect(201);
+    // N1: anular antes del día 15 siguiente (mes aún sin declarar): se fija el reloj al 1-abr-2025
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2025-04-01T12:00:00Z'));
+    try { await api('post', `/invoices/${id.P7}/void`, 'admin').send({ reason: 'Error', reasonCode: '05' }).expect(201); } finally { vi.useRealTimers(); }
+    // N1: anular antes del día 15 siguiente (mes aún sin declarar): se fija el reloj al 1-abr-2025
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2025-04-01T12:00:00Z'));
+    try { await api('post', `/invoices/${id.P8}/void`, 'admin').send({ reason: 'Proveedor lo anuló' }).expect(201); } finally { vi.useRealTimers(); }
     // fecha de anulación controlada: abril 2025
     await prisma.invoice.update({ where: { id: id.S5 }, data: { voidedAt: new Date('2025-04-02T15:00:00Z') } });
     await prisma.invoice.update({ where: { id: id.P7 }, data: { voidedAt: new Date('2025-04-03T15:00:00Z') } });

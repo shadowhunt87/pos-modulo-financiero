@@ -5,10 +5,11 @@ import type { AuthUser } from '../auth/types/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ZERO } from '../reports/accounting-nature.utils.js';
 import {
-  CONSUMER_DETAIL_THRESHOLD, CONSUMER_NCF, EXPENSE_TYPES, FIELD_SEPARATOR, GOODS_EXPENSE_TYPES, INCOME_TYPES,
+  CONSUMER_NCF, EXPENSE_TYPES, FIELD_SEPARATOR, GOODS_EXPENSE_TYPES, INCOME_TYPES,
   ISR_RETENTION_TYPES, LINE_BREAK, MAX_ROWS, MINOR_EXPENSE_NCF, PAYMENT_FORMS, SELF_ISSUED_PURCHASE_NCF,
   VOID_TYPES, code2, ymd,
 } from './dgii.codes.js';
+import { FiscalParametersService } from '../fiscal/fiscal-parameters.service.js';
 
 type Dec = Prisma.Decimal;
 type Side = 'SALES' | 'PURCHASES';
@@ -117,7 +118,7 @@ const idTypeOf = (p: { taxId: string | null; taxIdType: string | null }) =>
 
 @Injectable()
 export class DgiiService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly fiscal: FiscalParametersService) {}
 
   // ------------------------------------------------------------------
   // Utilidades
@@ -313,13 +314,15 @@ export class DgiiService {
     const errors: DgiiIssue[] = [];
     const warnings: DgiiIssue[] = [];
     const consumer = { count: 0, subtotal: ZERO, itbis: ZERO, total: ZERO };
+    // N2 (R9): el umbral es un parámetro con vigencia, al último día del período
+    const threshold = (await this.fiscal.numberAt('F607_UMBRAL_DETALLE_CONSUMO', period.end)).value;
     const rows: { kind: string; docType: string; [k: string]: string }[] = [];
 
     for (const { inv, kind, facts: f, payDate, includeRet } of items) {
       const prefix = ncfPrefix(inv.ncf);
       const isConsumer = CONSUMER_NCF.includes(prefix);
       // Facturas de consumo pequeñas: solo se resumen
-      if (kind === 'ORIGINAL' && isConsumer && inv.type === InvoiceType.SALE && f.total.lt(CONSUMER_DETAIL_THRESHOLD)) {
+      if (kind === 'ORIGINAL' && isConsumer && inv.type === InvoiceType.SALE && f.total.lt(threshold)) {
         consumer.count += 1;
         consumer.subtotal = consumer.subtotal.plus(f.subtotal);
         consumer.itbis = consumer.itbis.plus(f.itbis);
@@ -383,7 +386,7 @@ export class DgiiService {
       warnings,
       canExport: errors.length === 0,
       assumptions: [
-        `Facturas de consumo (B02) menores a RD$${CONSUMER_DETAIL_THRESHOLD.toLocaleString('en-US')}: no van en el detalle; se resumen en consumerSummary para la Oficina Virtual.`,
+        `Facturas de consumo (B02) menores a RD$${threshold.toNumber().toLocaleString('en-US')}: no van en el detalle; se resumen en consumerSummary para la Oficina Virtual.`,
         'Formas de venta: efectivo, cheque/transferencia y tarjeta salen de los cobros aplicados; las retenciones ya aplicadas van en "otras formas"; lo demás es venta a crédito. Suman el total del comprobante.',
         'Retenciones de terceros: se informan en la fila del período en que la factura queda cobrada, con la fecha de retención; si es de un mes anterior se repite el NCF con su fecha original.',
         'Notas de crédito/débito: montos en positivo, con su NCF y el NCF modificado.',

@@ -11,11 +11,13 @@ import { Notify } from '../../core/notify';
 import { clean } from '../../shared/format';
 import { opts, TAX_APPLIES, TAX_TYPE } from '../../shared/labels';
 import { ComboOption, UI } from '../../shared/ui';
+import { TaxLinkDialog } from '../fiscal/tax-link-dialog';
+import type { TaxLinkSuggestion } from '../fiscal/fiscal-types';
 
 @Component({
   selector: 'app-tax-rates',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ...UI],
+  imports: [ReactiveFormsModule, TaxLinkDialog, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -38,9 +40,9 @@ import { ComboOption, UI } from '../../shared/ui';
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
-            <thead><tr><th>Nombre</th><th>Tipo</th><th class="num">Tasa</th><th>Aplica a</th><th>Código DGII</th><th>Cuenta ventas</th><th>Cuenta compras</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Tipo</th><th class="num">Tasa</th><th>Aplica a</th><th>Código DGII</th><th>Valor oficial</th><th>Cuenta ventas</th><th>Cuenta compras</th><th>Estado</th><th></th></tr></thead>
             <tbody>
-              @if (loading()) { <tr><td colspan="9"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
+              @if (loading()) { <tr><td colspan="10"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
               @for (t of visible(); track t.id) {
                 <tr>
                   <td><strong>{{ t.name }}</strong>@if (t.isWithholding) { <span class="badge info" style="margin-left:6px">Retención</span> }</td>
@@ -48,6 +50,17 @@ import { ComboOption, UI } from '../../shared/ui';
                   <td class="num">{{ t.rate | pct: 2 }}</td>
                   <td>{{ t.appliesTo | lbl: TAX_APPLIES }}</td>
                   <td class="mono">{{ t.dgiiCode }}</td>
+                  <td>
+                    @switch (linkOf(t)?.status) {
+                      @case ('ENLAZADO') { <span class="badge pos" [title]="t.parameterKey ?? ''">✓&nbsp;Enlazado</span> }
+                      @case ('NO_APLICA') { <span class="dim">—</span> }
+                      @case (undefined) { }
+                      @default { <span class="badge warn" title="Si la DGII cambia la tasa, no se actualiza sola">!&nbsp;Sin enlazar</span> }
+                    }
+                    @if (canEdit && linkOf(t) && linkOf(t)!.status !== 'NO_APLICA') {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="linking.set(linkOf(t)!)">{{ linkOf(t)!.status === 'ENLAZADO' ? 'Cambiar' : 'Enlazar' }}</button>
+                    }
+                  </td>
                   <td class="dim">{{ lookups.accountName(t.salesAccountId) }}</td>
                   <td class="dim">{{ lookups.accountName(t.purchaseAccountId) }}</td>
                   <td><span class="badge" [class.pos]="t.active">{{ t.active ? 'Activo' : 'Inactivo' }}</span></td>
@@ -59,7 +72,7 @@ import { ComboOption, UI } from '../../shared/ui';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="9" class="table-empty">No hay impuestos con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="10" class="table-empty">No hay impuestos con esos filtros.</td></tr> }
               }
             </tbody>
           </table>
@@ -73,6 +86,7 @@ import { ComboOption, UI } from '../../shared/ui';
           <div class="field span-2"><label for="f-name">Nombre</label><input id="f-name" class="input" formControlName="name" placeholder="ITBIS 18%" />
             @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Escribe el nombre.</span> }</div>
           <div class="field"><label for="f-rate">Tasa (%)</label><input id="f-rate" class="input num" type="number" min="0" max="100" step="0.01" formControlName="rate" />
+            @if (editing()?.parameterKey) { <span class="hint">Enlazado a un valor oficial: la tasa cambia sola con la ley.</span> }
             @if (form.controls.rate.touched && form.controls.rate.invalid) { <span class="error-text">La tasa va de 0 a 100.</span> }</div>
           <div class="field"><label for="f-type">Tipo</label>
             <select id="f-type" class="select" formControlName="type">@for (o of typeOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select>
@@ -92,6 +106,8 @@ import { ComboOption, UI } from '../../shared/ui';
         <button type="submit" form="tax-form" class="btn btn-primary" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</button>
       </ng-container>
     </app-modal>
+
+    <app-tax-link-dialog [open]="!!linking()" [s]="linking()" (closed)="linking.set(null)" (changed)="afterLink()" />
   `,
 })
 export class TaxRates {
@@ -115,6 +131,16 @@ export class TaxRates {
   protected readonly visible = computed(() => this.rows().filter((t) => (!this.type() || t.type === this.type()) && (!this.active() || String(t.active) === this.active())));
   protected readonly accountOptions = computed<ComboOption[]>(() => this.lookups.accounts().filter((a) => a.active && a.isPostable).map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` })));
 
+  // N2: enlace con los valores oficiales (sugerencias del servidor; la persona confirma)
+  protected readonly links = signal<TaxLinkSuggestion[]>([]);
+  protected readonly linking = signal<TaxLinkSuggestion | null>(null);
+  protected linkOf(t: TaxRate): TaxLinkSuggestion | undefined { return this.links().find((l) => l.taxRateId === t.id); }
+  protected async afterLink(): Promise<void> {
+    this.linking.set(null);
+    void this.lookups.ensureTaxRates(true);
+    await this.load();
+  }
+
   protected readonly modalOpen = signal(false);
   protected readonly editing = signal<TaxRate | null>(null);
   protected readonly saving = signal(false);
@@ -133,7 +159,12 @@ export class TaxRates {
 
   private async load(): Promise<void> {
     this.loading.set(true); this.error.set('');
-    try { this.rows.set(await this.api.getP<TaxRate[]>('/tax-rates')); } catch (e) { this.error.set(errorMessage(e)); }
+    try {
+      const [rows, links] = await Promise.all([
+        this.api.getP<TaxRate[]>('/tax-rates'), this.api.getP<TaxLinkSuggestion[]>('/fiscal/tax-links/suggestions').catch(() => []),
+      ]);
+      this.rows.set(rows); this.links.set(links);
+    } catch (e) { this.error.set(errorMessage(e)); }
     this.loading.set(false);
   }
 
@@ -141,6 +172,7 @@ export class TaxRates {
     this.editing.set(null); this.formError.set('');
     this.form.reset({ rate: 18, type: 'ITBIS', appliesTo: 'BOTH', salesAccountId: null, purchaseAccountId: null });
     this.form.controls.type.enable();
+    this.form.controls.rate.enable();
     this.modalOpen.set(true);
   }
   protected openEdit(t: TaxRate): void {
@@ -150,6 +182,7 @@ export class TaxRates {
       salesAccountId: t.salesAccountId, purchaseAccountId: t.purchaseAccountId,
     });
     this.form.controls.type.disable();
+    if (t.parameterKey) this.form.controls.rate.disable(); else this.form.controls.rate.enable();
     this.modalOpen.set(true);
   }
 

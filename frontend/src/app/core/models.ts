@@ -12,6 +12,8 @@ export interface Partner {
 export interface TaxRate {
   id: string; name: string; rate: string; type: string; appliesTo: string; isWithholding: boolean; dgiiCode: string | null;
   salesAccountId: string | null; purchaseAccountId: string | null; active: boolean;
+  /** N2: enlazado a un valor fiscal con vigencia (la tasa sale de ahí). */
+  parameterKey?: string | null;
 }
 export interface Journal { id: string; code: string; name: string; type: string; nextNumber: number; active: boolean }
 export interface BankAccount {

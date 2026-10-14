@@ -1,0 +1,453 @@
+{
+  "description": "Catálogo fiscal inicial de RD (PLAN-v0.3 §5.6). Todo entra «Por validar» hasta la validación con nombre de la contadora (D33). No incluye RECARGO_MORA ni INTERES_INDEMNIZATORIO (nada los usa). NCF_B_ULTIMO_DIA_GRANDE_NACIONAL se omite: la fecha la da la contadora (Fase 0); mientras tanto los Grandes Nacionales se tratan como «solo e-CF».",
+  "parameters": [
+    {
+      "key": "ITBIS_TASA_GENERAL",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Ley 253-12 art. 23; Guía contable y fiscal §3 3.2",
+      "value": "18",
+      "unit": "%"
+    },
+    {
+      "key": "ITBIS_TASA_REDUCIDA",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Ley 253-12 art. 23 (yogur, mantequilla, café, aceites, azúcares, cacao); Guía contable y fiscal §3 3.2",
+      "value": "16",
+      "unit": "%"
+    },
+    {
+      "key": "ITBIS_TASA_EXPORTACION",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 343; Guía contable y fiscal §3 3.2",
+      "value": "0",
+      "unit": "%"
+    },
+    {
+      "key": "RET_ITBIS_SERVICIOS_PJ",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "NG 02-05 arts. 1, 2 y 5, modificada por NG 07-09; Guía contable y fiscal §3 3.2",
+      "value": "30",
+      "unit": "%",
+      "base": "ITBIS"
+    },
+    {
+      "key": "RET_ITBIS_PERSONA_FISICA",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "NG 02-05; Guía contable y fiscal §3 3.2",
+      "value": "100",
+      "unit": "%",
+      "base": "ITBIS"
+    },
+    {
+      "key": "RET_ITBIS_SEGURIDAD_LIMPIEZA_TRANSPORTE",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "NG 07-09; Guía contable y fiscal §3 3.2",
+      "value": "100",
+      "unit": "%",
+      "base": "ITBIS"
+    },
+    {
+      "key": "RET_ITBIS_INFORMALES",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "NG 02-05 (compras a no registrados, B11/E41); Guía contable y fiscal §3 3.2",
+      "value": "100",
+      "unit": "%",
+      "base": "ITBIS"
+    },
+    {
+      "key": "RET_ITBIS_RST",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3 3.2 (Validar)",
+      "value": "100",
+      "unit": "%",
+      "base": "ITBIS",
+      "notes": "Estado en la Guía: Validar. Confirmar con la contadora."
+    },
+    {
+      "key": "RET_ITBIS_TARJETA",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "NG 08-04; Guía contable y fiscal §3 3.2",
+      "value": "2",
+      "unit": "%",
+      "base": "TOTAL",
+      "notes": "La base TOTAL (sobre el monto cobrado) la confirma la contadora con D37."
+    },
+    {
+      "key": "RET_ISR_HONORARIOS_PF",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 309 (antes de la Ley 30-26)",
+      "value": "10",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Valor anterior a la Ley 30-26 tomado de fuentes secundarias (fuentes/investigacion-contable-fiscal-2026-10.md línea 119); validar con la contadora antes de marcarlo Oficial."
+    },
+    {
+      "key": "RET_ISR_HONORARIOS_PF",
+      "kind": "RATE",
+      "validFrom": "2026-07-01",
+      "source": "Ley 30-26 art. 309 modificado; Guía contable y fiscal §3 3.4 (Validar)",
+      "value": "15",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Pago a cuenta."
+    },
+    {
+      "key": "RET_ISR_ALQUILER_PF",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 309 (antes de la Ley 30-26)",
+      "value": "10",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Valor anterior a la Ley 30-26 tomado de fuentes secundarias (fuentes/investigacion-contable-fiscal-2026-10.md línea 119); validar con la contadora antes de marcarlo Oficial."
+    },
+    {
+      "key": "RET_ISR_ALQUILER_PF",
+      "kind": "RATE",
+      "validFrom": "2026-07-01",
+      "source": "Ley 30-26 art. 309 modificado; Guía contable y fiscal §3 3.4 (Validar)",
+      "value": "15",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Pago definitivo."
+    },
+    {
+      "key": "RET_ISR_PAGOS_ESTADO",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 309 y Norma 07-2007 (antes de la Ley 30-26)",
+      "value": "5",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Valor anterior a la Ley 30-26 tomado de fuentes secundarias (fuentes/investigacion-contable-fiscal-2026-10.md línea 119); validar con la contadora antes de marcarlo Oficial."
+    },
+    {
+      "key": "RET_ISR_PAGOS_ESTADO",
+      "kind": "RATE",
+      "validFrom": "2026-07-01",
+      "source": "Ley 30-26; Guía contable y fiscal §3 3.4 (Validar)",
+      "value": "5",
+      "unit": "%",
+      "base": "SUBTOTAL"
+    },
+    {
+      "key": "RET_ISR_EXTERIOR_DIGITAL",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 305 (retención general a no residentes)",
+      "value": "27",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Valor anterior a la Ley 30-26 tomado de fuentes secundarias (fuentes/investigacion-contable-fiscal-2026-10.md línea 119); validar con la contadora antes de marcarlo Oficial."
+    },
+    {
+      "key": "RET_ISR_EXTERIOR_DIGITAL",
+      "kind": "RATE",
+      "validFrom": "2026-07-01",
+      "source": "Ley 30-26 arts. 305-1 y 305-2; Guía contable y fiscal §3 3.4 (Validar)",
+      "value": "15",
+      "unit": "%",
+      "base": "SUBTOTAL",
+      "notes": "Regalías, licencias de software, publicidad en línea y almacenamiento de datos. Pago definitivo."
+    },
+    {
+      "key": "RET_ISR_DIVIDENDOS",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 308; Guía contable y fiscal §3 3.4",
+      "value": "10",
+      "unit": "%",
+      "base": "SUBTOTAL"
+    },
+    {
+      "key": "ISR_PJ_TASA",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 297; Guía contable y fiscal §3 3.3",
+      "value": "27",
+      "unit": "%"
+    },
+    {
+      "key": "ISR_PJ_TASA_GRANDES",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 297 (tasa general antes de la Ley 30-26)",
+      "value": "27",
+      "unit": "%",
+      "notes": "Hasta 2025 las grandes pagaban la tasa general."
+    },
+    {
+      "key": "ISR_PJ_TASA_GRANDES",
+      "kind": "RATE",
+      "validFrom": "2026-01-01",
+      "source": "Ley 30-26 (ingresos ≥ RD$1,000 millones, ejercicios 2026-2028); Guía contable y fiscal §3 3.3 (Validar)",
+      "value": "30",
+      "unit": "%"
+    },
+    {
+      "key": "ISR_PJ_TASA_GRANDES",
+      "kind": "RATE",
+      "validFrom": "2029-01-01",
+      "source": "Ley 30-26 (vuelve a la tasa general en 2029); Guía contable y fiscal §3 3.3 (Validar)",
+      "value": "27",
+      "unit": "%"
+    },
+    {
+      "key": "ISA_TASA",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Código Tributario art. 401; Guía contable y fiscal §3 3.3",
+      "value": "1",
+      "unit": "%"
+    },
+    {
+      "key": "IMP_CHEQUES_TRANSFERENCIAS",
+      "kind": "RATE",
+      "validFrom": "2025-01-01",
+      "source": "Ley 288-04 art. 382 (0.15 %)",
+      "value": "0.15",
+      "unit": "%",
+      "notes": "Solo se carga; se usa en la v1.0."
+    },
+    {
+      "key": "IMP_CHEQUES_TRANSFERENCIAS",
+      "kind": "RATE",
+      "validFrom": "2026-07-03",
+      "source": "Ley 30-26 art. 40; Guía contable y fiscal §3 3.6",
+      "value": "0.2",
+      "unit": "%",
+      "notes": "Las fuentes anotan una discrepancia (fuentes/investigacion-contable-fiscal-2026-10.md línea 130): verificar contra la Gaceta."
+    },
+    {
+      "key": "F607_UMBRAL_DETALLE_CONSUMO",
+      "kind": "AMOUNT",
+      "validFrom": "2025-01-01",
+      "source": "Instructivo del formato 607; Guía contable y fiscal §3 3.7",
+      "value": "250000",
+      "unit": "DOP",
+      "notes": "Facturas de consumo menores a este monto se resumen."
+    },
+    {
+      "key": "ECF_RFCE_UMBRAL_E32",
+      "kind": "AMOUNT",
+      "validFrom": "2025-01-01",
+      "source": "Norma técnica e-CF (RFCE); Guía contable y fiscal §3 3.7",
+      "value": "250000",
+      "unit": "DOP"
+    },
+    {
+      "key": "F607_NO_ENVIAR_SI_100_ECF",
+      "kind": "FLAG",
+      "validFrom": "2025-01-01",
+      "source": "PLAN-v0.3 D35 (conservador hasta que la contadora confirme)",
+      "value": "0",
+      "notes": "Una empresa que factura solo con e-CF no envía el 607. 0 = conservador: se sigue enviando, con nota."
+    },
+    {
+      "key": "F607_MIXTO_SOLO_B",
+      "kind": "FLAG",
+      "validFrom": "2025-01-01",
+      "source": "PLAN-v0.3 D35 (conservador hasta que la contadora confirme)",
+      "value": "0",
+      "notes": "Con facturación mixta, el 607 lleva solo los comprobantes B. 0 = conservador: se sigue enviando, con nota."
+    },
+    {
+      "key": "F608_EXCLUYE_ECF",
+      "kind": "FLAG",
+      "validFrom": "2025-01-01",
+      "source": "PLAN-v0.3 D35 (conservador hasta que la contadora confirme)",
+      "value": "0",
+      "notes": "Los e-CF anulados no van en el 608. 0 = conservador: se sigue enviando, con nota."
+    },
+    {
+      "key": "NCF_B_ULTIMO_DIA_GRANDE_LOCAL_MEDIANO",
+      "kind": "DATE",
+      "validFrom": "2025-01-01",
+      "source": "Decreto 587-24 art. 55; DGII; Guía contable y fiscal §3 3.7",
+      "valueDate": "2026-10-31"
+    },
+    {
+      "key": "NCF_B_ULTIMO_DIA_PEQUENO_MICRO_NC",
+      "kind": "DATE",
+      "validFrom": "2025-01-01",
+      "source": "Aviso DGII 06-26 (seis meses desde el 15-may-2026); Guía contable y fiscal §3 3.7 (Validar)",
+      "valueDate": "2026-11-15",
+      "notes": "No está claro si el 15 todavía admite B (PLAN-v0.3 nota M3)."
+    },
+    {
+      "key": "ECF_CONTINGENCIA_MAX_HORAS",
+      "kind": "AMOUNT",
+      "validFrom": "2025-01-01",
+      "source": "Decreto 587-24 arts. 40-43 (fuentes/investigacion-contable-fiscal-2026-10.md línea 224)",
+      "value": "72",
+      "unit": "horas"
+    },
+    {
+      "key": "NCF_B_CONTINGENCIA_MAX_DIAS",
+      "kind": "DAYS",
+      "validFrom": "2025-01-01",
+      "source": "Decreto 587-24 art. 55 (fuentes/investigacion-contable-fiscal-2026-10.md línea 251)",
+      "value": "15"
+    },
+    {
+      "key": "ECF_REGULARIZACION_DIAS",
+      "kind": "DAYS",
+      "validFrom": "2025-01-01",
+      "source": "Decreto 587-24 (fuentes/investigacion-contable-fiscal-2026-10.md línea 251)",
+      "value": "30"
+    },
+    {
+      "key": "ECF_AVISO_ROJO_HORAS",
+      "kind": "AMOUNT",
+      "validFrom": "2025-01-01",
+      "source": "Umbral del producto (no legal)",
+      "value": "48",
+      "unit": "horas"
+    },
+    {
+      "key": "DECLARACION_DIA_606_607_608",
+      "kind": "DAYS",
+      "validFrom": "2025-01-01",
+      "source": "Calendario fiscal DGII; Guía contable y fiscal §3 3.8",
+      "value": "15",
+      "notes": "Día del mes siguiente. Si cae en no laborable, pasa al siguiente laborable."
+    },
+    {
+      "key": "IT1_MAPA_CASILLAS",
+      "kind": "TABLE",
+      "validFrom": "2025-01-01",
+      "source": "Formulario IT-1 vigente (por validar con la contadora)",
+      "valueJson": {
+        "version": "borrador",
+        "casillas": {
+          "1": {
+            "texto": "Total de operaciones (ventas brutas)",
+            "origen": "ventas.total"
+          },
+          "2": {
+            "texto": "Ingresos por exportaciones de bienes",
+            "origen": "ventas.exportaciones"
+          },
+          "8": {
+            "texto": "Ventas exentas",
+            "origen": "ventas.exentas"
+          },
+          "13": {
+            "texto": "Total ingresos por operaciones gravadas",
+            "origen": "ventas.gravadas"
+          },
+          "14": {
+            "texto": "Operaciones gravadas al 18%",
+            "origen": "ventas.gravadas18"
+          },
+          "15": {
+            "texto": "Operaciones gravadas al 16%",
+            "origen": "ventas.gravadas16"
+          },
+          "19": {
+            "texto": "ITBIS facturado al 18%",
+            "origen": "itbis.facturado18"
+          },
+          "20": {
+            "texto": "ITBIS facturado al 16%",
+            "origen": "itbis.facturado16"
+          },
+          "23": {
+            "texto": "Total ITBIS facturado",
+            "origen": "itbis.facturado"
+          },
+          "25": {
+            "texto": "ITBIS retenido por terceros (servicios)",
+            "origen": "itbis.retenidoPorTerceros"
+          },
+          "28": {
+            "texto": "ITBIS pagado en compras locales (adelantado)",
+            "origen": "itbis.adelantadoCompras"
+          },
+          "29": {
+            "texto": "ITBIS pagado en servicios",
+            "origen": "itbis.adelantadoServicios"
+          },
+          "30": {
+            "texto": "ITBIS pagado en importaciones",
+            "origen": "itbis.adelantadoImportaciones"
+          },
+          "32": {
+            "texto": "Total ITBIS deducible",
+            "origen": "itbis.deducible"
+          },
+          "33": {
+            "texto": "Impuesto a pagar (23 - 32)",
+            "origen": "calc:23-32"
+          },
+          "34": {
+            "texto": "Saldo a favor (32 - 23)",
+            "origen": "calc:32-23"
+          },
+          "A1": {
+            "texto": "Anexo A: ITBIS retenido a terceros (a pagar)",
+            "origen": "itbis.retenidoATerceros"
+          }
+        }
+      },
+      "notes": "Mapa de casillas en borrador: numeración y orígenes por confirmar con el formulario vigente. Bloquea el IT-1 asistido hasta validarse."
+    },
+    {
+      "key": "IR17_MAPA_CASILLAS",
+      "kind": "TABLE",
+      "validFrom": "2025-01-01",
+      "source": "Formulario IR-17 vigente (por validar con la contadora)",
+      "valueJson": {
+        "version": "borrador",
+        "casillas": {
+          "1": {
+            "texto": "Alquileres",
+            "claves": [
+              "RET_ISR_ALQUILER_PF"
+            ]
+          },
+          "2": {
+            "texto": "Honorarios por servicios independientes",
+            "claves": [
+              "RET_ISR_HONORARIOS_PF"
+            ]
+          },
+          "4": {
+            "texto": "Dividendos",
+            "claves": [
+              "RET_ISR_DIVIDENDOS"
+            ]
+          },
+          "6": {
+            "texto": "Pagos a personas no residentes",
+            "claves": [
+              "RET_ISR_EXTERIOR_DIGITAL"
+            ]
+          },
+          "9": {
+            "texto": "Pagos del Estado",
+            "claves": [
+              "RET_ISR_PAGOS_ESTADO"
+            ]
+          },
+          "12": {
+            "texto": "Total retenciones del período",
+            "origen": "calc:suma"
+          }
+        }
+      },
+      "notes": "Mapa de casillas en borrador: numeración por confirmar con el formulario vigente. Bloquea el IR-17 asistido hasta validarse."
+    }
+  ],
+  "validations": []
+}

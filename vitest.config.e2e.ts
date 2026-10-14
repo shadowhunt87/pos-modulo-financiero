@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     root: './',
     include: ['test/**/*.e2e-spec.ts'],
+    globalSetup: ['test/global-setup.e2e.ts'],
     env: testEnv(mode || 'test'),
     fileParallelism: false,
     hookTimeout: 60_000,

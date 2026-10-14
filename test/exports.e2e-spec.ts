@@ -115,7 +115,9 @@ describe('Exportación Excel / PDF (e2e)', () => {
     await post('/payments', 'dgii').send({ direction: 'MADE', partnerId: supp, date: '2025-03-06', amount: 1180, method: 'BANK_TRANSFER', bankAccountId: bank, allocations: [{ invoiceId: id.P1, amount: 1180 }] }).expect(201);
     await inv('P2', { type: 'PURCHASE', partnerId: supp, ncf: 'B0100000102', issueDate: '2025-03-08' }); // sin tipo de gasto => error 606
     await inv('S5', { type: 'SALE', partnerId: cust, ncfType: 'B01', issueDate: '2025-03-18', dgiiIncomeType: '01' });
-    await post(`/invoices/${id.S5}/void`, 'dgii').send({ reason: 'Error', reasonCode: '03' }).expect(201);
+    // N1: anular antes del día 15 siguiente (mes aún sin declarar): se fija el reloj al 1-abr-2025
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2025-04-01T12:00:00Z'));
+    try { await post(`/invoices/${id.S5}/void`, 'dgii').send({ reason: 'Error', reasonCode: '03' }).expect(201); } finally { vi.useRealTimers(); }
     await prisma.invoice.update({ where: { id: id.S5 }, data: { voidedAt: new Date('2025-04-02T15:00:00Z') } });
   }, 120000);
 

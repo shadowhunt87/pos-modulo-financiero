@@ -51,7 +51,11 @@ export class TaxRatesService {
   }
 
   async update(id: string, dto: UpdateTaxRateDto, user: AuthUser) {
-    await this.get(id, user);
+    const cur = await this.get(id, user);
+    // N2 (R9): la tasa de un impuesto enlazado sale del valor oficial con vigencia; aquí es informativa
+    if (cur.parameterKey && dto.rate !== undefined && !cur.rate.eq(dto.rate)) {
+      throw new UnprocessableEntityException('Este impuesto está enlazado a un valor oficial: su tasa cambia sola cuando cambia la ley. Para usar otra tasa, desenlázalo primero');
+    }
     await this.assertAccounts(user.companyId, [dto.salesAccountId, dto.purchaseAccountId]);
     return this.prisma.$transaction(async (tx) => {
       const tax = await tx.taxRate.update({ where: { id, companyId: user.companyId }, data: dto });

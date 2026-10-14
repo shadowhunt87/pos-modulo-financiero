@@ -109,3 +109,19 @@ export const RATIO_GROUP: Record<string, string> = {
   LIQUIDITY: 'Liquidez: ¿puedo pagar lo de corto plazo?', LEVERAGE: 'Endeudamiento: ¿cuánto dependo de la deuda?',
   PROFITABILITY: 'Rentabilidad: ¿cuánto gano?', ACTIVITY: 'Actividad: ¿qué tan rápido cobro, pago y vendo?',
 };
+
+// Valores fiscales (N2): estado con icono + texto (nunca solo el color) y base de las retenciones
+export const PARAM_STATUS_LOOK: Record<string, { icon: string; tone: Tone; text: string }> = {
+  OFICIAL: { icon: '✓', tone: 'pos', text: 'Oficial' }, POR_VALIDAR: { icon: '?', tone: 'warn', text: 'Por validar' },
+};
+export const BASE_LABEL: Record<string, string> = { ITBIS: 'el ITBIS', SUBTOTAL: 'el subtotal', TOTAL: 'el total' };
+export const DGII_CLASSIFICATION: Record<string, string> = {
+  GRANDE_NACIONAL: 'Grande nacional', GRANDE_LOCAL: 'Grande local', MEDIANO: 'Mediano', PEQUENO: 'Pequeño', MICRO: 'Micro', NO_CLASIFICADO: 'No clasificado',
+};
+export const TAX_REGIME: Record<string, string> = { ORDINARIO: 'Ordinario', RST: 'Régimen Simplificado de Tributación (RST)' };
+export const LEGAL_FORM: Record<string, string> = {
+  SRL: 'Sociedad de Responsabilidad Limitada (SRL)', SA: 'Sociedad Anónima (SA)', SAS: 'Sociedad Anónima Simplificada (SAS)',
+  EIRL: 'Empresa Individual de Responsabilidad Limitada (EIRL)', SNC: 'Sociedad en Nombre Colectivo', SCS: 'Sociedad en Comandita Simple',
+  SCA: 'Sociedad en Comandita por Acciones', PERSONA_FISICA: 'Persona física', OTRA: 'Otra',
+};
+export const ACCOUNTING_FRAMEWORK: Record<string, string> = { NIIF_PYMES: 'NIIF para las PYMES', NIIF_COMPLETAS: 'NIIF completas' };

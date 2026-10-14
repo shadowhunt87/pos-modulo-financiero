@@ -21,6 +21,31 @@ Menú **Configuración › Empresa**.
 
 [CAPTURA: pantalla Empresa]
 
+## Datos fiscales
+
+Menú **Configuración › Datos fiscales** (o el botón **Datos fiscales (DGII)** en Empresa). Con estos datos el sistema sabe qué comprobantes, impuestos y plazos le tocan a tu empresa. Mientras falten, el Panel muestra el aviso **Completa los datos fiscales de tu empresa**.
+
+1. Elige la **Clasificación en la DGII** (está en tu Oficina Virtual): define hasta cuándo puedes usar comprobantes B.
+2. Elige el **Régimen de impuestos** (casi siempre Ordinario) y el **Tipo de sociedad**.
+3. Elige el **Marco contable**: NIIF para las PYMES salvo que tu contadora diga otra cosa.
+4. Si ya emites facturas electrónicas, escribe desde cuándo. Marca **Soy agente de retención** si la DGII te designó.
+5. Pulsa **Guardar datos fiscales**. Solo un administrador puede guardar; los demás lo ven.
+
+Si el año fiscal no cierra en marzo, junio, septiembre o diciembre, verás un aviso: son los únicos cierres que admite la DGII.
+
+[CAPTURA: pantalla Datos fiscales]
+
+## Valores fiscales
+
+Menú **Configuración › Valores fiscales**. Son las tasas, montos y fechas de la DGII que usa el sistema (ITBIS, retenciones, umbral del 607, fin de los comprobantes B…). Cada uno dice **desde cuándo rige**, **de dónde sale** y su estado:
+
+- **✓ Oficial**: tu contadora lo confirmó con su nombre.
+- **? Por validar**: viene de la ley o de fuentes confiables, pero falta esa confirmación.
+
+Nada se cambia a mano: cuando la ley cambia, se carga un valor nuevo con su fecha y lo anterior queda guardado. Con **Vigentes al** ves el valor que regía cualquier día, y con **Historial** todas sus versiones. Los botones **Excel** y **PDF** sacan la lista para que la contadora la revise.
+
+[CAPTURA: pantalla Valores fiscales]
+
 ## Impuestos
 
 Menú **Configuración › Impuestos**. Aquí viven el ITBIS (el impuesto sobre las ventas), las retenciones y otros impuestos que se eligen en las líneas de las facturas.
@@ -32,6 +57,17 @@ Menú **Configuración › Impuestos**. Aquí viven el ITBIS (el impuesto sobre 
 5. Guarda. Para cambiar uno existente usa **Editar**.
 
 [CAPTURA: ventana Nuevo impuesto]
+
+### Enlazar un impuesto con el valor oficial
+
+La columna **Valor oficial** dice si cada impuesto está **✓ Enlazado** o **! Sin enlazar**.
+
+- **Enlazado**: la tasa (y en las retenciones, sobre qué se calcula) sale del [valor fiscal](#valores-fiscales) vigente en la fecha de cada factura. Si la DGII cambia la tasa, se actualiza sola, y las facturas viejas no cambian.
+- **Sin enlazar**: usa la tasa que escribiste. Si la ley cambia, **no se actualiza sola**.
+
+Pulsa **Enlazar**, revisa la opción marcada como **Sugerido** (o elige la que corresponde si hay varias) y pulsa **Enlazar**. Un impuesto enlazado no deja editar su tasa: para usar otra, primero **Desenlazar**.
+
+Las notas de crédito y débito usan la tasa de la factura que modifican, aunque la ley haya cambiado después.
 
 ## Comprobantes fiscales (NCF)
 
@@ -86,6 +122,9 @@ Menú **Configuración › Clasificación de cuentas para reportes**. Define dó
 
 | Qué ves | Qué hacer |
 |---|---|
+| "No hay un valor vigente de …" | Falta un valor fiscal para esa fecha. Avisa a quien administra el sistema para que lo cargue. |
+| "El sistema tiene valores fiscales desde el 01/01/2025" | La factura usa un impuesto enlazado con una fecha anterior. Usa un impuesto sin enlazar para documentos tan viejos. |
+| "Este impuesto está enlazado a un valor oficial…" | Su tasa cambia sola. Desenlázalo si de verdad necesitas otra tasa. |
 | "Falta configurar en Configuración contable" | Elige la cuenta que nombra el mensaje en Cuentas automáticas. |
 | "No hay diario…" | Pulsa **Crear diarios estándar** en Libros diarios. |
 | "No hay secuencia configurada" / "Se agotó el rango" | Carga o renueva la secuencia en Comprobantes fiscales (NCF). |

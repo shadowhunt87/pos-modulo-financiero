@@ -14,6 +14,7 @@ import { Shell } from './layout/shell';
  *  help      : help, help/:slug
  *  feedback  : feedback/mine, feedback
  *  ecf       : ecf/import
+ *  fiscal    : fiscal-values, company/fiscal
  */
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/auth/login').then((m) => m.Login), title: 'Iniciar sesión' },
@@ -32,6 +33,7 @@ export const routes: Routes = [
       { path: '', loadChildren: () => import('./features/help/help.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/feedback/feedback.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/ecf/ecf.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/fiscal/fiscal.routes').then((m) => m.routes) },
       { path: '**', loadComponent: () => import('./features/not-found').then((m) => m.NotFound), title: 'No encontrado' },
     ],
   },

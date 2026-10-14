@@ -36,9 +36,11 @@ export const NAV: NavGroup[] = [
   ] },
   { title: 'Configuración', items: [
     { label: 'Empresa', path: '/company' },
+    { label: 'Datos fiscales', path: '/company/fiscal' },
     { label: 'Usuarios', path: '/users', roles: ['ADMIN'] },
     { label: 'Conexiones con otros sistemas', path: '/service-keys', roles: ['ADMIN'] },
     { label: 'Impuestos', path: '/tax-rates' },
+    { label: 'Valores fiscales', path: '/fiscal-values' },
     { label: 'Comprobantes fiscales (NCF)', path: '/ncf' },
     { label: 'Clasificación de cuentas para reportes', path: '/account-classification' },
     { label: 'Cuentas automáticas', path: '/accounting-settings' },

@@ -172,6 +172,14 @@
       "seccion": "usuarios-y-permisos", "ancla": "crear-un-usuario",
       "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
     },
+    "/fiscal-values": {
+      "seccion": "configuracion", "ancla": "valores-fiscales",
+      "siguiente": { "texto": "Enlaza tus impuestos con los valores oficiales", "ruta": "/tax-rates" }
+    },
+    "/company/fiscal": {
+      "seccion": "configuracion", "ancla": "datos-fiscales",
+      "siguiente": { "texto": "Revisa tus impuestos", "ruta": "/tax-rates" }
+    },
     "/tax-rates": {
       "seccion": "configuracion", "ancla": "impuestos",
       "siguiente": { "texto": "Crea una factura con tus impuestos", "ruta": "/invoices/new" }
@@ -278,6 +286,10 @@
   },
 
   "errores": [
+    { "patron": "No hay un valor vigente de", "explicacion": "Falta cargar ese valor fiscal para la fecha del documento. Avisa a quien administra el sistema (Manual › Valores fiscales).", "enlace": { "texto": "Ver valores fiscales", "ruta": "/fiscal-values" } },
+    { "patron": "valores fiscales desde el 01/01/2025", "explicacion": "Los impuestos enlazados solo tienen valores desde 2025. Para un documento más viejo usa un impuesto sin enlazar." },
+    { "patron": "enlazado a un valor oficial", "explicacion": "La tasa de un impuesto enlazado cambia sola con la ley. Si necesitas otra, desenlázalo primero en Impuestos.", "enlace": { "texto": "Ir a Impuestos", "ruta": "/tax-rates" } },
+    { "patron": "solo sirve para una retención de ITBIS|es una retención: no sirve|es un impuesto de línea", "explicacion": "Ese valor oficial no corresponde a este tipo de impuesto. Elige otro de la lista." },
     { "patron": "mes ya declarado|mes cerrado. No se anula|electrónica \\(e-CF\\). No se anula", "explicacion": "Lo ya cerrado o declarado no se cambia. Corrige la factura con una nota de crédito por el monto que sobra (o por el total)." },
     { "patron": "ya fue reversado", "explicacion": "Otra persona ya reversó este asiento. Recarga la página para ver el reverso." },
     { "patron": "reverseOn|mes abierto", "explicacion": "El mes del asiento está cerrado. En «Fecha del reverso» elige una fecha de un mes abierto (por ejemplo, hoy)." },

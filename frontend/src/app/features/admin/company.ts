@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -13,10 +14,11 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
 @Component({
   selector: 'app-company',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ...UI],
+  imports: [RouterLink, ReactiveFormsModule, ...UI],
   template: `
     <div class="page">
-      <div class="page-head"><div><h1>Empresa</h1><p class="sub">Datos generales y fiscales de la empresa.</p></div></div>
+      <div class="page-head"><div><h1>Empresa</h1><p class="sub">Datos generales y fiscales de la empresa.</p></div>
+        <a class="btn" routerLink="/company/fiscal">Datos fiscales (DGII)</a></div>
       @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
       @if (!canEdit) { <div class="notice info" role="status">Solo un administrador puede editar estos datos.</div> }
       @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }

@@ -54,6 +54,7 @@ model Company {
   ecfImports          EcfImport[]
   serviceKeys         ServiceKey[]
   ratioThresholds     RatioThreshold[]
+  fiscalProfile       CompanyFiscalProfile?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -543,6 +544,7 @@ model TaxRate {
   appliesTo         TaxApplies @default(BOTH)
   isWithholding     Boolean    @default(false) // retención (resta del total a cobrar/pagar)
   dgiiCode          String? // código para reportes 606/607/IT-1
+  parameterKey      String? // N2: enlazado a un parámetro fiscal con vigencia (la tasa y la base salen de ahí)
   salesAccountId    String? // ej: ITBIS por pagar
   salesAccount      Account?   @relation("TaxSalesAccount", fields: [salesAccountId], references: [id])
   purchaseAccountId String? // ej: ITBIS adelantado
@@ -680,35 +682,41 @@ enum InvoiceStatus {
 }
 
 model InvoiceLine {
-  id           String      @id @default(uuid())
-  invoiceId    String
-  invoice      Invoice     @relation(fields: [invoiceId], references: [id])
-  description  String
-  quantity     Decimal     @db.Decimal(19, 4)
-  unitPrice    Decimal     @db.Decimal(19, 4)
-  discount     Decimal     @default(0) @db.Decimal(19, 4) // monto de descuento
-  taxRateId    String?
-  taxRate      TaxRate?    @relation(fields: [taxRateId], references: [id])
-  taxAmount    Decimal     @default(0) @db.Decimal(19, 4)
-  total        Decimal     @db.Decimal(19, 4)
+  id                String      @id @default(uuid())
+  invoiceId         String
+  invoice           Invoice     @relation(fields: [invoiceId], references: [id])
+  description       String
+  quantity          Decimal     @db.Decimal(19, 4)
+  unitPrice         Decimal     @db.Decimal(19, 4)
+  discount          Decimal     @default(0) @db.Decimal(19, 4) // monto de descuento
+  taxRateId         String?
+  taxRate           TaxRate?    @relation(fields: [taxRateId], references: [id])
+  taxAmount         Decimal     @default(0) @db.Decimal(19, 4)
+  total             Decimal     @db.Decimal(19, 4)
+  // N2: tasa usada y parámetro de donde salió (trazabilidad; null en facturas viejas o impuestos sin enlazar)
+  appliedRate       Decimal?    @db.Decimal(9, 4)
+  fiscalParameterId String?
   // Cuenta contable de ingreso/gasto (si no, usa AccountingSettings)
-  accountId    String?
-  account      Account?    @relation(fields: [accountId], references: [id])
-  costCenterId String?
-  costCenter   CostCenter? @relation(fields: [costCenterId], references: [id])
+  accountId         String?
+  account           Account?    @relation(fields: [accountId], references: [id])
+  costCenterId      String?
+  costCenter        CostCenter? @relation(fields: [costCenterId], references: [id])
 
   @@index([invoiceId])
 }
 
 // Retenciones aplicadas a una factura (ISR, ITBIS retenido)
 model InvoiceWithholding {
-  id        String  @id @default(uuid())
-  invoiceId String
-  invoice   Invoice @relation(fields: [invoiceId], references: [id])
-  taxRateId String
-  taxRate   TaxRate @relation(fields: [taxRateId], references: [id])
-  base      Decimal @db.Decimal(19, 4)
-  amount    Decimal @db.Decimal(19, 4)
+  id                String   @id @default(uuid())
+  invoiceId         String
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id])
+  taxRateId         String
+  taxRate           TaxRate  @relation(fields: [taxRateId], references: [id])
+  base              Decimal  @db.Decimal(19, 4)
+  amount            Decimal  @db.Decimal(19, 4)
+  // N2: tasa usada y parámetro de donde salió
+  appliedRate       Decimal? @db.Decimal(9, 4)
+  fiscalParameterId String?
 
   @@index([invoiceId])
 }
@@ -1266,4 +1274,128 @@ model RatioThreshold {
   updatedAt   DateTime @updatedAt
 
   @@unique([companyId, ratioKey])
+}
+
+// ============================================================
+// PARÁMETROS FISCALES CON VIGENCIA (PLAN-v0.3 §5, R9)
+// Tablas globales (sin companyId) y de SOLO INSERCIÓN: ninguna fila se modifica ni se borra.
+// ============================================================
+
+// Un valor de la DGII desde una fecha. Rige hasta el siguiente validFrom de la misma clave (no hay validTo).
+// Corregir un valor = revisión nueva con supersedesId.
+model FiscalParameter {
+  id           String                      @id @default(uuid())
+  key          String                      @db.VarChar(60)
+  revision     Int                         @default(1)
+  kind         FiscalParameterKind
+  value        Decimal?                    @db.Decimal(19, 6)
+  valueDate    DateTime?                   @db.Date
+  valueJson    Json?
+  unit         String?
+  base         WithholdingBase? // solo retenciones
+  validFrom    DateTime                    @db.Date
+  supersedesId String?                     @unique
+  supersedes   FiscalParameter?            @relation("FiscalParameterRevision", fields: [supersedesId], references: [id])
+  supersededBy FiscalParameter?            @relation("FiscalParameterRevision")
+  source       String                      @db.VarChar(300)
+  sourceUrl    String?
+  notes        String?
+  loadId       String
+  load         FiscalParameterLoad         @relation(fields: [loadId], references: [id])
+  createdAt    DateTime                    @default(now())
+  validations  FiscalParameterValidation[]
+
+  @@unique([key, validFrom, revision])
+  @@index([key, validFrom])
+}
+
+enum FiscalParameterKind {
+  RATE
+  AMOUNT
+  DATE
+  DAYS
+  FLAG
+  TABLE
+  NONE // "deja de aplicar desde validFrom"
+}
+
+enum WithholdingBase {
+  ITBIS
+  SUBTOTAL
+  TOTAL
+}
+
+// Validación con nombre (la contadora): un valor es Oficial solo si tiene una
+model FiscalParameterValidation {
+  id          String              @id @default(uuid())
+  parameterId String
+  parameter   FiscalParameter     @relation(fields: [parameterId], references: [id])
+  validatedBy String
+  validatedAt DateTime
+  note        String?
+  loadId      String
+  load        FiscalParameterLoad @relation(fields: [loadId], references: [id])
+  createdAt   DateTime            @default(now())
+
+  @@unique([parameterId, validatedBy])
+}
+
+// Registro de cada carga (los datos globales no tienen empresa ni usuario para AuditLog)
+model FiscalParameterLoad {
+  id          String                      @id @default(uuid())
+  loadedAt    DateTime                    @default(now())
+  loadedBy    String
+  fileName    String
+  sha256      String
+  gitCommit   String
+  summary     Json
+  parameters  FiscalParameter[]
+  validations FiscalParameterValidation[]
+}
+
+// Ficha fiscal de la empresa (PLAN-v0.3 §6), 1 a 1 con Company
+model CompanyFiscalProfile {
+  id                    String               @id @default(uuid())
+  companyId             String               @unique
+  company               Company              @relation(fields: [companyId], references: [id])
+  dgiiClassification    DgiiClassification?
+  taxRegime             TaxRegime?
+  legalForm             LegalForm?
+  accountingFramework   AccountingFramework?
+  frameworkAdoptionDate DateTime?            @db.Date
+  ecfEmitterSince       DateTime?            @db.Date
+  isWithholdingAgent    Boolean              @default(false)
+  updatedById           String
+  updatedAt             DateTime             @updatedAt
+}
+
+enum DgiiClassification {
+  GRANDE_NACIONAL
+  GRANDE_LOCAL
+  MEDIANO
+  PEQUENO
+  MICRO
+  NO_CLASIFICADO
+}
+
+enum TaxRegime {
+  ORDINARIO
+  RST
+}
+
+enum LegalForm {
+  SRL
+  SA
+  SAS
+  EIRL
+  SNC
+  SCS
+  SCA
+  PERSONA_FISICA
+  OTRA
+}
+
+enum AccountingFramework {
+  NIIF_PYMES
+  NIIF_COMPLETAS
 }

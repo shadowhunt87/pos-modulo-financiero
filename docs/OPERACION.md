@@ -58,3 +58,27 @@ el ADMIN importe.
 | `mysql2`, `deepmerge-ts` (vía `@prisma/config`) | Alta | `prisma` 7.10.0 (herramienta de migraciones) | Bajo: solo corre en el contenedor `migrate`, no recibe datos de usuarios. Esperar la corrección de Prisma 7 |
 | `uuid` 8.3.2 | Moderada | `exceljs` 4.4.0 y `bull` 4.16.5 | Bajo: la falla es al pasar un búfer propio a `uuid` v3/v5/v6, que el sistema no hace |
 | `bull`, `@nestjs/bull` | Moderada | dependencia directa **que no se usa** | Ninguno en uso. Quitarlas cierra 2 alertas (lo decide Carlos con el socio; ver PLAN.md, deuda 16) |
+
+## Cargar o corregir valores fiscales (cargador, PLAN-v0.3 §5.5)
+
+Los valores de la DGII (tasas, umbrales, fechas) **no se escriben en el código ni en una pantalla**: se cargan desde un archivo
+JSON fechado en `docs/normativa-dgii/parametros/AAAA-MM-DD_<tema>.json`. El cargador **solo agrega** filas; nada se edita ni se borra
+(la base de datos también lo impide). Corregir un valor = una fila nueva con `"revision": 2` (o la que siga) para la misma clave y fecha.
+
+**Antes de cargar:** Carlos autoriza la carga. Si el archivo valida valores (`"validations"`), el nombre es el de la contadora que los revisó.
+
+1. Sube el archivo a git y anota su commit: `git log -1 --format=%H -- docs/normativa-dgii/parametros/<archivo>.json`
+2. Copia el archivo al contenedor del API (la imagen solo trae `dist/`):
+   `docker cp docs/normativa-dgii/parametros/<archivo>.json <contenedor-api>:/tmp/<archivo>.json`
+3. **Simula primero** (no escribe nada; muestra lo que haría y los errores):
+   `docker exec <contenedor-api> node dist/fiscal/load-parameters.js /tmp/<archivo>.json --dry-run`
+4. Si la simulación está bien, carga de verdad (todo o nada, en una sola transacción):
+   `docker exec <contenedor-api> node dist/fiscal/load-parameters.js /tmp/<archivo>.json --commit <hash> --by "Nombre de quien carga"`
+5. Si el informe lista **documentos emitidos con un valor que se corrige**, pásaselo a la contadora: ella decide si hacen falta notas de crédito o débito.
+6. Revisa en **Configuración › Valores fiscales** que se vea el valor nuevo.
+
+Cargar dos veces el mismo archivo no duplica nada. Un archivo con un campo desconocido, una tasa sin valor desde el 01/01/2025
+o una fila que ya existe con otros datos se rechaza completo.
+
+**Primera vez:** el catálogo inicial es `docs/normativa-dgii/parametros/2026-10-14_catalogo-inicial.json`. Sin él, las facturas con
+impuestos enlazados y el 607 dan «No hay un valor vigente…».

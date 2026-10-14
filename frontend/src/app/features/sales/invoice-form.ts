@@ -72,6 +72,9 @@ export class InvoiceForm {
   protected readonly baseCurrency = signal('DOP');
   protected readonly ncfTypes = signal<NcfType[]>([]);
   protected readonly relatedInvoices = signal<InvoiceRow[]>([]);
+  /** N2: tasa y base vigentes de cada impuesto en la fecha del documento (GET /fiscal/tax-rates/effective). */
+  protected readonly effective = signal<Record<string, { rate: string; base: string | null; linked: boolean; error: string | null }>>({});
+  private lastTaxDate = '';
 
   protected readonly form = this.fb.nonNullable.group({
     type: ['SALE', Validators.required],
@@ -146,7 +149,7 @@ export class InvoiceForm {
       const d = dec(l.discount);
       if (d.gt(gross)) problems.push(`El descuento de la línea ${i + 1} es mayor que su importe.`);
       const net = r2(gross.minus(d));
-      const rate = l.taxRateId ? rates.get(l.taxRateId)?.rate : undefined;
+      const rate = l.taxRateId ? (this.effective()[l.taxRateId]?.rate ?? rates.get(l.taxRateId)?.rate) : undefined;
       tax = tax.plus(rate ? r2(net.times(dec(rate)).div(100)) : 0);
       subtotal = subtotal.plus(net); discount = discount.plus(d);
       return net;
@@ -155,18 +158,32 @@ export class InvoiceForm {
     let withheld = dec(0);
     const whAmounts = v.withholdings.map((w) => {
       const t = rates.get(w.taxRateId);
-      const base = w.base !== null && String(w.base) !== '' ? dec(w.base) : t?.type === 'ITBIS_WITHHOLDING' ? tax : subtotal;
-      const amount = t ? r2(base.times(dec(t.rate)).div(100)) : dec(0);
+      const eff = this.effective()[w.taxRateId];
+      // Enlazado: la base la manda el valor oficial (igual que el servidor); si no, la escrita o la de siempre
+      const base = eff?.base === 'ITBIS' ? tax : eff?.base === 'SUBTOTAL' ? subtotal : eff?.base === 'TOTAL' ? subtotal.plus(tax)
+        : w.base !== null && String(w.base) !== '' ? dec(w.base) : t?.type === 'ITBIS_WITHHOLDING' ? tax : subtotal;
+      const amount = t ? r2(base.times(dec(eff?.rate ?? t.rate)).div(100)) : dec(0);
       withheld = withheld.plus(amount);
       return amount;
     });
     const total = subtotal.plus(tax);
+    for (const id of new Set([...v.lines.map((l) => l.taxRateId), ...v.withholdings.map((w) => w.taxRateId)])) {
+      const err = id ? this.effective()[id]?.error : null;
+      if (err) problems.push(err);
+    }
     if (total.lte(0)) problems.push('El total debe ser mayor a cero.');
     if (withheld.gt(total)) problems.push('Las retenciones no pueden superar el total.');
     return { nets, whAmounts, subtotal, discount, tax, withheld, total, balance: total.minus(withheld), problems };
   });
 
   constructor() {
+    // Las notas usan la fecha de la factura que modifican (como el servidor)
+    effect(() => {
+      const v = this.raw();
+      const rel = this.relatedInvoices().find((r) => r.id === v.relatedInvoiceId);
+      const date = (rel && (v.type === 'CREDIT_NOTE' || v.type === 'DEBIT_NOTE') ? isoDate(rel.issueDate) : v.issueDate) || '';
+      if (date && date !== this.lastTaxDate) { this.lastTaxDate = date; untracked(() => void this.loadEffective(date)); }
+    });
     effect(() => {
       const id = this.id(); const type = this.type(); const related = this.related();
       untracked(() => void this.init(id, type, related));
@@ -359,5 +376,10 @@ export class InvoiceForm {
       await this.router.navigate(['/invoices', saved.id]);
     } catch (e) { this.formError.set(e); }
     this.saving.set(false);
+  }
+
+  private async loadEffective(date: string): Promise<void> {
+    try { this.effective.set(await this.api.getP('/fiscal/tax-rates/effective', { date })); }
+    catch { this.effective.set({}); } // sin el dato se usa la tasa del maestro; el servidor manda al guardar
   }
 }
