@@ -247,6 +247,22 @@ describe('Seguridad (e2e)', () => {
       }
     });
 
+    it('nginx: en cada ruta que pasa al API oculta las cabeceras que él mismo pone (cada una sale una sola vez)', async () => {
+      // Las que pone nginx (security-headers.conf) y que helmet también manda: si no se ocultan en
+      // /api/, el navegador recibe dos valores (p. ej. X-Frame-Options DENY y SAMEORIGIN, o dos CSP).
+      const nginxHeaders = [...readFileSync('frontend/deploy/security-headers.conf', 'utf8').matchAll(/^\s*add_header\s+([\w-]+)/gm)].map((m) => m[1].toLowerCase());
+      const fromApi = (await request(app.getHttpServer()).get('/auth/me').expect(401)).headers;
+      const both = nginxHeaders.filter((h) => fromApi[h] !== undefined);
+      expect(both.length).toBeGreaterThanOrEqual(3);
+      const conf = readFileSync('frontend/deploy/nginx.conf', 'utf8');
+      const apiLocations = [...conf.matchAll(/location[^{]*\{([^}]*)\}/g)].map((m) => m[1]).filter((body) => body.includes('proxy_pass'));
+      expect(apiLocations.length).toBeGreaterThanOrEqual(2);
+      for (const body of apiLocations) {
+        const hidden = [...body.matchAll(/proxy_hide_header\s+([\w-]+)/g)].map((m) => m[1].toLowerCase());
+        expect(both.filter((h) => !hidden.includes(h))).toEqual([]);
+      }
+    });
+
     it('CORS apagado por defecto: ningún origen recibe permiso', async () => {
       const r = await request(app.getHttpServer()).options('/auth/login').set('Origin', 'https://evil.example').set('Access-Control-Request-Method', 'POST');
       expect(r.headers['access-control-allow-origin']).toBeUndefined();
