@@ -211,7 +211,7 @@ describe('Semáforo financiero (e2e)', () => {
       expect((pdf.body as Buffer).subarray(0, 4).toString()).toBe('%PDF');
       const xlsx = await binary(api('get', '/financial-analysis/export/compare?from=2030-01-01&to=2030-03-31&format=xlsx', 'view')).expect(200);
       const wb = new ExcelJS.Workbook();
-      await wb.xlsx.load(xlsx.body as Buffer);
+      await wb.xlsx.load(xlsx.body as never); // el Buffer de supertest y el de exceljs difieren solo en el tipo
       const texts: string[] = [];
       wb.eachSheet((ws) => ws.eachRow((r) => r.eachCell((c) => texts.push(c.text))));
       expect(texts).toContain('Razón corriente');
