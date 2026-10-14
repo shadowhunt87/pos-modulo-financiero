@@ -8,6 +8,7 @@ import { RouterLink } from '@angular/router';
  *     actionLabel="Nueva factura" actionLink="/invoices/new" [canAct]="canWrite()" />
  *   <app-empty-state [filtered]="hasFilters()" title="No hay facturas con esos filtros" (clear)="clearFilters()" />
  *
+ * - Si la acción abre una ventana (no una ruta), omite `actionLink` y escucha `(action)="openNew()"`.
  * - Dentro de una tabla va en <tr><td colspan="N"> con el número de columnas de la tabla.
  * - `canAct` (por defecto verdadero): pásale el permiso; si es falso no se muestra el botón de crear.
  * - `filtered`: con filtros activos muestra «Quitar filtros» (emite `clear`) en lugar del botón de crear.
@@ -22,8 +23,12 @@ import { RouterLink } from '@angular/router';
       @if (text()) { <p>{{ text() }}</p> }
       @if (filtered()) {
         <button type="button" class="btn" style="margin-top:12px" (click)="clear.emit()">Quitar filtros</button>
-      } @else if (actionLabel() && actionLink() && canAct()) {
-        <a class="btn btn-primary" style="margin-top:12px" [routerLink]="actionLink()">{{ actionLabel() }}</a>
+      } @else if (actionLabel() && canAct()) {
+        @if (actionLink()) {
+          <a class="btn btn-primary" style="margin-top:12px" [routerLink]="actionLink()">{{ actionLabel() }}</a>
+        } @else {
+          <button type="button" class="btn btn-primary" style="margin-top:12px" (click)="action.emit()">{{ actionLabel() }}</button>
+        }
       }
     </div>
   `,
@@ -36,6 +41,7 @@ export class EmptyState {
   readonly canAct = input<boolean>(true);
   readonly filtered = input<boolean>(false);
   readonly clear = output<void>();
+  readonly action = output<void>();
 }
 
 /** Deja en blanco los campos de filtro (inputs y selects) de una barra de filtros; los `app-combobox` se limpian con su FormControl. */

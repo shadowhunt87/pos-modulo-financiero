@@ -25,4 +25,15 @@ describe('EmptyState', () => {
     expect(el.querySelector('button')?.textContent).toContain('Quitar filtros');
     expect(el.querySelector('a')).toBeNull();
   });
+  it('sin enlace, el botón emite «action» (abre una ventana)', () => {
+    TestBed.configureTestingModule({ imports: [EmptyState], providers: [provideRouter([])] });
+    const fixture = TestBed.createComponent(EmptyState);
+    fixture.componentRef.setInput('title', 'Vacío');
+    fixture.componentRef.setInput('actionLabel', 'Nuevo');
+    let n = 0;
+    fixture.componentInstance.action.subscribe(() => n++);
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement).querySelector('button')?.click();
+    expect(n).toBe(1);
+  });
 });
