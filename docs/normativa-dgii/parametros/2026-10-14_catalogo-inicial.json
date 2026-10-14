@@ -447,6 +447,62 @@
         }
       },
       "notes": "Mapa de casillas en borrador: numeración por confirmar con el formulario vigente. Bloquea el IR-17 asistido hasta validarse."
+    },
+    {
+      "key": "F609_COLUMNAS",
+      "kind": "TABLE",
+      "validFrom": "2025-01-01",
+      "source": "Instructivo del formato 609 (por validar con el documento oficial)",
+      "valueJson": {
+        "version": "borrador",
+        "columnas": [
+          {
+            "campo": "beneficiary",
+            "titulo": "Razón social del beneficiario"
+          },
+          {
+            "campo": "idType",
+            "titulo": "Tipo de identificación"
+          },
+          {
+            "campo": "taxId",
+            "titulo": "Número de identificación tributaria"
+          },
+          {
+            "campo": "country",
+            "titulo": "País"
+          },
+          {
+            "campo": "rentType",
+            "titulo": "Tipo de renta"
+          },
+          {
+            "campo": "ncf",
+            "titulo": "NCF"
+          },
+          {
+            "campo": "invoiceDate",
+            "titulo": "Fecha del comprobante"
+          },
+          {
+            "campo": "paymentDate",
+            "titulo": "Fecha de pago"
+          },
+          {
+            "campo": "amount",
+            "titulo": "Monto facturado"
+          },
+          {
+            "campo": "isrWithheld",
+            "titulo": "ISR retenido"
+          },
+          {
+            "campo": "itbisWithheld",
+            "titulo": "ITBIS retenido"
+          }
+        ]
+      },
+      "notes": "Orden de columnas en borrador: se reemplaza con una revisión cuando llegue el instructivo oficial (Carlos lo baja de la DGII)."
     }
   ],
   "validations": []

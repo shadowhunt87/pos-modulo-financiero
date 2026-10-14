@@ -154,6 +154,18 @@
       "seccion": "reportes-dgii-presupuestos", "ancla": "dgii-606-607-y-608",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
+    "/dgii/it1": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "declaraciones-it-1-ir-17-y-609",
+      "siguiente": { "texto": "Marca tus declaraciones en el calendario", "ruta": "/fiscal-calendar" }
+    },
+    "/dgii/ir17": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "declaraciones-it-1-ir-17-y-609",
+      "siguiente": { "texto": "Marca tus declaraciones en el calendario", "ruta": "/fiscal-calendar" }
+    },
+    "/dgii/609": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "declaraciones-it-1-ir-17-y-609",
+      "siguiente": { "texto": "Marca tus declaraciones en el calendario", "ruta": "/fiscal-calendar" }
+    },
     "/dgii/review": {
       "seccion": "reportes-dgii-presupuestos", "ancla": "revision-del-mes",
       "siguiente": { "texto": "Genera los formatos 606, 607 y 608", "ruta": "/dgii" }

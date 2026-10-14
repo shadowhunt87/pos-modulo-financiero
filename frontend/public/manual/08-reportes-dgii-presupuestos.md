@@ -35,6 +35,16 @@ Menú **Reportes › Calendario fiscal**. Muestra lo que tienes que presentar (6
 
 [CAPTURA: Calendario fiscal]
 
+## Declaraciones IT-1, IR-17 y 609
+
+Menú **Reportes › Declaraciones DGII**. Elige el mes y la pestaña:
+
+- **IT-1 (ITBIS):** una hoja casilla por casilla con el valor de cada una y **de dónde sale**. Arriba dice si las ventas **cuadran con el 607**. Abajo verás el ITBIS a pagar o el saldo a favor, que incluye el saldo a favor del mes anterior si marcaste ese IT-1 como presentado. El sistema no calcula la proporcionalidad del ITBIS: si tienes ventas exentas, revísala con tu contadora.
+- **IR-17 (retenciones):** las retenciones de ISR a proveedores, en su casilla. Si una retención no está enlazada a un valor oficial, verás un aviso para enlazarla.
+- **609 (pagos al exterior):** compras con comprobante B17/E47 o a proveedores de otro país, con su retención. Pulsa **Descargar TXT** para subirlo a la Oficina Virtual.
+
+El IT-1 y el IR-17 **no generan archivo**: copia los valores en la Oficina Virtual (puedes sacar la hoja en **Excel** o **PDF**). Al terminar, pulsa **Ya lo presenté**. Si el mapa de casillas o las columnas del 609 dicen **Por validar**, revísalos con tu contadora antes de presentar.
+
 ## Revisión del mes
 
 Menú **Reportes › Revisión del mes**. Antes de presentar a la DGII, elige el mes y pulsa **Revisar**. El sistema dice:

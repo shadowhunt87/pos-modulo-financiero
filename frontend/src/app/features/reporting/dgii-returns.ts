@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { Api } from '../../core/api';
 import { UI } from '../../shared/ui';
-import { FieldHelp } from '../../shared/ui/field-help';
 
 interface Check {
   key: string; title: string; ok: boolean; detail: string; route: string; expected?: string; ledger?: string; difference?: string;
@@ -19,7 +18,7 @@ const prevMonth = () => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d
 @Component({
   selector: 'app-dgii-returns',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FieldHelp, ...UI],
+  imports: [RouterLink, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
