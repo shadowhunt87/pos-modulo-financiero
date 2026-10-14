@@ -396,6 +396,8 @@ export class InvoicingService {
     const reversed = inv.type === InvoiceType.CREDIT_NOTE;
 
     // --- Comprobante fiscal ---
+    // N7: ¿el e-NCF lo emite el sistema por el proveedor? (no los e-CF de proveedores ni los importados)
+    const emitted = { here: false };
     let ncf = built.header.ncf;
     let ncfType = built.header.ncfType;
     if (side === 'SALES') {
@@ -422,7 +424,7 @@ export class InvoicingService {
       // N5 (D24): pasado el último día de las B de la clasificación (fecha de la factura o de hoy) → solo e-CF
       if (!isElectronic(ncfType)) await this.calendar.assertBAllowed(tx, companyId, ncfType, inv.issueDate);
       ncf = isElectronic(ncfType)
-        ? await this.electronicNcf(tx, companyId, ncfType, inv.issueDate, opts)
+        ? await this.electronicNcf(tx, companyId, ncfType, inv.issueDate, opts, emitted)
         : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else if (ncf) {
       ncfType = ncf.slice(0, 3);
@@ -436,7 +438,7 @@ export class InvoicingService {
     } else if (ncfType && SELF_ISSUED_PURCHASE_NCF.includes(ncfType)) {
       // Proveedor informal / gasto menor / pago al exterior: el comprobante lo emite la empresa
       ncf = isElectronic(ncfType)
-        ? await this.electronicNcf(tx, companyId, ncfType, inv.issueDate, opts)
+        ? await this.electronicNcf(tx, companyId, ncfType, inv.issueDate, opts, emitted)
         : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else {
       throw new UnprocessableEntityException('Las compras requieren el NCF del proveedor (o ncfType B11/B13/B17 si lo emites tú)');
@@ -481,7 +483,7 @@ export class InvoicingService {
     await tx.invoiceWithholding.deleteMany({ where: { invoiceId: id } });
     await this.persistChildren(tx, id, built);
     // N7 (A9): e-CF emitido desde el sistema → documento PENDING_SEND en la MISMA transacción; lo envía la cola
-    if (ncfType && isElectronic(ncfType) && !opts.assignedNcf) {
+    if (emitted.here) {
       const company = await tx.company.findUniqueOrThrow({ where: { id: companyId }, select: { taxId: true } });
       const conn = await tx.ecfConnection.findUnique({ where: { companyId }, select: { providerCode: true } });
       await tx.ecfDocument.create({
@@ -498,10 +500,11 @@ export class InvoicingService {
    * e-NCF propio: el que trae la importación (emitido en el portal) o, con conexión activa con el proveedor (N7), el de
    * nuestra secuencia E (numeración OURS) o ninguno todavía (numeración PROVIDER: llega con la respuesta).
    */
-  private async electronicNcf(tx: Tx, companyId: string, ncfType: string, issueDate: Date, opts: IssueOptions): Promise<string | null> {
+  private async electronicNcf(tx: Tx, companyId: string, ncfType: string, issueDate: Date, opts: IssueOptions, emitted: { here: boolean }): Promise<string | null> {
     if (opts.assignedNcf) return this.assigned(ncfType, opts);
     const conn = await tx.ecfConnection.findUnique({ where: { companyId } });
     if (!conn?.active || !conn.ecfTypes.includes(ncfType)) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
+    emitted.here = true;
     if (conn.numbering === 'PROVIDER') return null;
     return (await this.ncf.consumeNext(tx, companyId, ncfType, issueDate)).ncf;
   }

@@ -102,13 +102,13 @@ export class EcfSenderService implements OnModuleInit, OnModuleDestroy {
       if (xmlKey && result.xml) await this.storage.save(xmlKey, Buffer.from(result.xml, 'utf8'));
       const eNcf = 'eNcf' in result && result.eNcf ? result.eNcf : null;
       if (result.outcome === 'IN_PROCESS') {
-        await this.prisma.ecfDocument.update({ where: { id }, data: { status: EcfStatus.SENDING, trackId: ('trackId' in result ? result.trackId : null) ?? doc.trackId, attempts: { increment: 1 }, nextAttemptAt: new Date(Date.now() + 2 * 60_000), sentAt: doc.sentAt ?? new Date(), ...(xmlKey ? { xmlFileUrl: xmlKey } : {}) } });
+        await this.prisma.ecfDocument.update({ where: { id, companyId }, data: { status: EcfStatus.SENDING, trackId: ('trackId' in result ? result.trackId : null) ?? doc.trackId, attempts: { increment: 1 }, nextAttemptAt: new Date(Date.now() + 2 * 60_000), sentAt: doc.sentAt ?? new Date(), ...(xmlKey ? { xmlFileUrl: xmlKey } : {}) } });
         return;
       }
       const status = FINAL[result.outcome];
       await this.prisma.$transaction(async (tx) => {
         await tx.ecfDocument.update({
-          where: { id },
+          where: { id, companyId },
           data: {
             status, trackId: ('trackId' in result ? result.trackId : null) ?? doc.trackId, securityCode: result.securityCode ?? null, lastError: status === EcfStatus.REJECTED ? (result.message ?? 'Rechazado') : null,
             attempts: { increment: 1 }, nextAttemptAt: null, resolvedAt: new Date(), sentAt: doc.sentAt ?? new Date(), contingencySince: null, ...(xmlKey ? { xmlFileUrl: xmlKey } : {}),
@@ -122,7 +122,7 @@ export class EcfSenderService implements OnModuleInit, OnModuleDestroy {
     } catch (e) {
       const unavailable = e instanceof EcfUnavailableError;
       await this.prisma.ecfDocument.update({
-        where: { id },
+        where: { id, companyId },
         data: { status: unavailable ? EcfStatus.CONTINGENCY : EcfStatus.PENDING_SEND, attempts: { increment: 1 }, nextAttemptAt: this.backoff(doc.attempts + 1), lastError: (e as Error).message.slice(0, 1000), contingencySince: unavailable ? (doc.contingencySince ?? new Date()) : doc.contingencySince },
       });
       await this.event(companyId, id, unavailable ? 'CONTINGENCY' : 'ERROR', (e as Error).message);

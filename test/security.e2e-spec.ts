@@ -378,7 +378,13 @@ describe('Seguridad (e2e)', () => {
 
     it('lecturas restringidas: usuarios, comentarios recibidos y llaves de servicio son solo de ADMIN (el resto de lecturas es para cualquier rol)', () => {
       const restricted = routes(app).filter((r) => r.method === 'GET' && r.roles).map((r) => `${r.path} -> ${r.roles!.join(',')}`).sort();
-      expect(restricted).toEqual(['/data-export/summary -> ADMIN', '/feedback/ -> ADMIN', '/service-keys/ -> ADMIN', '/users/ -> ADMIN', '/users/:id -> ADMIN', '/users/security-events -> ADMIN']);
+      expect(restricted).toEqual([
+        '/auditing/account-notices -> ADMIN,AUDITOR', '/auditing/engagements -> ADMIN,AUDITOR', '/auditing/engagements/:id -> ADMIN,AUDITOR',
+        '/auditing/engagements/:id/findings -> ADMIN,AUDITOR', '/auditing/engagements/:id/items -> AUDITOR', '/auditing/engagements/:id/report -> ADMIN,AUDITOR',
+        '/auditing/engagements/:id/workpapers -> AUDITOR', '/auditing/files -> ADMIN,AUDITOR', '/auditing/files/:id/download -> ADMIN,AUDITOR',
+        '/auditing/history -> AUDITOR', '/data-export/summary -> ADMIN', '/ecf/connection -> ADMIN', '/feedback/ -> ADMIN', '/service-keys/ -> ADMIN',
+        '/users/ -> ADMIN', '/users/:id -> ADMIN', '/users/security-events -> ADMIN',
+      ]);
     });
 
     it('un VIEWER recibe 403 en cada ruta que exige un rol que no tiene (modificaciones y lecturas restringidas)', async () => {
