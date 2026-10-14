@@ -4,6 +4,7 @@ export interface GuideLink { texto: string; ruta: string }
 export interface FieldHelpDef { texto: string; seccion?: string; ancla?: string }
 export interface ErrorHelpDef { patron: string; explicacion: string; enlace?: GuideLink }
 interface AyudaJson {
+  version?: string;
   pantallas?: Record<string, { seccion?: string; ancla?: string; siguiente?: GuideLink }>;
   campos?: Record<string, string | FieldHelpDef>;
   errores?: ErrorHelpDef[] | Record<string, Omit<ErrorHelpDef, 'patron'>>;
@@ -64,6 +65,9 @@ export class Guidance {
   }
 
   /** Lista de "Cómo arreglarlo" (patrón de mensaje -> explicación -> enlace). */
+  /** Versión del manual (ayuda.json): la usa el aviso de novedades (D4). */
+  version(): string { return this.data().version ?? ''; }
+
   errors(): ErrorHelpDef[] {
     const e = this.data().errores;
     if (!e) return [];

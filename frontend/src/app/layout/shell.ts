@@ -15,13 +15,14 @@ import { FeedbackDialog } from '../features/feedback/feedback-dialog';
 import { HelpDrawer } from '../features/help/help-drawer';
 import { NAV } from './nav';
 import { SampleDataBanner } from '../features/setup/sample-data-banner';
+import { ReleaseNotice } from './release-notice';
 
 interface Ledger { totalDebit: string; totalCredit: string }
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog, SampleDataBanner],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog, SampleDataBanner, ReleaseNotice],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })

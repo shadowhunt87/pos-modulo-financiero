@@ -55,7 +55,7 @@
       <app-breadcrumbs />
       <app-next-step />
     </div>
-    <main class="content"><app-sample-data-banner /><router-outlet /></main>
+    <main class="content"><app-release-notice /><app-sample-data-banner /><router-outlet /></main>
   </div>
   <app-feedback-dialog [open]="feedback.isOpen()" (closed)="feedback.close()" />
   <app-help-drawer [open]="helpOpen()" (closed)="helpOpen.set(false)" />

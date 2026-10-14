@@ -1,5 +1,5 @@
 {
-  "version": "v0.2 · Fase 1 · 2026-10-10",
+  "version": "v0.3 · 2026-10-14",
   "secciones": [
     { "slug": "primeros-pasos", "archivo": "01-primeros-pasos.md", "titulo": "Primeros pasos" },
     { "slug": "configuracion", "archivo": "02-configuracion.md", "titulo": "Configuración de la empresa" },
@@ -14,7 +14,8 @@
     { "slug": "semaforo-financiero", "archivo": "11-semaforo-financiero.md", "titulo": "Semáforo financiero" },
     { "slug": "seguridad-y-exportacion", "archivo": "12-seguridad-y-exportacion.md", "titulo": "Seguridad de la cuenta y exportación de datos" },
     { "slug": "arranque", "archivo": "13-arranque.md", "titulo": "Arranque: tu primera factura en 15 minutos" },
-    { "slug": "auditoria", "archivo": "14-auditoria.md", "titulo": "Auditoría" }
+    { "slug": "auditoria", "archivo": "14-auditoria.md", "titulo": "Auditoría" },
+    { "slug": "novedades", "archivo": "15-novedades.md", "titulo": "Novedades" }
   ],
 
   "pantallas": {

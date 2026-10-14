@@ -60,6 +60,7 @@ export const NAV: NavGroup[] = [
   ] },
   { title: 'Ayuda', items: [
     { label: 'Manual de usuario', path: '/help' },
+    { label: 'Novedades', path: '/help/novedades' },
     { label: 'Mis comentarios', path: '/feedback/mine' },
     { label: 'Comentarios recibidos', path: '/feedback', roles: ['ADMIN'] },
   ] },
