@@ -60,7 +60,43 @@ No hace falta saber programar, pero sí entrar al servidor por terminal (la pant
 
 **Si hay que recuperar los datos de verdad**: no lo haga solo la primera vez; pida a Claude los pasos de "Restaurar de verdad" arriba. Lo que sí puede hacer siempre es **copiar los archivos de `diarios/` a su computadora** (con `scp` o su programa de archivos por SFTP): con ese `.dump` y el `.tar.gz` se puede reconstruir todo en cualquier servidor.
 
-## Copia FUERA del servidor (pendiente de decisión de Carlos)
+## Cifrado, copia externa y aviso de fallo (S3) — listo, falta tu configuración
+
+Ya está programado. Desde que exista la frase, **cada respaldo se cifra** (gpg, AES-256) antes de guardarse y antes de salir
+del servidor; sin la frase, `backup.sh` **se niega** a copiar nada afuera. Si algo falla, se ejecuta tu aviso (`ALERT_CMD`).
+
+**Paso a paso para activarlo (Carlos, una sola vez):**
+1. Entra al servidor por SSH y ve a la carpeta de respaldos: `cd /home/claude/claude-docker/proyectos/Software/financiero-backups`
+2. Instala gpg si no está: `sudo apt install -y gnupg`
+3. Crea la frase (no se muestra en pantalla): `openssl rand -base64 48 > .frase-respaldos && chmod 600 .frase-respaldos`
+4. **Guarda una copia de la frase** y de la llave del 2FA (`TWO_FACTOR_ENCRYPTION_KEY` de `.env.production`, decisión D42)
+   en tu gestor de claves y en papel, en un lugar seguro. Sin la frase **no se pueden abrir** los respaldos.
+5. Configura el destino (D17). Recomendado Backblaze B2: crea la cuenta y un *bucket* privado, y en el servidor corre
+   `rclone config` (nombre del destino: `externo`).
+6. Copia la plantilla: `cp <repo>/deploy/offsite.env.example offsite.env && chmod 600 offsite.env`, y descomenta la
+   línea `OFFSITE_CMD` que corresponda y una `ALERT_CMD` (correo, ntfy o Telegram).
+7. Prueba: corre `scripts/backup.sh`. Debe terminar con `fin OK` y con `copia externa OK`.
+8. Comprueba que la copia externa se puede restaurar: descarga el último respaldo a una carpeta (`rclone copy externo:financiero-respaldos/diarios/ /tmp/prueba-externa/`) y corre
+   `scripts/restore-test.sh --desde /tmp/prueba-externa`. Debe decir `RESULTADO: OK`. Luego borra esa carpeta.
+
+**Estado del respaldo:** `scripts/backup-status.sh` sale con error si el último respaldo completo tiene más de 26 horas o si
+el último intento falló. Puedes ponerlo en cron (por ejemplo a las 9:00) con `|| <tu aviso>`.
+
+**Qué verifica la prueba de restauración:** las huellas SHA-256, que se puede descifrar con la frase, conteos por tabla
+contra la base viva, que **la balanza cuadra en cada empresa** y que un adjunto se abre.
+
+**Carpetas de operación (anexo S0, 3.10 y 4.8):**
+- `~/financiero-exportaciones/` (permisos 700): ahí deja el comando `data-export` el ZIP de un cliente que se va. Se borra al
+  confirmar la entrega. Crear una vez: `mkdir -p ~/financiero-exportaciones && chmod 700 ~/financiero-exportaciones`.
+- `financiero-ops.log`: una línea por cada rescate del 2FA y cada exportación del operador (sin secretos). Para que quede
+  fuera del contenedor, monta la carpeta y define `OPS_LOG_FILE` en `.env.production`.
+
+**Verificaciones de infraestructura pendientes (sin imprimir secretos):**
+- [ ] ¿El respaldo general de las 3:00 incluye `.env.production`? (lleva `JWT_SECRET` y `TWO_FACTOR_ENCRYPTION_KEY`). Si no, la copia de D42 es la única.
+- [ ] NPM (proxy host 14): que no guarde en disco `/api/data-export` (o respete `X-Accel-Buffering: no`) y que no corte descargas largas.
+- [ ] `TRUST_PROXY` debe valer **2** en pruebas (NPM → nginx `web` → API): `grep '^TRUST_PROXY=' .env.production`.
+
+## Copia FUERA del servidor: opciones de destino (D17)
 
 Hoy, si el servidor se pierde, se pierden también los respaldos. Está el gancho listo; solo falta elegir destino. Para activarlo se crea el archivo `financiero-backups/offsite.env` (fuera del repo) con una línea `OFFSITE_CMD='...'`. El comando recibe las variables `BACKUP_DB`, `BACKUP_ADJUNTOS`, `BACKUP_SHA` (rutas del respaldo recién hecho). Si el comando falla, el script sale con error.
 

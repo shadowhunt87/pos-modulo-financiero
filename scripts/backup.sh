@@ -18,8 +18,23 @@ chmod 700 "$BACKUP_DIR" "$BACKUP_DIR/diarios" "$BACKUP_DIR/semanales"
 LOG="$BACKUP_DIR/backup.log"
 log() { printf '%s [backup] %s\n' "$(date '+%F %T')" "$*" | tee -a "$LOG"; }
 
+# Frase secreta del cifrado (D18): un archivo con permisos 600 FUERA del repositorio. Nunca se imprime.
+PASSPHRASE_FILE="${BACKUP_PASSPHRASE_FILE:-$BACKUP_DIR/.frase-respaldos}"
+STATUS_OK="$BACKUP_DIR/ultimo-ok"       # fecha del ultimo respaldo completo (lo lee backup-status.sh)
+STATUS_FAIL="$BACKUP_DIR/ultimo-fallo"
+
+# Configuracion de la copia externa y del aviso de fallo (deploy/offsite.env.example); se lee antes para poder avisar
+[ -f "$BACKUP_DIR/offsite.env" ] && . "$BACKUP_DIR/offsite.env"
+
 TMP=""
-fail() { log "FALLA: $1 (linea ${2:-?})"; [ -n "$TMP" ] && rm -rf "$TMP"; exit 1; }
+fail() {
+  log "FALLA: $1 (linea ${2:-?})"
+  [ -n "$TMP" ] && rm -rf "$TMP"
+  printf '%s %s\n' "$(date '+%F %T')" "$1" > "$STATUS_FAIL"
+  # Aviso de fallo (correo, Telegram, webhook…): ALERT_CMD recibe el motivo en $BACKUP_FALLA. Nunca la frase.
+  if [ -n "${ALERT_CMD:-}" ]; then BACKUP_FALLA="$1" bash -c "$ALERT_CMD" >>"$LOG" 2>&1 || log "AVISO: ALERT_CMD tambien fallo"; fi
+  exit 1
+}
 trap 'fail "error inesperado" "$LINENO"' ERR
 
 # Un solo respaldo a la vez
@@ -57,33 +72,48 @@ docker run --rm -v "$UPLOADS_VOL":/data:ro "$HELPER_IMAGE" tar czf - -C /data . 
 tar tzf "$TMP/$ADJ" >/dev/null || fail "el tar.gz de adjuntos esta corrupto"
 log "adjuntos verificados"
 
-# 3) Checksums y publicacion (solo si todo salio bien)
+# 3) Cifrado (gpg simetrico AES256, frase de un archivo). Con frase, solo se guardan los cifrados.
+if [ -f "$PASSPHRASE_FILE" ]; then
+  command -v gpg >/dev/null || fail "falta gpg en el servidor (apt install gnupg)"
+  [ "$(stat -c %a "$PASSPHRASE_FILE")" = "600" ] || fail "la frase debe tener permisos 600 (chmod 600 $PASSPHRASE_FILE)"
+  for f in "$DUMP" "$ADJ"; do
+    gpg --batch --yes --quiet --pinentry-mode loopback --passphrase-file "$PASSPHRASE_FILE" \
+      --symmetric --cipher-algo AES256 -o "$TMP/$f.gpg" "$TMP/$f" || fail "no se pudo cifrar $f"
+    rm -f "$TMP/$f"
+  done
+  DUMP="$DUMP.gpg"; ADJ="$ADJ.gpg"
+  log "cifrado con AES256"
+else
+  [ -n "${OFFSITE_CMD:-}" ] && fail "hay copia externa configurada pero no la frase ($PASSPHRASE_FILE): nada sale del servidor sin cifrar"
+  log "AVISO: sin frase de cifrado; los respaldos locales quedan sin cifrar"
+fi
+
+# 4) Checksums y publicacion (solo si todo salio bien)
 ( cd "$TMP" && sha256sum "$DUMP" "$ADJ" > "sha256-$STAMP.txt" )
 mv "$TMP/$DUMP" "$TMP/$ADJ" "$TMP/sha256-$STAMP.txt" "$BACKUP_DIR/diarios/"
 rmdir "$TMP"; TMP=""
 log "guardado: $DUMP ($(du -h "$BACKUP_DIR/diarios/$DUMP" | cut -f1)), $ADJ ($(du -h "$BACKUP_DIR/diarios/$ADJ" | cut -f1))"
 
-# 4) Copia semanal (domingos)
+# 5) Copia semanal (domingos)
 if [ "$(date +%u)" = "$WEEKLY_DOW" ]; then
   cp -p "$BACKUP_DIR/diarios/"{"$DUMP","$ADJ","sha256-$STAMP.txt"} "$BACKUP_DIR/semanales/"
   log "copia semanal guardada"
 fi
 
-# 5) Retencion: 14 diarios y 8 semanales (por conjunto de fecha)
+# 6) Retencion: 14 diarios y 8 semanales (por conjunto de fecha)
 prune() { # carpeta, cuantos conservar
   local dir="$1" keep="$2" old
-  old="$(ls -1 "$dir"/db-*.dump 2>/dev/null | sort -r | tail -n +"$((keep+1))")" || true
+  old="$(ls -1 "$dir"/sha256-*.txt 2>/dev/null | sort -r | tail -n +"$((keep+1))")" || true
   for f in $old; do
-    s="$(basename "$f" .dump)"; s="${s#db-}"
-    rm -f "$dir/db-$s.dump" "$dir/adjuntos-$s.tar.gz" "$dir/sha256-$s.txt"
+    s="$(basename "$f" .txt)"; s="${s#sha256-}"
+    rm -f "$dir/db-$s.dump" "$dir/db-$s.dump.gpg" "$dir/adjuntos-$s.tar.gz" "$dir/adjuntos-$s.tar.gz.gpg" "$dir/sha256-$s.txt"
     log "retencion: borrado conjunto $s de $(basename "$dir")"
   done
 }
 prune "$BACKUP_DIR/diarios" "$KEEP_DAILY"
 prune "$BACKUP_DIR/semanales" "$KEEP_WEEKLY"
 
-# 6) Gancho opcional para copia FUERA del servidor (pendiente de elegir destino)
-[ -f "$BACKUP_DIR/offsite.env" ] && . "$BACKUP_DIR/offsite.env"
+# 7) Copia FUERA del servidor (pendiente de elegir destino)
 if [ -n "${OFFSITE_CMD:-}" ]; then
   log "copia externa: ejecutando OFFSITE_CMD"
   export BACKUP_DIR BACKUP_DB="$BACKUP_DIR/diarios/$DUMP" BACKUP_ADJUNTOS="$BACKUP_DIR/diarios/$ADJ" BACKUP_SHA="$BACKUP_DIR/diarios/sha256-$STAMP.txt"
@@ -92,4 +122,6 @@ if [ -n "${OFFSITE_CMD:-}" ]; then
 else
   log "AVISO: sin copia externa configurada (OFFSITE_CMD vacio): los respaldos viven solo en este servidor"
 fi
+date '+%F %T' > "$STATUS_OK"
+rm -f "$STATUS_FAIL"
 log "fin OK"
