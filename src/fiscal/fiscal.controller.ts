@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Put, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { UserRole } from '../generated/prisma/enums.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -13,7 +13,8 @@ import { FiscalParametersService } from './fiscal-parameters.service.js';
 import { FiscalProfileService } from './fiscal-profile.service.js';
 import { TaxLinksService } from './tax-links.service.js';
 import { FiscalAlertsService } from './fiscal-alerts.service.js';
-import { DateQuery, ExportParametersQuery, LinkTaxDto, UpdateFiscalProfileDto } from './dto/fiscal.dto.js';
+import { CalendarQuery, ContingencyDto, DateQuery, ExportParametersQuery, FilingDto, LinkTaxDto, UpdateFiscalProfileDto } from './dto/fiscal.dto.js';
+import { FiscalCalendarService } from './fiscal-calendar.service.js';
 import { ymd } from './fiscal-dates.js';
 
 const { ADMIN, ACCOUNTANT } = UserRole;
@@ -30,6 +31,7 @@ export class FiscalController {
     private readonly links: TaxLinksService,
     private readonly alertsSvc: FiscalAlertsService,
     private readonly prisma: PrismaService,
+    private readonly cal: FiscalCalendarService,
   ) {}
 
   @Get('parameters')
@@ -105,5 +107,42 @@ export class FiscalController {
   @Get('alerts')
   alerts(@CurrentUser() user: AuthUser) {
     return this.alertsSvc.list(user);
+  }
+
+  // ---- calendario fiscal (N5)
+  @Get('calendar')
+  calendar(@Query() q: CalendarQuery, @CurrentUser() user: AuthUser) {
+    const from = q.from ? new Date(q.from) : new Date(Date.now() - 31 * 86_400_000);
+    const to = q.to ? new Date(q.to) : new Date(Date.now() + 92 * 86_400_000);
+    return this.cal.calendar(user, from, to);
+  }
+
+  @Roles(ADMIN, ACCOUNTANT)
+  @Post('filings')
+  file(@Body() dto: FilingDto, @CurrentUser() user: AuthUser) {
+    return this.cal.file(user, dto);
+  }
+
+  @Roles(ADMIN)
+  @Delete('filings/:id')
+  unfile(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.cal.unfile(user, id);
+  }
+
+  @Get('b-contingency')
+  contingency(@CurrentUser() user: AuthUser) {
+    return this.cal.contingency(user);
+  }
+
+  @Roles(ADMIN)
+  @Post('b-contingency')
+  startContingency(@Body() dto: ContingencyDto, @CurrentUser() user: AuthUser) {
+    return this.cal.startContingency(user, dto.reason, dto.days);
+  }
+
+  @Roles(ADMIN)
+  @Delete('b-contingency')
+  endContingency(@CurrentUser() user: AuthUser) {
+    return this.cal.endContingency(user);
   }
 }

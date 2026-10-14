@@ -34,6 +34,7 @@ export const NAV: NavGroup[] = [
     { label: 'Semáforo financiero', path: '/analysis' },
     { label: 'DGII 606 · 607 · 608', path: '/dgii' },
     { label: 'Revisión del mes', path: '/dgii/review' },
+    { label: 'Calendario fiscal', path: '/fiscal-calendar' },
     { label: 'Presupuestos', path: '/budgets' },
   ] },
   { title: 'Auditoría', items: [

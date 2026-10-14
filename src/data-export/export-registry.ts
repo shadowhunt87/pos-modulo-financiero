@@ -53,6 +53,7 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   company('EcfImport', { jsonColumns: ['preview'], files: [{ column: 'storageKey', folder: 'xml', nameColumn: 'fileName', pattern: ecfXml }] }),
   company('ServiceKey', { excludedColumns: [{ column: 'keyHash', reason: 'Hash de la llave de servicio: nunca sale' }] }),
   company('RatioThreshold'), company('CompanyFiscalProfile'), company('SampleRecord'),
+  company('FiscalFiling', { jsonColumns: ['snapshot'] }), company('BContingency'),
 
   child('JournalEntryLine', (c): Prisma.JournalEntryLineWhereInput => ({ journalEntry: { companyId: c } })),
   child('InvoiceLine', (c): Prisma.InvoiceLineWhereInput => ({ invoice: { companyId: c } })),
@@ -77,6 +78,8 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   { model: 'FiscalParameter', cls: 'GLOBAL_PUBLIC', jsonColumns: ['valueJson'] },
   { model: 'FiscalParameterValidation', cls: 'GLOBAL_PUBLIC' },
   { model: 'FiscalParameterLoad', cls: 'GLOBAL_PUBLIC', jsonColumns: ['summary'] },
+  { model: 'FiscalObligation', cls: 'GLOBAL_PUBLIC', jsonColumns: ['appliesWhen'] },
+  { model: 'Holiday', cls: 'GLOBAL_PUBLIC' },
 
   { model: 'UserTwoFactor', cls: 'SECRET', reason: 'Secreto de la verificación en dos pasos (cifrado) y sus contadores' },
   { model: 'UserRecoveryCode', cls: 'SECRET', reason: 'Huellas de los códigos de emergencia' },

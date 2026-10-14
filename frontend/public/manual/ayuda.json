@@ -207,6 +207,10 @@
       "seccion": "seguridad-y-exportacion", "ancla": "exportar-todos-mis-datos",
       "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
     },
+    "/fiscal-calendar": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "calendario-fiscal",
+      "siguiente": { "texto": "Revisa el mes antes de declarar", "ruta": "/dgii/review" }
+    },
     "/fiscal-values": {
       "seccion": "configuracion", "ancla": "valores-fiscales",
       "siguiente": { "texto": "Enlaza tus impuestos con los valores oficiales", "ruta": "/tax-rates" }
@@ -321,6 +325,8 @@
   },
 
   "errores": [
+    { "patron": "comprobantes B ya no son válidos", "explicacion": "Tu clasificación ya no puede emitir comprobantes B: usa e-CF. Si el sistema electrónico falló, el administrador puede registrar una contingencia en Calendario fiscal.", "enlace": { "texto": "Ir al Calendario fiscal", "ruta": "/fiscal-calendar" } },
+    { "patron": "La secuencia .* venció", "explicacion": "Pide una secuencia nueva en la Oficina Virtual de la DGII y cárgala.", "enlace": { "texto": "Cargar comprobantes", "ruta": "/setup/ncf" } },
     { "patron": "El encargo está cerrado", "explicacion": "Un encargo cerrado es de solo lectura. Si de verdad hay que cambiarlo, la auditora lo reabre desde el Resumen escribiendo el motivo." },
     { "patron": "Para cerrar faltan", "explicacion": "Termina las áreas pendientes (Revisado) y comunica o borra los hallazgos en borrador antes de cerrar." },
     { "patron": "fuera del período del encargo", "explicacion": "Ese documento es de otra fecha: solo se revisan partidas del período del encargo." },

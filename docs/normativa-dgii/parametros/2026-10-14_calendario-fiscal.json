@@ -1,0 +1,111 @@
+{
+  "description": "Calendario fiscal inicial (PLAN-v0.3 §8.1). Fuera por ahora: TSS y RST (los confirma la contadora). Los feriados van en su propio archivo, año por año.",
+  "obligations": [
+    {
+      "code": "IR-3",
+      "name": "Retenciones a asalariados (IR-3)",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 10,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Empresas con empleados"
+    },
+    {
+      "code": "IR-17",
+      "name": "Otras retenciones y retribuciones complementarias (IR-17)",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 10,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Agentes de retención"
+    },
+    {
+      "code": "606",
+      "name": "Formato 606: compras de bienes y servicios",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 15,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Todas las empresas (aunque no haya operaciones)"
+    },
+    {
+      "code": "607",
+      "name": "Formato 607: ventas de bienes y servicios",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 15,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Todas las empresas (aunque no haya operaciones)"
+    },
+    {
+      "code": "608",
+      "name": "Formato 608: comprobantes anulados",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 15,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Todas las empresas (aunque no haya operaciones)"
+    },
+    {
+      "code": "609",
+      "name": "Formato 609: pagos al exterior",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 15,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Todas las empresas (aunque no haya operaciones)"
+    },
+    {
+      "code": "ANTICIPO",
+      "name": "Anticipo del impuesto sobre la renta",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 15,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Personas jurídicas",
+      "appliesWhen": {
+        "taxRegime": "ORDINARIO"
+      }
+    },
+    {
+      "code": "IT-1",
+      "name": "Declaración del ITBIS (IT-1, con su Anexo A)",
+      "frequency": "MONTHLY",
+      "rule": "DAY_OF_NEXT_MONTH",
+      "ruleValue": 20,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Contribuyentes del ITBIS",
+      "appliesWhen": {
+        "taxRegime": "ORDINARIO"
+      }
+    },
+    {
+      "code": "IR-2",
+      "name": "Declaración jurada de sociedades (IR-2)",
+      "frequency": "ANNUAL",
+      "rule": "DAYS_AFTER_FY_END",
+      "ruleValue": 120,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Personas jurídicas"
+    },
+    {
+      "code": "ISA",
+      "name": "Impuesto sobre los activos",
+      "frequency": "ANNUAL",
+      "rule": "DAYS_AFTER_FY_END",
+      "ruleValue": 120,
+      "validFrom": "2025-01-01",
+      "source": "Guía contable y fiscal §3.8; calendario DGII",
+      "ownerText": "Personas jurídicas"
+    }
+  ]
+}

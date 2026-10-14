@@ -15,8 +15,8 @@ import { NCF_TYPE_REGEX } from '../masters/dto/ncf.dto.js';
 import { DocumentSequencesService, type DocType } from '../masters/sequences/document-sequences.service.js';
 import { AccountingSettingsService } from '../masters/accounting-settings/accounting-settings.service.js';
 import { PostingService, type PostLine } from '../posting/posting.service.js';
-import { isMonthDeclared } from '../common/declared-month.js';
 import { FiscalParametersService } from '../fiscal/fiscal-parameters.service.js';
+import { FiscalCalendarService } from '../fiscal/fiscal-calendar.service.js';
 import { TaxLinksService } from '../fiscal/tax-links.service.js';
 import { CreateInvoiceDto, IssueInvoiceDto, ListInvoicesQuery, UpdateInvoiceDto, VoidInvoiceDto } from './dto/invoice.dto.js';
 
@@ -103,6 +103,7 @@ export class InvoicingService {
     private readonly settings: AccountingSettingsService,
     private readonly posting: PostingService,
     private readonly fiscal: FiscalParametersService,
+    private readonly calendar: FiscalCalendarService,
   ) {}
 
   // ------------------------------------------------------------------
@@ -418,6 +419,8 @@ export class InvoicingService {
       if ((ncfType === 'B01' || ncfType === 'E31') && !partner.taxId) {
         throw new UnprocessableEntityException('El crédito fiscal requiere que el cliente tenga RNC/cédula');
       }
+      // N5 (D24): pasado el último día de las B de la clasificación (fecha de la factura o de hoy) → solo e-CF
+      if (!isElectronic(ncfType)) await this.calendar.assertBAllowed(tx, companyId, ncfType, inv.issueDate);
       ncf = isElectronic(ncfType)
         ? this.assigned(ncfType, opts)
         : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
@@ -583,8 +586,8 @@ export class InvoicingService {
         if (!(e instanceof UnprocessableEntityException)) throw e;
         throw new UnprocessableEntityException('Esta factura es de un mes cerrado. No se anula: corrígela con una nota de crédito');
       }
-      // N6: pasado el día 15 del mes siguiente el 606/607 ya se presentó; anularla lo cambiaría
-      if (inv.ncf && isMonthDeclared(inv.issueDate)) {
+      // N6 (§4.2): mes ya declarado (presentación marcada o vencimiento del 607 pasado): anularla cambiaría lo presentado
+      if (inv.ncf && (await this.calendar.isMonthDeclared(user.companyId, inv.issueDate, tx))) {
         throw new UnprocessableEntityException('Esta factura es de un mes ya declarado a la DGII. No se anula: corrígela con una nota de crédito');
       }
       const allocations = await tx.paymentAllocation.count({ where: { invoiceId: id, payment: { status: { not: 'VOIDED' } } } });

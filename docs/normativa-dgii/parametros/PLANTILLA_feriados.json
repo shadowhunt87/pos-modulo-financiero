@@ -1,0 +1,10 @@
+{
+  "description": "PLANTILLA de feriados (Ley 139-97). Carlos: copia este archivo como AAAA-MM-DD_feriados-2027.json, escribe las fechas OFICIALES ya trasladadas según el calendario publicado por el Ministerio de Trabajo, y cárgalo con el cargador (docs/OPERACION.md). Nunca se calculan.",
+  "holidays": [
+    {
+      "date": "2027-01-01",
+      "name": "Año Nuevo",
+      "source": "Calendario oficial de días feriados 2027 (Ministerio de Trabajo)"
+    }
+  ]
+}

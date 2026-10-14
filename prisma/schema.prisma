@@ -57,6 +57,8 @@ model Company {
   fiscalProfile       CompanyFiscalProfile?
   sampleRecords       SampleRecord[]
   auditEngagements    AuditEngagement[]
+  fiscalFilings       FiscalFiling[]
+  bContingencies      BContingency[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1349,6 +1351,8 @@ model FiscalParameterValidation {
 // Registro de cada carga (los datos globales no tienen empresa ni usuario para AuditLog)
 model FiscalParameterLoad {
   id          String                      @id @default(uuid())
+  obligations FiscalObligation[]
+  holidays    Holiday[]
   loadedAt    DateTime                    @default(now())
   loadedBy    String
   fileName    String
@@ -1674,4 +1678,84 @@ model AuditFile {
   @@index([companyId])
   @@index([workpaperId])
   @@index([findingId])
+}
+
+// ============================================================
+// CALENDARIO FISCAL (PLAN-v0.3 §8, R11). Obligaciones y feriados: globales, de SOLO INSERCIÓN, cargados con el
+// cargador (nunca calculados ni escritos en el código). Presentaciones y contingencia: por empresa.
+// ============================================================
+
+model FiscalObligation {
+  id           String              @id @default(uuid())
+  code         String              @db.VarChar(30) // "IT-1", "606", "IR-2"...
+  revision     Int                 @default(1)
+  name         String              @db.VarChar(200)
+  ownerText    String? // quién la presenta, en palabras
+  frequency    ObligationFrequency
+  rule         ObligationRule
+  ruleValue    Int // día del mes siguiente, días después del cierre o MMDD
+  appliesWhen  Json? // { taxRegime?: "ORDINARIO", isWithholdingAgent?: true }
+  validFrom    DateTime            @db.Date
+  supersedesId String?             @unique
+  supersedes   FiscalObligation?   @relation("FiscalObligationRevision", fields: [supersedesId], references: [id])
+  supersededBy FiscalObligation?   @relation("FiscalObligationRevision")
+  source       String              @db.VarChar(300)
+  loadId       String
+  load         FiscalParameterLoad @relation(fields: [loadId], references: [id])
+  createdAt    DateTime            @default(now())
+
+  @@unique([code, validFrom, revision])
+}
+
+enum ObligationFrequency {
+  MONTHLY
+  ANNUAL
+}
+
+enum ObligationRule {
+  DAY_OF_NEXT_MONTH
+  DAYS_AFTER_FY_END
+  FIXED_DATE
+}
+
+// Feriados (Ley 139-97): se cargan año por año, nunca se calculan
+model Holiday {
+  id        String              @id @default(uuid())
+  date      DateTime            @unique @db.Date
+  name      String              @db.VarChar(120)
+  source    String              @db.VarChar(300)
+  loadId    String
+  load      FiscalParameterLoad @relation(fields: [loadId], references: [id])
+  createdAt DateTime            @default(now())
+}
+
+// «Ya lo presenté»: quita el aviso y bloquea anular facturas de ese mes (PLAN-v0.3 §4.2)
+model FiscalFiling {
+  id             String   @id @default(uuid())
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id])
+  obligationCode String   @db.VarChar(30)
+  period         String   @db.VarChar(7) // AAAA-MM (mensual) o AAAA (anual)
+  filedAt        DateTime
+  filedById      String
+  reference      String?  @db.VarChar(100)
+  snapshot       Json?
+  createdAt      DateTime @default(now())
+
+  @@unique([companyId, obligationCode, period])
+}
+
+// Contingencia de comprobantes B registrada por el ADMIN (D24): permite emitir B pasado el último día, con plazo máximo
+model BContingency {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  reason      String    @db.VarChar(1000)
+  startedAt   DateTime  @default(now())
+  endsAt      DateTime
+  endedAt     DateTime?
+  endedById   String?
+  createdById String
+
+  @@index([companyId, endsAt])
 }

@@ -23,6 +23,18 @@ Menú **Reportes › Estados financieros**.
 
 Las **Razones financieras** agrupan indicadores de **Liquidez**, **Endeudamiento**, **Rentabilidad** y **Actividad**. Si ves **Cuentas sin categoría**, pídele a tu contadora que complete la [Clasificación de cuentas para reportes](/help/configuracion#clasificacion-de-cuentas-para-reportes).
 
+## Calendario fiscal
+
+Menú **Reportes › Calendario fiscal**. Muestra lo que tienes que presentar (606, 607, 608, 609, IT-1, IR-17, IR-3, anticipos, IR-2 e ISA), cuándo vence y su estado: **○ Pendiente**, **! Vencida** o **✓ Presentada**. Si el día cae en fin de semana o feriado, el vencimiento pasa al siguiente día laborable (lo verás indicado).
+
+- **Prepararla** te lleva a la pantalla donde se arma la declaración.
+- **Ya lo presenté**: márcala cuando la envíes (puedes anotar el número de confirmación). Desde ese momento no se pueden anular facturas de ese mes: se corrigen con nota de crédito. Solo un administrador puede **Deshacer**.
+- En el **Panel** verás los avisos: lo que vence esta semana, lo vencido, los comprobantes que se agotan o vencen y cuándo dejan de valer tus comprobantes B.
+
+**Comprobantes B y contingencia.** Según tu clasificación en la DGII (Datos fiscales), los comprobantes B dejan de valer en una fecha; después el sistema no deja emitirlos y debes usar e-CF. Si tu sistema de facturación electrónica falla, el administrador puede **Registrar contingencia** para seguir con B por el plazo máximo legal, y debe avisar a la DGII.
+
+[CAPTURA: Calendario fiscal]
+
 ## Revisión del mes
 
 Menú **Reportes › Revisión del mes**. Antes de presentar a la DGII, elige el mes y pulsa **Revisar**. El sistema dice:

@@ -22,6 +22,8 @@ function print(r: LoadReport, dry: boolean) {
   for (const n of r.newRows) out(`  + ${n.key} desde ${n.validFrom} (revisión ${n.revision}): ${n.value}`);
   for (const v of r.revisions) out(`  ~ ${v.key} desde ${v.validFrom}: la revisión ${v.revision} reemplaza a ${v.replaces}`);
   for (const v of r.validations) out(`  ✓ ${v.key} desde ${v.validFrom} validado por ${v.validatedBy}`);
+  for (const o of r.newObligations) out(`  + obligación ${o.code} desde ${o.validFrom} (revisión ${o.revision})`);
+  for (const h of r.newHolidays) out(`  + feriado ${h.date}: ${h.name}`);
   out(`Filas nuevas: ${r.newRows.length} · revisiones: ${r.revisions.length} · validaciones: ${r.validations.length} · sin cambios: ${r.skipped}`);
   if (r.affected.length) {
     out('Documentos emitidos con un valor que se corrige (revisa con la contadora si hacen falta notas):');

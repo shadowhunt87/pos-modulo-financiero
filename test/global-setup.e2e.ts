@@ -10,14 +10,16 @@ import { applyLoad, parseCatalog } from '../src/fiscal/fiscal-loader.js';
  */
 export default async function setup() {
   const env = loadEnv('test', process.cwd(), '');
-  const file = 'docs/normativa-dgii/parametros/2026-10-14_catalogo-inicial.json';
-  const text = readFileSync(file, 'utf8');
-  const parsed = parseCatalog(text);
-  if (!parsed.file) throw new Error(`Catálogo fiscal inválido:\n${parsed.errors.join('\n')}`);
+  const files = ['docs/normativa-dgii/parametros/2026-10-14_catalogo-inicial.json', 'docs/normativa-dgii/parametros/2026-10-14_calendario-fiscal.json'];
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
   try {
-    const r = await applyLoad(prisma, parsed.file, text, { fileName: file, gitCommit: '0000000', loadedBy: 'e2e' });
-    if (!r.ok) throw new Error(`No se pudo cargar el catálogo fiscal de pruebas:\n${r.errors.join('\n')}`);
+    for (const file of files) {
+      const text = readFileSync(file, 'utf8');
+      const parsed = parseCatalog(text);
+      if (!parsed.file) throw new Error(`Catálogo fiscal inválido (${file}):\n${parsed.errors.join('\n')}`);
+      const r = await applyLoad(prisma, parsed.file, text, { fileName: file, gitCommit: '0000000', loadedBy: 'e2e' });
+      if (!r.ok) throw new Error(`No se pudo cargar ${file} en la base de pruebas:\n${r.errors.join('\n')}`);
+    }
   } finally {
     await prisma.$disconnect();
   }
