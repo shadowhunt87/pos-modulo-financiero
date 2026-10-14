@@ -129,6 +129,11 @@ export class AttachmentsService {
   async download(id: string, user: AuthUser) {
     const row = await this.prisma.attachment.findFirst({ where: { id, companyId: user.companyId } });
     if (!row) throw new NotFoundException('Adjunto no encontrado');
+    // Patrón exacto de la clave (ANEXO-S0 §4.9): <companyId>/<uuid>; otra forma no se lee
+    if (!new RegExp(`^${user.companyId}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).test(row.fileUrl)) {
+      this.log.warn(`Clave de adjunto con forma inesperada (${row.id})`);
+      throw new NotFoundException('El archivo ya no está disponible en el almacenamiento');
+    }
     let data: Buffer;
     try {
       data = await this.storage.read(row.fileUrl);

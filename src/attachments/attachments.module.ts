@@ -17,6 +17,6 @@ import { FILE_STORAGE, LocalFileStorage } from './file-storage.js';
   ],
   controllers: [AttachmentsController],
   providers: [AttachmentsService, { provide: FILE_STORAGE, useClass: LocalFileStorage }],
-  exports: [AttachmentsService],
+  exports: [AttachmentsService, FILE_STORAGE],
 })
 export class AttachmentsModule {}

@@ -117,10 +117,10 @@ export const twoFactorIpRule = (ip: string): AttemptRule => ({ key: `2fa:ip:${ip
 export const passwordRules = (userId: string): AttemptRule[] => [{ key: `pw:user:${userId}`, limit: 5 }];
 
 export class TooManyAttemptsException extends HttpException {
-  constructor(readonly retryAfterSeconds: number) {
+  constructor(readonly retryAfterSeconds: number, message?: string) {
     const mins = Math.max(1, Math.ceil(retryAfterSeconds / 60));
     super(
-      { statusCode: 429, error: 'Too Many Requests', message: `Demasiados intentos fallidos. Intenta de nuevo en ${mins} minuto(s).` },
+      { statusCode: 429, error: 'Too Many Requests', message: message ?? `Demasiados intentos fallidos. Intenta de nuevo en ${mins} minuto(s).` },
       HttpStatus.TOO_MANY_REQUESTS,
     );
   }
