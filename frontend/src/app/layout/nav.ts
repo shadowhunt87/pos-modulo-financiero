@@ -33,6 +33,7 @@ export const NAV: NavGroup[] = [
     { label: 'Estados financieros', path: '/reports' },
     { label: 'Semáforo financiero', path: '/analysis' },
     { label: 'DGII 606 · 607 · 608', path: '/dgii' },
+    { label: 'Revisión del mes', path: '/dgii/review' },
     { label: 'Presupuestos', path: '/budgets' },
   ] },
   { title: 'Auditoría', items: [

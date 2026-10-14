@@ -1,6 +1,6 @@
 <div class="page">
   <div class="page-head">
-    <div><h1>DGII 606 · 607 · 608</h1><p class="sub">Revisa los formatos de envío del mes, corrige lo que falte y genera el archivo para la Oficina Virtual.</p></div>
+    <div><h1>DGII 606 · 607 · 608</h1><p class="sub">Revisa los formatos de envío del mes, corrige lo que falte y genera el archivo para la Oficina Virtual. Antes de enviar, mira la <a routerLink="/dgii/review">Revisión del mes</a>.</p></div>
     <div class="period-box">
       <button type="button" class="btn" (click)="shift(-1)" aria-label="Mes anterior">‹</button>
       <div class="field"><label for="period">Período</label><input id="period" class="input" type="month" [value]="period()" (change)="setPeriod($any($event.target).value)" /></div>

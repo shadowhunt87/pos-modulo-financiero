@@ -23,6 +23,20 @@ Menú **Reportes › Estados financieros**.
 
 Las **Razones financieras** agrupan indicadores de **Liquidez**, **Endeudamiento**, **Rentabilidad** y **Actividad**. Si ves **Cuentas sin categoría**, pídele a tu contadora que complete la [Clasificación de cuentas para reportes](/help/configuracion#clasificacion-de-cuentas-para-reportes).
 
+## Revisión del mes
+
+Menú **Reportes › Revisión del mes**. Antes de presentar a la DGII, elige el mes y pulsa **Revisar**. El sistema dice:
+
+- Si los formatos **606, 607 y 608** tienen errores o avisos.
+- Si el **ITBIS del 607** cuadra con lo que dice tu contabilidad (la cuenta de ITBIS por pagar), y lo mismo con el **ITBIS del 606** (ITBIS por adelantar) y las **retenciones** que hiciste a proveedores. Las notas de crédito se restan, así que no causan diferencias falsas.
+- Si alguna diferencia se debe a **asientos manuales**: los muestra con su número para que los revises.
+- Si **falta algún número de comprobante** (NCF) en tu secuencia: un número sin factura se reporta como anulado en el 608.
+- Si importaste **facturas electrónicas sin verificar**.
+
+Si usas la **misma cuenta** de ITBIS para ventas y compras, el cuadre se hace sobre el neto y verás un aviso: conviene separarlas. Cuando todo dice **Cuadra**, estás listo para declarar.
+
+[CAPTURA: Revisión del mes con sus cuadres]
+
 ## DGII 606, 607 y 608
 
 Menú **Reportes › DGII 606 · 607 · 608**. Son los formatos mensuales que se envían a la DGII: 606 de compras, 607 de ventas y 608 de comprobantes anulados.

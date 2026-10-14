@@ -123,6 +123,12 @@ export class DgiiService {
   // ------------------------------------------------------------------
   // Utilidades
   // ------------------------------------------------------------------
+  /** Bandera de los formatos (D35): 1 = activa; sin valor cargado = 0 (conservador: todo como hoy). */
+  private async flag(key: string, at: Date) {
+    const p = await this.fiscal.tryValueAt(key, at);
+    return !!p?.value && p.value.eq(1);
+  }
+
   private parsePeriod(p: string): Period {
     const m = /^(\d{4})-?(0[1-9]|1[0-2])$/.exec(p);
     if (!m) throw new UnprocessableEntityException('period inválido');
@@ -374,14 +380,31 @@ export class DgiiService {
         otherForms: m2(withheld),
       });
     }
-    this.checkLimit('607', rows.length, errors);
+    // e-CF (PLAN-v0.3 §9.1, D35): banderas en 0 = como hoy, con nota; en 1 = lo que confirme la contadora
+    const isE = (r: Record<string, string>) => (r.ncf ?? '').startsWith('E');
+    const ecfRows = rows.filter(isE);
+    const [noSendIfAllE, onlyB] = await Promise.all([this.flag('F607_NO_ENVIAR_SI_100_ECF', period.end), this.flag('F607_MIXTO_SOLO_B', period.end)]);
+    const allE = rows.length > 0 && ecfRows.length === rows.length;
+    const notRequired = allE && noSendIfAllE;
+    const ecfNotes: string[] = [];
+    let fileRows = rows;
+    if (ecfRows.length) {
+      if (notRequired) ecfNotes.push('Este mes no tienes que enviarlo: todas tus ventas fueron e-CF. El archivo sigue disponible por si tu contadora lo pide.');
+      else if (onlyB && ecfRows.length < rows.length) {
+        fileRows = rows.filter((r) => !isE(r));
+        ecfNotes.push(`El archivo lleva solo los comprobantes B; las ${ecfRows.length} ventas e-CF se muestran aparte (ecfRows).`);
+      } else ecfNotes.push('Si eres 100 % electrónico, puede que no tengas que enviarlo; confírmalo con tu contadora.');
+    }
+    this.checkLimit('607', fileRows.length, errors);
     errors.push(...this.companyIssue(company.taxId).map((message) => ({ invoiceId: '', invoiceNumber: '', ncf: null, message })));
     return this.base('607', period, company, {
-      count: rows.length,
-      totals: totalsOf(rows, 'amount'),
+      notRequired,
+      ecfRows: fileRows === rows ? [] : ecfRows,
+      count: fileRows.length,
+      totals: totalsOf(fileRows, 'amount'),
       // Se llena en la Oficina Virtual al enviar el archivo
       consumerSummary: { count: consumer.count, amount: m2(consumer.subtotal), itbis: m2(consumer.itbis), total: m2(consumer.total) },
-      rows,
+      rows: fileRows,
       errors,
       warnings,
       canExport: errors.length === 0,
@@ -391,6 +414,7 @@ export class DgiiService {
         'Retenciones de terceros: se informan en la fila del período en que la factura queda cobrada, con la fecha de retención; si es de un mes anterior se repite el NCF con su fecha original.',
         'Notas de crédito/débito: montos en positivo, con su NCF y el NCF modificado.',
         'Una empresa que opere como facturador electrónico no envía el 607 mientras lo sea.',
+        ...ecfNotes,
       ],
     });
   }
@@ -411,7 +435,9 @@ export class DgiiService {
     });
     const errors: DgiiIssue[] = [];
     const rows: { invoiceId: string; invoiceNumber: string; ncf: string; voucherDate: string; voidType: string }[] = [];
+    const excludeE = await this.flag('F608_EXCLUYE_ECF', period.end);
     for (const inv of voided) {
+      if (excludeE && inv.ncf?.startsWith('E')) continue; // D35: con la bandera en 1, los e-CF no van al 608
       // Solo los comprobantes que emitió la propia empresa (no el NCF que trae un proveedor)
       const own =
         inv.type === InvoiceType.SALE ||
@@ -430,7 +456,10 @@ export class DgiiService {
       errors,
       warnings: [] as DgiiIssue[],
       canExport: errors.length === 0,
-      assumptions: ['Se reportan en el período en que se anuló el comprobante (fecha de anulación).'],
+      assumptions: [
+        'Se reportan en el período en que se anuló el comprobante (fecha de anulación).',
+        excludeE ? 'Los e-CF anulados no van en el 608 (bandera F608_EXCLUYE_ECF).' : 'Si emites e-CF, confirma con tu contadora si los anulados van en el 608.',
+      ],
     });
   }
 

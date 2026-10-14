@@ -154,6 +154,10 @@
       "seccion": "reportes-dgii-presupuestos", "ancla": "dgii-606-607-y-608",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
+    "/dgii/review": {
+      "seccion": "reportes-dgii-presupuestos", "ancla": "revision-del-mes",
+      "siguiente": { "texto": "Genera los formatos 606, 607 y 608", "ruta": "/dgii" }
+    },
     "/budgets": {
       "seccion": "reportes-dgii-presupuestos", "ancla": "presupuestos",
       "siguiente": { "texto": "Compara lo presupuestado con lo real en Estados financieros", "ruta": "/reports" }

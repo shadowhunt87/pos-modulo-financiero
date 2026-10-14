@@ -24,6 +24,7 @@ import { FinancialAnalysisModule } from './financial-analysis/financial-analysis
 import { FiscalModule } from './fiscal/fiscal.module.js';
 import { DataExportModule } from './data-export/data-export.module.js';
 import { AuditingModule } from './auditing/auditing.module.js';
+import { DgiiReturnsModule } from './dgii-returns/dgii-returns.module.js';
 import { GuidanceModule } from './guidance/guidance.module.js';
 import { validate } from './config/env.validation.js';
 
@@ -56,6 +57,7 @@ import { validate } from './config/env.validation.js';
     FiscalModule,
     DataExportModule,
     AuditingModule,
+    DgiiReturnsModule,
   ],
 })
 export class AppModule {}
