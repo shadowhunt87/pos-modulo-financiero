@@ -58,7 +58,7 @@
       <section class="panel panel-pad">
         <h2 style="margin-bottom:12px">Datos del documento</h2>
         <dl class="kv">
-          <dt>Tercero</dt><dd><strong>{{ i.partner.name }}</strong>@if (i.partner.taxId) { <span class="mono dim"> · {{ i.partner.taxId }}</span> }</dd>
+          <dt>Cliente / proveedor</dt><dd><strong>{{ i.partner.name }}</strong>@if (i.partner.taxId) { <span class="mono dim"> · {{ i.partner.taxId }}</span> }</dd>
           <dt>Fecha de emisión</dt><dd>{{ i.issueDate | fdate }}</dd>
           <dt>Vencimiento</dt><dd>{{ i.dueDate | fdate }}</dd>
           @if (i.ncfType) { <dt>Tipo de comprobante</dt><dd class="mono">{{ i.ncfType }}</dd> }
@@ -173,7 +173,7 @@
             <span class="hint">Solo si la nota viene de un proveedor. En ventas el NCF se asigna solo.</span></div>
         }
       </div>
-      @if (actionError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ actionError() }}</div> }
+      <app-error-notice style="display:block;margin-top:14px" [error]="actionError()" />
     </form>
   }
   <ng-container modal-actions>
@@ -194,7 +194,7 @@
           @for (c of voidCodes; track c[0]) { <option [value]="c[0]">{{ c[0] }} · {{ c[1] }}</option> }</select>
         <span class="hint">{{ needsVoidCode() ? 'Obligatorio porque el comprobante lo emitiste tú (reporte 608).' : 'Se reporta en el 608 solo si el comprobante es tuyo.' }}</span></div>
     </div>
-    @if (actionError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ actionError() }}</div> }
+    <app-error-notice style="display:block;margin-top:14px" [error]="actionError()" />
   </form>
   <ng-container modal-actions>
     <button type="button" class="btn" (click)="voidOpen.set(false)">Cancelar</button>

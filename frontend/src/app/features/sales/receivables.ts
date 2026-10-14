@@ -9,7 +9,7 @@ import { errorMessage } from '../../core/errors';
 import { Lookups } from '../../core/lookups';
 import { Notify } from '../../core/notify';
 import { dec, monthRange, today, yearStart } from '../../shared/format';
-import { ComboOption, UI } from '../../shared/ui';
+import { ComboOption, EmptyState, ErrorNotice, FieldHelp, UI } from '../../shared/ui';
 import { loadOpenInvoices, OpenInvoice } from './payment-shared';
 
 interface Buckets { current: string; d1_30: string; d31_60: string; d61_90: string; over90: string; total: string }
@@ -26,7 +26,7 @@ type Tab = 'aging' | 'statement';
 @Component({
   selector: 'app-receivables',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, EmptyState, ErrorNotice, FieldHelp, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -52,22 +52,22 @@ type Tab = 'aging' | 'statement';
 
       @if (tab() === 'aging') {
         <form class="toolbar" [formGroup]="agingForm" (ngSubmit)="loadAging()">
-          <div class="field"><label for="r-asof">Al corte</label><input id="r-asof" class="input" type="date" formControlName="asOf" /></div>
-          <button type="submit" class="btn btn-primary" [disabled]="agingLoading()">Actualizar</button>
+          <div class="field"><label for="r-asof">Al corte<app-field-help key="ventas.alCorte" /></label><input id="r-asof" class="input" type="date" formControlName="asOf" /></div>
+          <button type="submit" class="btn" [disabled]="agingLoading()">Actualizar</button>
         </form>
         @if (agingError()) { <div class="notice neg" role="alert">{{ agingError() }}</div> }
         @if (aging(); as a) {
           <div class="figures" style="margin-bottom:16px">
             <div class="figure"><div class="f-label">{{ scope() === 'RECEIVABLE' ? 'Total por cobrar' : 'Total por pagar' }}</div><div class="f-value">{{ a.totals.total | money }}</div><div class="f-note">Moneda base</div></div>
             <div class="figure"><div class="f-label">Al día</div><div class="f-value">{{ a.totals.current | money }}</div></div>
-            <div class="figure"><div class="f-label">Vencido</div><div class="f-value">{{ overdue() | money }}</div><div class="f-note">{{ overduePct() }}% del total</div></div>
+            <div class="figure"><div class="f-label">Vencido<app-field-help key="ventas.vencido" /></div><div class="f-value">{{ overdue() | money }}</div><div class="f-note">{{ overduePct() }}% del total</div></div>
             <div class="figure"><div class="f-label">Más de 90 días</div><div class="f-value">{{ a.totals.over90 | money }}</div></div>
           </div>
         }
         <section class="panel">
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>Tercero</th><th class="num">Al día</th><th class="num">1–30 días</th><th class="num">31–60 días</th><th class="num">61–90 días</th><th class="num">Más de 90</th><th class="num">Total</th><th></th></tr></thead>
+              <thead><tr><th>Cliente / proveedor</th><th class="num">Al día</th><th class="num">1–30 días</th><th class="num">31–60 días</th><th class="num">61–90 días</th><th class="num">Más de 90</th><th class="num">Total</th><th></th></tr></thead>
               <tbody>
                 @if (agingLoading()) { <tr><td colspan="8"><div class="loading"><span class="spinner"></span> Cargando…</div></td></tr> }
                 @for (r of aging()?.partners ?? []; track r.partnerId) {
@@ -79,7 +79,14 @@ type Tab = 'aging' | 'statement';
                     <td class="actions"><button type="button" class="btn btn-ghost btn-sm" (click)="showStatement(r)">Estado de cuenta</button></td>
                   </tr>
                 } @empty {
-                  @if (!agingLoading()) { <tr><td colspan="8" class="table-empty">No hay saldos pendientes a esa fecha.</td></tr> }
+                  @if (!agingLoading() && !agingError()) {
+                    <tr><td colspan="8">
+                      <app-empty-state
+                        [title]="scope() === 'RECEIVABLE' ? 'Nadie te debe nada a esa fecha' : 'No le debes nada a ningún proveedor a esa fecha'"
+                        [text]="scope() === 'RECEIVABLE' ? 'Cuando emitas una factura de venta a crédito, aparecerá aquí con los días que lleva de atraso.' : 'Cuando registres una factura de compra a crédito, aparecerá aquí hasta que la pagues.'"
+                        actionLabel="Nueva factura" actionLink="/invoices/new" [canAct]="canEdit" />
+                    </td></tr>
+                  }
                 }
               </tbody>
               @if (aging(); as a) {
@@ -128,7 +135,7 @@ type Tab = 'aging' | 'statement';
           </section>
           <p class="hint" style="margin-top:8px">Un saldo negativo indica un anticipo a favor del {{ scope() === 'RECEIVABLE' ? 'cliente' : 'proveedor' }}.</p>
         } @else if (!stmtLoading() && !stmtError()) {
-          <div class="empty">Elige un tercero y el rango de fechas para ver su estado de cuenta.</div>
+          <div class="empty">Elige un cliente o proveedor y el rango de fechas para ver su estado de cuenta.</div>
         }
       }
     </div>
@@ -139,7 +146,7 @@ type Tab = 'aging' | 'statement';
           <div class="field span-all"><span class="label">{{ scope() === 'RECEIVABLE' ? 'Cliente' : 'Proveedor' }}</span>
             <app-combobox formControlName="partnerId" [options]="partnerOptions()" [clearable]="false" placeholder="Buscar por nombre o RNC" /></div>
           @if (creditLoading()) { <div class="loading span-all"><span class="spinner"></span> Cargando documentos…</div> }
-          <div class="field span-all"><label for="c-note">Nota de crédito</label>
+          <div class="field span-all"><label for="c-note">Nota de crédito<app-field-help key="ventas.notaCredito" /></label>
             <select id="c-note" class="select" formControlName="creditNoteId">
               <option value="">{{ notes().length ? 'Elige la nota' : 'Sin notas de crédito pendientes' }}</option>
               @for (n of notes(); track n.id) { <option [value]="n.id">{{ n.number }} · disponible {{ n.balance | money }} {{ n.currency }}</option> }
@@ -154,7 +161,7 @@ type Tab = 'aging' | 'statement';
             @if (maxCredit().gt(0)) { <span class="hint">Máximo: {{ maxCredit().toFixed(2) }}</span> }
             @if (creditForm.controls.amount.touched && creditForm.controls.amount.invalid) { <span class="error-text">Indica un monto mayor que cero.</span> }</div>
         </div>
-        @if (creditError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ creditError() }}</div> }
+        <app-error-notice style="display:block;margin-top:14px" [error]="creditError()" />
       </form>
       <ng-container modal-actions>
         <button type="button" class="btn" (click)="creditOpen.set(false)">Cancelar</button>
@@ -209,7 +216,7 @@ export class Receivables {
   protected readonly creditOpen = signal(false);
   protected readonly creditLoading = signal(false);
   protected readonly creditSaving = signal(false);
-  protected readonly creditError = signal('');
+  protected readonly creditError = signal<unknown>('');
   protected readonly notes = signal<OpenInvoice[]>([]);
   protected readonly invoices = signal<OpenInvoice[]>([]);
   protected readonly creditForm = this.fb.nonNullable.group({
@@ -293,7 +300,7 @@ export class Receivables {
       ]);
       this.invoices.set(invs);
       this.notes.set(notes.flat().filter((n) => dec(n.balance).gt(0)));
-    } catch (e) { this.creditError.set(errorMessage(e)); }
+    } catch (e) { this.creditError.set(e); }
     this.creditLoading.set(false);
   }
 
@@ -320,7 +327,7 @@ export class Receivables {
       this.creditOpen.set(false);
       await this.loadAging();
       if (this.stmt()) await this.loadStatement();
-    } catch (e) { this.creditError.set(errorMessage(e)); }
+    } catch (e) { this.creditError.set(e); }
     this.creditSaving.set(false);
   }
 }

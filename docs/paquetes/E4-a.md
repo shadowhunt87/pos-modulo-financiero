@@ -65,3 +65,15 @@ Dos PR: (0) piezas compartidas; (1) las 6 pantallas. Cada PR en español con **Q
 - El estado vacío «con filtros» necesita saber si hay filtros activos; añade una señal calculada, sin cambiar cómo se cargan los datos.
 - El texto de ayuda de `app-field-help` va primero en `ayuda.json` (`key`) y, si falta, usa `text`; si usas `seccion/ancla` deben existir en el manual (`verificar-ayuda` lo comprueba).
 - Un modelo local pequeño se equivoca en archivos largos: trabaja con un archivo por vez y revisa `git diff` antes de seguir.
+
+## 11. Cómo copiar las piezas compartidas (resumen para IA pequeñas)
+1. `app-empty-state` (`shared/ui/empty-state.ts`): importa por nombre `import { EmptyState } from '../../shared/ui';` y agrégalo a `imports` (no está en `UI`).
+2. Dentro de una tabla va en `<tr><td colspan="N">` (N = columnas), en el `@empty`, con `@if (!loading() && !error())`.
+3. Entradas: `title`, `text`, `actionLabel`, `actionLink` (ruta), `canAct` (permiso; por defecto verdadero), `filtered`.
+4. Si el botón abre una ventana en vez de una ruta, omite `actionLink` y usa `(action)="openNew()"`.
+5. Con filtros activos pon `[filtered]="hasFilters()"` y `(clear)="clearFilters()"`: muestra «Quitar filtros» en lugar del botón. `hasFilters` es una señal que se calcula en `load()`; `clearFilters` reinicia los filtros (en filtros sin formulario, `resetFilterControls(bar)` de `empty-state.ts` limpia los campos).
+6. Ejemplo: `<app-empty-state [filtered]="hasFilters()" (clear)="clearFilters(bar)" [title]="hasFilters() ? 'No hay facturas con esos filtros' : 'Todavía no hay facturas'" text="Crea la primera para empezar." actionLabel="Nueva factura" actionLink="/invoices/new" [canAct]="canEdit" />`
+7. Ejemplos reales: `features/sales/invoices.ts` (enlace), `features/catalog/partners.ts` (ventana).
+8. `StatusBadge` (`<app-status [value]="x.status" [map]="MAPA" />`) ya muestra icono + color + texto sin cambiar nada en tu pantalla: ✓ verde, ✕ rojo, ! ámbar, i azul, • sin tono (icono con `aria-hidden`).
+9. No uses `<span class="badge">` suelto para estados: cámbialo por `app-status` y, si el estado no tiene tono, añádelo en `tone()` de `shared/labels.ts`.
+10. Prueba: `empty-state.spec.ts` muestra cómo probar con `TestBed` y `provideRouter([])`.

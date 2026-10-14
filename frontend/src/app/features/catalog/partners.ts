@@ -10,7 +10,8 @@ import { Partner } from '../../core/models';
 import { PartnerDialog } from './partner-dialog';
 import { Notify } from '../../core/notify';
 import { opts, PARTNER_TYPE } from '../../shared/labels';
-import { UI } from '../../shared/ui';
+import { EmptyState, UI } from '../../shared/ui';
+import { resetFilterControls } from '../../shared/ui/empty-state';
 
 /**
  * PANTALLA DE REFERENCIA: listado con filtros y paginación + alta/edición en un modal.
@@ -19,7 +20,7 @@ import { UI } from '../../shared/ui';
 @Component({
   selector: 'app-partners',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PartnerDialog, ...UI],
+  imports: [PartnerDialog, EmptyState, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -27,7 +28,7 @@ import { UI } from '../../shared/ui';
         @if (canEdit) { <button type="button" class="btn btn-primary" (click)="openNew()">Nuevo cliente / proveedor</button> }
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar" #bar>
         <div class="field wide"><label for="q">Buscar</label><input id="q" class="input" placeholder="Nombre, nombre comercial o RNC" (input)="search$.next($any($event.target).value)" /></div>
         <div class="field"><label for="type">Tipo</label>
           <select id="type" class="select" (change)="setFilter('type', $any($event.target).value)">
@@ -62,7 +63,14 @@ import { UI } from '../../shared/ui';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay clientes ni proveedores con esos filtros.</td></tr> }
+                @if (!loading() && !error()) {
+                  <tr><td colspan="7">
+                    <app-empty-state [filtered]="hasFilters()" (clear)="clearFilters(bar)" (action)="openNew()"
+                      [title]="hasFilters() ? 'No hay clientes ni proveedores con esos filtros' : 'Aún no tienes clientes ni proveedores'"
+                      text="Registra a quién le vendes o le compras para poder hacerle facturas, cobros y pagos."
+                      actionLabel="Nuevo cliente / proveedor" [canAct]="canEdit" />
+                  </td></tr>
+                }
               }
             </tbody>
           </table>
@@ -91,6 +99,7 @@ export class Partners {
   protected readonly page = signal(1);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly hasFilters = signal(false);
   private filters: Record<string, string> = {};
   protected readonly search$ = new Subject<string>();
 
@@ -103,11 +112,17 @@ export class Partners {
   }
 
   protected setFilter(key: string, value: string): void { this.filters = { ...this.filters, [key]: value }; this.page.set(1); void this.load(); }
+  protected clearFilters(bar: HTMLElement): void {
+    resetFilterControls(bar);
+    this.filters = {};
+    this.page.set(1); void this.load();
+  }
   protected goTo(p: number): void { this.page.set(p); void this.load(); }
 
   private async load(): Promise<void> {
     this.loading.set(true);
     this.error.set('');
+    this.hasFilters.set(Object.values(this.filters).some((v) => !!v));
     try {
       const res = await this.api.getP<Page<Partner>>('/partners', { ...this.filters, page: this.page(), limit: this.limit });
       this.rows.set(res.data);

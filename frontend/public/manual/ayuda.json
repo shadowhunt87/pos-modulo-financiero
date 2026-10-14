@@ -262,6 +262,18 @@
     "cliente.documento": {
       "texto": "Escribe solo números, sin guiones: 9 dígitos si es RNC (empresa) u 11 si es cédula. Sin esto no podrás facturarle con crédito fiscal (B01).",
       "seccion": "clientes-y-proveedores", "ancla": "que-significa-cada-campo"
+    },
+    "ventas.alCorte": {
+      "texto": "Es la fecha hasta la que se calcula lo que te deben (o lo que debes). Los días de atraso se cuentan desde el vencimiento de cada factura hasta esta fecha. Por defecto es hoy.",
+      "seccion": "cobros-y-pagos", "ancla": "lo-que-me-deben-y-lo-que-debo"
+    },
+    "ventas.vencido": {
+      "texto": "Es la suma de las facturas cuya fecha de vencimiento ya pasó y todavía tienen saldo. El porcentaje te dice qué parte del total está atrasada.",
+      "seccion": "cobros-y-pagos", "ancla": "lo-que-me-deben-y-lo-que-debo"
+    },
+    "ventas.notaCredito": {
+      "texto": "Una nota de crédito es un documento que reduce lo que te deben (o lo que debes) por una devolución o un error. Aquí la aplicas a una factura pendiente para bajar su saldo.",
+      "seccion": "cobros-y-pagos", "ancla": "aplicar-una-nota-de-credito"
     }
   },
 
