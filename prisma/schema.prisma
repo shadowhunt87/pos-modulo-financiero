@@ -50,6 +50,7 @@ model Company {
   financialSnapshots  FinancialRatioSnapshot[]
   accountingSettings  AccountingSettings?
   feedbacks           Feedback[]
+  ratioThresholds     RatioThreshold[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,15 +114,15 @@ model DocumentSequence {
 // ============================================================
 
 model User {
-  id          String    @id @default(uuid())
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
-  email       String    @unique
-  password    String
-  name        String
-  role        UserRole  @default(ACCOUNTANT)
-  active      Boolean   @default(true)
-  lastLoginAt DateTime?
+  id                String    @id @default(uuid())
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id])
+  email             String    @unique
+  password          String
+  name              String
+  role              UserRole  @default(ACCOUNTANT)
+  active            Boolean   @default(true)
+  lastLoginAt       DateTime?
   // Los tokens emitidos antes de esta fecha dejan de servir (cambio/reseteo de clave)
   passwordChangedAt DateTime?
 
@@ -1137,4 +1138,20 @@ enum FeedbackStatus {
   DONE
   WONT_DO
   DUPLICATE
+}
+
+// Límites del semáforo financiero que cambió la empresa (sin fila = valor por defecto del código,
+// src/financial-analysis/ratio-thresholds.ts). La dirección ("más es mejor") es fija en el código.
+model RatioThreshold {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  ratioKey    String // ej: "currentRatio"
+  greenAt     Decimal  @db.Decimal(19, 4)
+  redAt       Decimal  @db.Decimal(19, 4)
+  enabled     Boolean  @default(true)
+  updatedById String // "quién", sin relación (como FiscalYear.closedById)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, ratioKey])
 }
