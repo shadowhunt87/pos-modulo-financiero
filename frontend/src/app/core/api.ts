@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 import { AppConfig } from './config';
@@ -86,6 +86,24 @@ export class Api {
     const name = filenameFrom(res.headers.get('content-disposition')) ?? fallbackName;
     saveBlob(res.body as Blob, name);
   }
+
+  /** Descarga con POST (exportación completa: lleva la confirmación en el cuerpo). */
+  async downloadPost(path: string, body: unknown, fallbackName = 'archivo'): Promise<void> {
+    let res: HttpResponse<Blob>;
+    try {
+      res = await firstValueFrom(this.http.post(this.url(path), body, { observe: 'response', responseType: 'blob' }));
+    } catch (e) { throw await blobError(e); }
+    saveBlob(res.body as Blob, filenameFrom(res.headers.get('content-disposition')) ?? fallbackName);
+  }
+}
+
+/** Error de una descarga: el cuerpo llega como Blob; se convierte al JSON del backend para mostrar su mensaje. */
+async function blobError(e: unknown): Promise<unknown> {
+  if (e instanceof HttpErrorResponse && e.error instanceof Blob) {
+    try { return new HttpErrorResponse({ error: JSON.parse(await e.error.text()), status: e.status, statusText: e.statusText, url: e.url ?? undefined }); }
+    catch { return e; }
+  }
+  return e;
 }
 
 function filenameFrom(header: string | null): string | null {

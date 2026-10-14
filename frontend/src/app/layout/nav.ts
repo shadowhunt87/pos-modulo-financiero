@@ -38,6 +38,8 @@ export const NAV: NavGroup[] = [
     { label: 'Empresa', path: '/company' },
     { label: 'Datos fiscales', path: '/company/fiscal' },
     { label: 'Usuarios', path: '/users', roles: ['ADMIN'] },
+    { label: 'Seguridad de mi cuenta', path: '/security' },
+    { label: 'Exportar todos mis datos', path: '/data-export', roles: ['ADMIN'] },
     { label: 'Conexiones con otros sistemas', path: '/service-keys', roles: ['ADMIN'] },
     { label: 'Impuestos', path: '/tax-rates' },
     { label: 'Valores fiscales', path: '/fiscal-values' },

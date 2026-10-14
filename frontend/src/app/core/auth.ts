@@ -12,7 +12,13 @@ export interface SessionUser {
   role: Role;
   companyId: string;
 }
-interface AuthResponse { access_token: string; user: SessionUser }
+export interface AuthResponse { access_token: string; user: SessionUser; recoveryCodes?: string[]; recoveryCodesRemaining?: number }
+/** Respuesta del login: sesión, o desafío del segundo paso (2FA), o inscripción obligatoria (ANEXO-S0 E1). */
+export type LoginResult =
+  | AuthResponse
+  | { twoFactorRequired: true; challengeToken: string; expiresInSeconds: number }
+  | { twoFactorSetupRequired: true; challengeToken: string; expiresInSeconds: number };
+export interface EnrollStart { otpauthUri: string; qrCode: string; secret: string; expiresInSeconds: number }
 
 const TOKEN_KEY = 'fm.token';
 const USER_KEY = 'fm.user';
@@ -82,9 +88,22 @@ export class Auth {
     write(USER_KEY, JSON.stringify(next));
   }
 
-  async login(email: string, password: string): Promise<void> {
-    const res = await firstValueFrom(this.api.post<AuthResponse>('/auth/login', { email: email.trim(), password }));
+  /** Paso 1. Si devuelve un desafío, la sesión NO empieza: sigue `loginSecondStep`. El desafío vive solo en memoria. */
+  async login(email: string, password: string): Promise<LoginResult> {
+    const res = await firstValueFrom(this.api.post<LoginResult>('/auth/login', { email: email.trim(), password }));
+    if ('access_token' in res) this.setSession(res);
+    return res;
+  }
+
+  /** Paso 2: código de la app o de emergencia (o el primero, si es una inscripción). */
+  async loginSecondStep(challengeToken: string, code: string): Promise<AuthResponse> {
+    const res = await firstValueFrom(this.api.post<AuthResponse>('/auth/login/2fa', { challengeToken, code: code.trim() }));
     this.setSession(res);
+    return res;
+  }
+
+  enrollStart(challengeToken: string): Promise<EnrollStart> {
+    return firstValueFrom(this.api.post<EnrollStart>('/auth/login/2fa/enroll', { challengeToken }));
   }
 
   logout(returnUrl?: string): void {

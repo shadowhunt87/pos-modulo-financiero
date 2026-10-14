@@ -5,7 +5,10 @@ import { catchError, throwError } from 'rxjs';
 import { Auth } from './auth';
 import { AppConfig } from './config';
 
-/** Agrega el token a las llamadas al backend y cierra la sesión si el servidor dice 401. */
+/**
+ * Agrega el token a las llamadas al backend y cierra la sesión si el servidor dice 401 (sesión inválida).
+ * No en /auth/login/* (todavía no hay sesión) y las confirmaciones con sesión responden 422, no 401 (ANEXO-S0 G3).
+ */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(Auth);
   const cfg = inject(AppConfig);
@@ -15,7 +18,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const request = toApi && token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
   return next(request).pipe(
     catchError((err: unknown) => {
-      if (err instanceof HttpErrorResponse && err.status === 401 && toApi && !req.url.endsWith('/auth/login') && auth.loggedIn()) {
+      if (err instanceof HttpErrorResponse && err.status === 401 && toApi && !req.url.includes('/auth/login') && auth.loggedIn()) {
         auth.logout(router.url.startsWith('/login') ? undefined : router.url);
       }
       return throwError(() => err);

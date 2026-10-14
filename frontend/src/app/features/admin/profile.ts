@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
+import { TwoFactorState } from '../../core/two-factor';
+import { RouterLink } from '@angular/router';
 import { Auth, SessionUser } from '../../core/auth';
 import { errorMessage } from '../../core/errors';
 import { Notify } from '../../core/notify';
@@ -15,7 +17,7 @@ function sameAs(a: string, b: string) {
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ...UI],
+  imports: [RouterLink, ReactiveFormsModule, ...UI],
   template: `
     <div class="page">
       <div class="page-head"><div><h1>Mi perfil</h1><p class="sub">Tus datos de acceso y tu contraseña.</p></div></div>
@@ -44,10 +46,18 @@ function sameAs(a: string, b: string) {
                 @if (passForm.controls.newPassword.touched && passForm.controls.newPassword.invalid) { <span class="error-text">Entre 8 y 72 caracteres.</span> }</div>
               <div class="field span-all"><label for="c-rep">Repite la contraseña nueva</label><input id="c-rep" class="input" type="password" formControlName="repeat" autocomplete="new-password" />
                 @if (passForm.controls.repeat.touched && passForm.hasError('mismatch')) { <span class="error-text">Las contraseñas no coinciden.</span> }</div>
+              @if (tf.status()?.enabled) {
+                <div class="field span-all"><label for="c-code">Código de tu aplicación</label><input id="c-code" class="input" inputmode="numeric" autocomplete="one-time-code" maxlength="32" formControlName="code" /></div>
+              }
             </div>
             @if (passError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ passError() }}</div> }
             <div class="btn-row" style="margin-top:14px"><button type="submit" class="btn btn-primary" [disabled]="savingPass()">{{ savingPass() ? 'Guardando…' : 'Cambiar contraseña' }}</button></div>
           </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Verificación en dos pasos</h2><a routerLink="/security">Seguridad de mi cuenta</a></div>
+          <p class="panel-pad">{{ tf.status()?.enabled ? 'Activada: al entrar te pedimos un código de tu teléfono.' : 'Sin activar. Actívala para que nadie entre solo con tu clave.' }}</p>
         </section>
       </div>
     </div>
@@ -70,7 +80,11 @@ export class Profile {
     currentPassword: ['', Validators.required],
     newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
     repeat: ['', Validators.required],
+    code: [''],
   }, { validators: sameAs('newPassword', 'repeat') });
+  protected readonly tf = inject(TwoFactorState);
+
+  constructor() { void this.tf.load(); }
 
   protected async saveProfile(): Promise<void> {
     this.profileForm.markAllAsTouched();
@@ -93,7 +107,7 @@ export class Profile {
     try {
       const v = this.passForm.getRawValue();
       const res = await firstValueFrom(this.api.post<{ access_token: string; user?: SessionUser }>('/users/me/change-password', {
-        currentPassword: v.currentPassword, newPassword: v.newPassword,
+        currentPassword: v.currentPassword, newPassword: v.newPassword, ...(v.code.trim() ? { code: v.code.trim() } : {}),
       }));
       // El backend invalida los tokens anteriores: se guarda el nuevo para no perder la sesión
       if (res.access_token) this.auth.replaceToken(res.access_token);

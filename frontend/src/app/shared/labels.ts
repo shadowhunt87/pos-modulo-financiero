@@ -125,3 +125,12 @@ export const LEGAL_FORM: Record<string, string> = {
   SCA: 'Sociedad en Comandita por Acciones', PERSONA_FISICA: 'Persona física', OTRA: 'Otra',
 };
 export const ACCOUNTING_FRAMEWORK: Record<string, string> = { NIIF_PYMES: 'NIIF para las PYMES', NIIF_COMPLETAS: 'NIIF completas' };
+
+// Cambios de seguridad (ANEXO-S0 3.12, E11)
+export const SECURITY_EVENT: Record<string, string> = {
+  TWO_FACTOR_ENABLED: 'Activó la verificación en dos pasos', TWO_FACTOR_DEVICE_CHANGED: 'Cambió de teléfono',
+  TWO_FACTOR_DISABLED: 'Desactivó la verificación en dos pasos', TWO_FACTOR_LOCKED_OUT: 'Bloqueo por códigos equivocados',
+  TWO_FACTOR_RESET: 'Verificación restablecida', ADMIN_GRANTED: 'Ascendido a administrador', PASSWORD_RESET_BY_ADMIN: 'Clave restablecida por un administrador',
+  LOGIN_2FA: 'Entró', DATA_EXPORT_STARTED: 'Empezó una exportación completa', DATA_EXPORT_COMPLETED: 'Exportación completa terminada',
+  DATA_EXPORT_FAILED: 'Exportación completa interrumpida',
+};

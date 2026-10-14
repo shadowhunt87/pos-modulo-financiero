@@ -11,7 +11,8 @@
     { "slug": "reportes-dgii-presupuestos", "archivo": "08-reportes-dgii-presupuestos.md", "titulo": "Reportes, DGII y presupuestos" },
     { "slug": "usuarios-y-permisos", "archivo": "09-usuarios-y-permisos.md", "titulo": "Usuarios y permisos" },
     { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" },
-    { "slug": "semaforo-financiero", "archivo": "11-semaforo-financiero.md", "titulo": "Semáforo financiero" }
+    { "slug": "semaforo-financiero", "archivo": "11-semaforo-financiero.md", "titulo": "Semáforo financiero" },
+    { "slug": "seguridad-y-exportacion", "archivo": "12-seguridad-y-exportacion.md", "titulo": "Seguridad de la cuenta y exportación de datos" }
   ],
 
   "pantallas": {
@@ -172,6 +173,14 @@
       "seccion": "usuarios-y-permisos", "ancla": "crear-un-usuario",
       "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
     },
+    "/security": {
+      "seccion": "seguridad-y-exportacion", "ancla": "activar-la-verificacion-en-dos-pasos",
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
+    "/data-export": {
+      "seccion": "seguridad-y-exportacion", "ancla": "exportar-todos-mis-datos",
+      "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
+    },
     "/fiscal-values": {
       "seccion": "configuracion", "ancla": "valores-fiscales",
       "siguiente": { "texto": "Enlaza tus impuestos con los valores oficiales", "ruta": "/tax-rates" }
@@ -286,6 +295,12 @@
   },
 
   "errores": [
+    { "patron": "El código no es correcto o ya se usó", "explicacion": "Espera a que tu aplicación muestre un número nuevo y escríbelo enseguida. Si sigue fallando, revisa que la hora del teléfono esté en automático, o usa un código de emergencia." },
+    { "patron": "La verificación venció", "explicacion": "Pasaron más de 5 minutos. Vuelve a escribir tu correo y tu clave." },
+    { "patron": "exige la verificación en dos pasos", "explicacion": "Tu rol debe tener la verificación activada. Pide a otro administrador de tu empresa que la restablezca: tendrás 72 horas para inscribir tu teléfono." },
+    { "patron": "confirma con tu clave", "explicacion": "Escribe tu contraseña (y el código de tu aplicación, si la tienes) en el recuadro «Confirma que eres tú» y vuelve a intentarlo." },
+    { "patron": "Ya hay una exportación en curso", "explicacion": "El servidor prepara una exportación a la vez. Espera unos minutos y vuelve a intentarlo." },
+    { "patron": "no está disponible en este servidor|No podemos comprobar el código", "explicacion": "Hay un problema en el servidor con la verificación. Entra con un código de emergencia y avisa al administrador del sistema." },
     { "patron": "No hay un valor vigente de", "explicacion": "Falta cargar ese valor fiscal para la fecha del documento. Avisa a quien administra el sistema (Manual › Valores fiscales).", "enlace": { "texto": "Ver valores fiscales", "ruta": "/fiscal-values" } },
     { "patron": "valores fiscales desde el 01/01/2025", "explicacion": "Los impuestos enlazados solo tienen valores desde 2025. Para un documento más viejo usa un impuesto sin enlazar." },
     { "patron": "enlazado a un valor oficial", "explicacion": "La tasa de un impuesto enlazado cambia sola con la ley. Si necesitas otra, desenlázalo primero en Impuestos.", "enlace": { "texto": "Ir a Impuestos", "ruta": "/tax-rates" } },
