@@ -40,7 +40,7 @@ import { resetFilterControls } from '../../shared/ui/empty-state';
           </select></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">

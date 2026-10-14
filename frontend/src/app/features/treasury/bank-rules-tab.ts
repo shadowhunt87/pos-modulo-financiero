@@ -25,7 +25,7 @@ import { BankRule } from './types';
       @if (canAdmin) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva regla</button> }
     </div>
     <p class="hint" style="margin:-4px 0 12px">Las reglas se aplican de menor a mayor prioridad: gana la primera cuyo texto aparezca en la descripción (sin distinguir mayúsculas).</p>
-    @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+    <app-error-notice [error]="error()" />
     <section class="panel">
       <div class="table-wrap">
         <table class="table">
@@ -48,7 +48,7 @@ import { BankRule } from './types';
                 </td>
               </tr>
             } @empty {
-              @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay reglas. Con una regla, comisiones e intereses se categorizan solos al importar el extracto.</td></tr> }
+              @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay reglas. Con una regla, comisiones e intereses se categorizan solos al importar el extracto." actionLabel="Nueva regla" (action)="openNew()" [canAct]="canAdmin" /></td></tr> }
             }
           </tbody>
         </table>

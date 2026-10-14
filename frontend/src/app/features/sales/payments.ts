@@ -39,7 +39,7 @@ interface PaymentRow {
         <div class="field"><label for="f-to">Hasta</label><input id="f-to" class="input" type="date" formControlName="to" /></div>
       </form>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">

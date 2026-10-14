@@ -19,7 +19,7 @@ import { Entry, balanceOf, send } from './ledger-shared';
   imports: [RouterLink, AttachmentsPanel, ErrorNotice, FieldHelp, ...UI],
   template: `
     <div class="page">
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (loading() && !entry()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
       @if (entry(); as e) {
         <div class="page-head">
@@ -80,7 +80,7 @@ import { Entry, balanceOf, send } from './ledger-shared';
           <div class="panel-head"><h2>Líneas</h2></div>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>Cuenta</th><th>Descripción</th><th>Tercero</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
+              <thead><tr><th>Cuenta</th><th>Descripción</th><th>Cliente / proveedor</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
               <tbody>
                 @for (l of e.lines; track l.id) {
                   <tr>

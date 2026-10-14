@@ -52,7 +52,7 @@ type SettingsResponse = { requireEntryApproval: boolean } & Record<Key, { accoun
       <div class="page-head">
         <div><h1>Configuración contable</h1><p class="sub">Cuentas por defecto que usa el sistema al contabilizar facturas, pagos y el cierre de año.</p></div>
       </div>
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (!canEdit) { <div class="notice info" role="status">Solo un administrador puede cambiar esta configuración.</div> }
       @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
       @else {

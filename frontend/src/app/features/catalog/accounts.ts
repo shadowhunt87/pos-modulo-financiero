@@ -61,7 +61,7 @@ interface Row { acc: Account; depth: number; hasChildren: boolean }
           </select></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel" [hidden]="isEmpty()">
         <div class="table-wrap">
           <table class="table">
@@ -88,7 +88,7 @@ interface Row { acc: Account; depth: number; hasChildren: boolean }
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay cuentas con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay cuentas con esos filtros." text="Puedes cargar el catálogo estándar de RD desde Configuración inicial." actionLabel="Nueva cuenta" (action)="openNew()" [canAct]="canEdit" /></td></tr> }
               }
             </tbody>
           </table>

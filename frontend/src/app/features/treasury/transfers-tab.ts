@@ -26,7 +26,7 @@ import { splitRef, TransferEntry } from './types';
       <div class="grow"></div>
       @if (canWrite) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva transferencia</button> }
     </div>
-    @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+    <app-error-notice [error]="error()" />
     <section class="panel">
       <div class="table-wrap">
         <table class="table">
@@ -43,7 +43,7 @@ import { splitRef, TransferEntry } from './types';
                 <td><app-status [value]="t.status" [map]="ENTRY_STATUS" /></td>
               </tr>
             } @empty {
-              @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay transferencias en ese rango de fechas.</td></tr> }
+              @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay transferencias en ese rango de fechas." /></td></tr> }
             }
           </tbody>
         </table>

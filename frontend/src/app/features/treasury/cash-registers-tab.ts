@@ -24,7 +24,7 @@ import { CashRegisterRow, UserLite } from './types';
       <div class="grow"></div>
       @if (canAdmin) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva caja</button> }
     </div>
-    @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+    <app-error-notice [error]="error()" />
     <section class="panel">
       <div class="table-wrap">
         <table class="table">
@@ -47,7 +47,7 @@ import { CashRegisterRow, UserLite } from './types';
                 </td>
               </tr>
             } @empty {
-              @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay cajas. @if (canAdmin) { Crea la primera con “Nueva caja”. }</td></tr> }
+              @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay cajas" text="Una caja registra el efectivo que entra y sale del negocio." actionLabel="Nueva caja" (action)="openNew()" [canAct]="canAdmin" /></td></tr> }
             }
           </tbody>
         </table>

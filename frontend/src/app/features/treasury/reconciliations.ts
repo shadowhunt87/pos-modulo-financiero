@@ -37,7 +37,7 @@ import { Reconciliation } from './types';
           </select></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -58,7 +58,7 @@ import { Reconciliation } from './types';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay conciliaciones con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay conciliaciones con esos filtros." text="Compara el extracto del banco con tus libros, mes a mes." actionLabel="Nueva conciliación" (action)="openNew()" [canAct]="canCreate" /></td></tr> }
               }
             </tbody>
           </table>

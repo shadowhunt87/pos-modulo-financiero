@@ -21,7 +21,7 @@
     @if (tab() === 'account') {
       <div class="field wide" role="group" aria-labelledby="lb-acc"><span id="lb-acc" class="label">Cuenta</span>
         <app-combobox formControlName="accountId" [options]="accountOptions()" placeholder="Código o nombre de la cuenta" /></div>
-      <div class="field wide" role="group" aria-labelledby="lb-par"><span id="lb-par" class="label">Tercero (opcional)</span>
+      <div class="field wide" role="group" aria-labelledby="lb-par"><span id="lb-par" class="label">Cliente / proveedor (opcional)</span>
         <app-combobox formControlName="partnerId" [options]="partnerOptions()" placeholder="Todos los terceros" /></div>
     }
     @if (tab() === 'subledger') {
@@ -47,7 +47,7 @@
     }
   </div>
 
-  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  <app-error-notice [error]="error()" />
   @if (message()) { <div class="notice info" role="status">{{ message() }}</div> }
   @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
 
@@ -212,7 +212,7 @@
                     <td class="num">{{ l.debit | money: true }}</td><td class="num">{{ l.credit | money: true }}</td>
                   </tr>
                 }
-              } @empty { <tr><td colspan="5" class="table-empty">No hay asientos contabilizados en este rango.</td></tr> }
+              } @empty { <tr><td colspan="5"><app-empty-state title="No hay asientos contabilizados en este rango." /></td></tr> }
             </tbody>
           </table></div>
           <app-pagination [page]="jPage()" [limit]="pageSize" [total]="j.total" (pageChange)="goJournal($event)" /></section>
@@ -228,7 +228,7 @@
             <div class="figure"><div class="f-label">Saldo final</div><div class="f-value">{{ d.closingBalance | money }}</div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
-            <thead><tr><th>Fecha</th><th>Asiento</th><th>Descripción</th><th>Tercero</th><th>Documento origen</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Asiento</th><th>Descripción</th><th>Cliente / proveedor</th><th>Documento origen</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo</th></tr></thead>
             <tbody>
               <tr class="sub-row"><td colspan="7">Saldo inicial</td><td class="num">{{ d.openingBalance | money }}</td></tr>
               @for (m of d.movements; track m.lineId) {
@@ -241,7 +241,7 @@
                   <td class="num">{{ m.debit | money: true }}</td><td class="num">{{ m.credit | money: true }}</td>
                   <td class="num" [class.neg]="m.balance.startsWith('-')">{{ m.balance | money }}</td>
                 </tr>
-              } @empty { <tr><td colspan="8" class="table-empty">No hay movimientos de esta cuenta en el rango.</td></tr> }
+              } @empty { <tr><td colspan="8"><app-empty-state title="No hay movimientos de esta cuenta en el rango." /></td></tr> }
             </tbody>
             <tfoot><tr><td colspan="5">Totales del rango</td><td class="num">{{ d.totalDebit | money }}</td><td class="num">{{ d.totalCredit | money }}</td><td class="num">{{ d.closingBalance | money }}</td></tr></tfoot>
           </table></div>
@@ -259,7 +259,7 @@
             <div class="figure"><div class="f-label">Saldo final</div><div class="f-value">{{ s.totals.closingBalance | money }}</div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
-            <thead><tr><th>Tercero</th><th>RNC / cédula</th><th class="num">Saldo inicial</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo final</th></tr></thead>
+            <thead><tr><th>Cliente / proveedor</th><th>RNC / cédula</th><th class="num">Saldo inicial</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo final</th></tr></thead>
             <tbody>
               @for (p of s.partners; track p.partnerId ?? 'none') {
                 <tr>
@@ -268,7 +268,7 @@
                   <td class="num">{{ p.openingBalance | money }}</td><td class="num">{{ p.debit | money: true }}</td><td class="num">{{ p.credit | money: true }}</td>
                   <td class="num" [class.neg]="p.closingBalance.startsWith('-')">{{ p.closingBalance | money }}</td>
                 </tr>
-              } @empty { <tr><td colspan="6" class="table-empty">Esta cuenta no tiene movimientos en el rango.</td></tr> }
+              } @empty { <tr><td colspan="6"><app-empty-state title="Esta cuenta no tiene movimientos en el rango." /></td></tr> }
             </tbody>
             <tfoot><tr><td colspan="2">Totales</td><td class="num">{{ s.totals.openingBalance | money }}</td><td class="num">{{ s.totals.debit | money }}</td><td class="num">{{ s.totals.credit | money }}</td><td class="num">{{ s.totals.closingBalance | money }}</td></tr></tfoot>
           </table></div></section>

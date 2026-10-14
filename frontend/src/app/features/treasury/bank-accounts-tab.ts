@@ -27,7 +27,7 @@ import { BankAccountRow } from './types';
       <div class="grow"></div>
       @if (canAdmin) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva cuenta bancaria</button> }
     </div>
-    @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+    <app-error-notice [error]="error()" />
     <section class="panel">
       <div class="table-wrap">
         <table class="table">
@@ -52,7 +52,7 @@ import { BankAccountRow } from './types';
                 </td>
               </tr>
             } @empty {
-              @if (!loading()) { <tr><td colspan="8" class="table-empty">No hay cuentas bancarias. @if (canAdmin) { Crea la primera con “Nueva cuenta bancaria”. }</td></tr> }
+              @if (!loading()) { <tr><td colspan="8"><app-empty-state title="No hay cuentas bancarias" text="Registra tu cuenta para anotar cobros, pagos y conciliar con el banco." actionLabel="Nueva cuenta bancaria" (action)="openNew()" [canAct]="canAdmin" /></td></tr> }
             }
           </tbody>
           @if (visible().length > 1) {

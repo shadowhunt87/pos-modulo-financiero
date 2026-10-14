@@ -37,7 +37,7 @@
               </td>
             </tr>
           } @empty {
-            @if (!loading()) { <tr><td colspan="7" class="table-empty">Todavía no hay años fiscales. Crea el primero para generar sus períodos mensuales.</td></tr> }
+            @if (!loading()) { <tr><td colspan="7"><app-empty-state title="Todavía no hay años fiscales. Crea el primero para generar sus períodos mensuales." /></td></tr> }
           }
         </tbody>
       </table>
@@ -96,7 +96,7 @@
         <div class="table-wrap"><table class="table">
           <thead><tr><th>Cuenta</th><th class="num">Saldo</th></tr></thead>
           <tbody>@for (a of p.income; track a.accountId) { <tr><td><span class="mono">{{ a.code }}</span> {{ a.name }}</td><td class="num">{{ a.balance | money }}</td></tr> }
-            @empty { <tr><td colspan="2" class="table-empty">Sin ingresos en el año.</td></tr> }</tbody>
+            @empty { <tr><td colspan="2"><app-empty-state title="Sin ingresos en el año." /></td></tr> }</tbody>
         </table></div>
       </section>
       <section class="panel">
@@ -104,7 +104,7 @@
         <div class="table-wrap"><table class="table">
           <thead><tr><th>Cuenta</th><th class="num">Saldo</th></tr></thead>
           <tbody>@for (a of p.expenses; track a.accountId) { <tr><td><span class="mono">{{ a.code }}</span> {{ a.name }}</td><td class="num">{{ a.balance | money }}</td></tr> }
-            @empty { <tr><td colspan="2" class="table-empty">Sin gastos en el año.</td></tr> }</tbody>
+            @empty { <tr><td colspan="2"><app-empty-state title="Sin gastos en el año." /></td></tr> }</tbody>
         </table></div>
       </section>
     </div>
@@ -115,7 +115,7 @@
         <thead><tr><th>Cuenta</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
         <tbody>@for (l of p.entryLines; track $index) {
           <tr><td><span class="mono">{{ l.code }}</span> {{ l.name }}</td><td class="num">{{ l.debit | money: 'blank' }}</td><td class="num">{{ l.credit | money: 'blank' }}</td></tr>
-        } @empty { <tr><td colspan="3" class="table-empty">No hay saldos que trasladar: el año se cierra sin asiento.</td></tr> }</tbody>
+        } @empty { <tr><td colspan="3"><app-empty-state title="No hay saldos que trasladar: el año se cierra sin asiento." /></td></tr> }</tbody>
       </table></div>
     </section>
   }

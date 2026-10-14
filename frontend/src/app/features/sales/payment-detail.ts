@@ -26,7 +26,7 @@ interface PaymentFull {
   imports: [RouterLink, AttachmentsPanel, ErrorNotice, FieldHelp, ...UI],
   template: `
     <div class="page">
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (loading() && !pay()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
       @if (pay(); as p) {
         <div class="page-head">
@@ -71,7 +71,7 @@ interface PaymentFull {
                   @for (a of p.allocations; track a.id) {
                     <tr><td><a class="mono" [routerLink]="['/invoices', a.invoice.id]">{{ a.invoice.number }}</a>@if (a.invoice.ncf) { <div class="dim mono">{{ a.invoice.ncf }}</div> }</td>
                       <td>{{ a.invoice.type | lbl: INVOICE_TYPE }}</td><td class="num">{{ a.amount | money }}</td></tr>
-                  } @empty { <tr><td colspan="3" class="table-empty">Sin aplicaciones a facturas.</td></tr> }
+                  } @empty { <tr><td colspan="3"><app-empty-state title="Sin aplicaciones a facturas." /></td></tr> }
                 </tbody>
                 @if (p.allocations.length) { <tfoot><tr><td colspan="2">Total aplicado</td><td class="num">{{ applied() | money }}</td></tr></tfoot> }
               </table>

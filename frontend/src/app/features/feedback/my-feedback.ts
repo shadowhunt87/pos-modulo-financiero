@@ -19,7 +19,7 @@ import { FeedbackMine } from './feedback-types';
         <button type="button" class="btn btn-primary" (click)="launcher.open()">Enviar comentario</button>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
       @else if (!rows().length && !error()) {
         <div class="panel empty">

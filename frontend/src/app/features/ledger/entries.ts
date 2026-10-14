@@ -42,7 +42,7 @@ import { Entry } from './ledger-shared';
         <div class="field"><label for="to">Hasta</label><input id="to" type="date" class="input" (change)="setServer('to', $any($event.target).value)" /></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -60,7 +60,7 @@ import { Entry } from './ledger-shared';
                   <td class="num">{{ total(e) | money }}</td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay asientos con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay asientos con esos filtros." text="Los asientos de facturas y pagos se crean solos; aquí registras los manuales." actionLabel="Nuevo asiento" actionLink="/entries/new" [canAct]="canCreate" /></td></tr> }
               }
             </tbody>
           </table>

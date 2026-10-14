@@ -26,7 +26,7 @@ interface NcfCatalog { code: string; name: string }
         @if (canEdit) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva secuencia</button> }
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @for (a of alerts(); track a.id) {
         <div class="notice warn" role="status"><strong>{{ a.ncfType }}</strong> · {{ alertText(a) }}</div>
       }
@@ -59,7 +59,7 @@ interface NcfCatalog { code: string; name: string }
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="8" class="table-empty">Aún no hay secuencias. Crea una con el rango que te autorizó la DGII.</td></tr> }
+                @if (!loading()) { <tr><td colspan="8"><app-empty-state title="Aún no hay secuencias. Crea una con el rango que te autorizó la DGII." actionLabel="Guía para cargar tus NCF" actionLink="/setup/ncf" [canAct]="canEdit" /></td></tr> }
               }
             </tbody>
           </table>

@@ -25,7 +25,7 @@ interface Group { key: string; title: string; year: FiscalYear | null; periods: 
         @if (isAdmin) { <button type="button" class="btn btn-primary" (click)="openNew()">Nuevo período</button> }
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
       @for (g of groups(); track g.key) {
         <section class="panel">

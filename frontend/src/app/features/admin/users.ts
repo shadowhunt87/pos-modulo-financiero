@@ -43,7 +43,7 @@ interface SecurityEvent {
           </select></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -66,7 +66,7 @@ interface SecurityEvent {
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="7" class="table-empty">No hay usuarios con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="7"><app-empty-state title="No hay usuarios con esos filtros." /></td></tr> }
               }
             </tbody>
           </table>
@@ -88,7 +88,7 @@ interface SecurityEvent {
                   <td>{{ e.target?.name ?? '—' }}</td>
                   <td class="dim mono">{{ e.ip ?? '—' }}</td>
                 </tr>
-              } @empty { <tr><td colspan="5" class="table-empty">Sin cambios de seguridad en los últimos 30 días.</td></tr> }
+              } @empty { <tr><td colspan="5"><app-empty-state title="Sin cambios de seguridad en los últimos 30 días." /></td></tr> }
             </tbody>
           </table>
         </div>

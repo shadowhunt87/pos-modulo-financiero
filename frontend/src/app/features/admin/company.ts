@@ -19,7 +19,7 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
     <div class="page">
       <div class="page-head"><div><h1>Empresa</h1><p class="sub">Datos generales y fiscales de la empresa.</p></div>
         <a class="btn" routerLink="/company/fiscal">Datos fiscales (DGII)</a></div>
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (!canEdit) { <div class="notice info" role="status">Solo un administrador puede editar estos datos.</div> }
       @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
       @else {

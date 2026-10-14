@@ -20,7 +20,7 @@ interface DocSeq { docType: string; prefix: string; padding: number; nextNumber:
         <div><h1>Numeración de documentos</h1><p class="sub">Prefijo y correlativo de facturas, notas, cobros y pagos.</p></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -37,7 +37,7 @@ interface DocSeq { docType: string; prefix: string; padding: number; nextNumber:
                   <td class="actions">@if (canEdit) { <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(s)">Editar</button> }</td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="6" class="table-empty">No hay numeraciones.</td></tr> }
+                @if (!loading()) { <tr><td colspan="6"><app-empty-state title="No hay numeraciones." /></td></tr> }
               }
             </tbody>
           </table>

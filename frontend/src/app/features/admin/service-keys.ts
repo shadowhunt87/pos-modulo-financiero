@@ -28,7 +28,7 @@ interface CreatedKey extends ServiceKey { key: string; warning: string }
         <button type="button" class="btn btn-primary" (click)="openNew()">Nueva conexión</button>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">

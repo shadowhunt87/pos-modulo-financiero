@@ -36,7 +36,7 @@ import type { TaxLinkSuggestion } from '../fiscal/fiscal-types';
           </select></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -72,7 +72,7 @@ import type { TaxLinkSuggestion } from '../fiscal/fiscal-types';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="10" class="table-empty">No hay impuestos con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="10"><app-empty-state title="No hay impuestos con esos filtros." text="«Preparar mi contabilidad» crea el ITBIS y las retenciones habituales ya enlazados." actionLabel="Nuevo impuesto" (action)="openNew()" [canAct]="canEdit" /></td></tr> }
               }
             </tbody>
           </table>

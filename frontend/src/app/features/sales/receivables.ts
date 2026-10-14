@@ -127,7 +127,7 @@ type Tab = 'aging' | 'statement';
                       <td class="num">{{ m.debit | money: 'blank' }}</td><td class="num">{{ m.credit | money: 'blank' }}</td>
                       <td class="num" [class]="m.balance | signClass">{{ m.balance | money }}</td>
                     </tr>
-                  } @empty { <tr><td colspan="7" class="table-empty">Sin movimientos en el rango.</td></tr> }
+                  } @empty { <tr><td colspan="7"><app-empty-state title="Sin movimientos en el rango." /></td></tr> }
                 </tbody>
                 <tfoot><tr><td colspan="6">Saldo final</td><td class="num">{{ s.closingBalance | money }}</td></tr></tfoot>
               </table>

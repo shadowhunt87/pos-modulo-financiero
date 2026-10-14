@@ -32,7 +32,7 @@ import { BudgetHead } from './report-types';
           </select></div>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -52,7 +52,7 @@ import { BudgetHead } from './report-types';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="6" class="table-empty">No hay presupuestos con esos filtros.@if (canEdit) { Crea el primero con «Nuevo presupuesto». }</td></tr> }
+                @if (!loading()) { <tr><td colspan="6"><app-empty-state title="No hay presupuestos con esos filtros." text="Planea cuánto esperas vender y gastar, y compáralo con lo real." actionLabel="Nuevo presupuesto" (action)="openNew()" [canAct]="canEdit" /></td></tr> }
               }
             </tbody>
           </table>

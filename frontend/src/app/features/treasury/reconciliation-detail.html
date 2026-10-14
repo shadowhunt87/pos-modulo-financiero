@@ -1,6 +1,6 @@
 <div class="page">
   @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
-  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  <app-error-notice [error]="error()" />
 
   @if (rec(); as r) {
     @if (summary(); as s) {
@@ -123,7 +123,7 @@
                   <tbody>
                     @for (i of s.depositsInTransit; track i.journalEntryLineId) {
                       <tr><td><a [routerLink]="['/entries', i.entryId]">{{ itemLabel(i) }}</a></td><td>{{ i.description }}</td><td class="num">{{ i.amount | money }}</td></tr>
-                    } @empty { <tr><td colspan="3" class="table-empty">No hay depósitos en tránsito.</td></tr> }
+                    } @empty { <tr><td colspan="3"><app-empty-state title="No hay depósitos en tránsito." /></td></tr> }
                   </tbody>
                 </table>
               </div>
@@ -136,7 +136,7 @@
                   <tbody>
                     @for (i of s.outstandingPayments; track i.journalEntryLineId) {
                       <tr><td><a [routerLink]="['/entries', i.entryId]">{{ itemLabel(i) }}</a></td><td>{{ i.description }}</td><td class="num" [class]="i.amount | signClass">{{ i.amount | money }}</td></tr>
-                    } @empty { <tr><td colspan="3" class="table-empty">No hay pagos pendientes.</td></tr> }
+                    } @empty { <tr><td colspan="3"><app-empty-state title="No hay pagos pendientes." /></td></tr> }
                   </tbody>
                 </table>
               </div>
@@ -157,7 +157,7 @@
                       <td><app-status [value]="t.status" [map]="TX_STATUS" />@if (t.matches.length > 1) { <div class="faint">{{ t.matches.length }} líneas</div> }</td>
                       <td class="actions">@if (canMatch) { <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="unmatch(t)">Deshacer enlace</button> }</td>
                     </tr>
-                  } @empty { <tr><td colspan="5" class="table-empty">Todavía no hay movimientos enlazados hasta esta fecha de corte.</td></tr> }
+                  } @empty { <tr><td colspan="5"><app-empty-state title="Todavía no hay movimientos enlazados hasta esta fecha de corte." /></td></tr> }
                 </tbody>
               </table>
             </div>
@@ -191,7 +191,7 @@
               <td>{{ i.description }}</td>
               <td class="num">{{ i.amount | money }}</td>
             </tr>
-          } @empty { <tr><td colspan="4" class="table-empty">No hay partidas en libros con el mismo sentido (entrada o salida) para enlazar.</td></tr> }
+          } @empty { <tr><td colspan="4"><app-empty-state title="No hay partidas en libros con el mismo sentido (entrada o salida) para enlazar." /></td></tr> }
         </tbody>
         <tfoot><tr><td colspan="3">Suma elegida</td><td class="num" [class.pos]="manualMatches()">{{ pickedSum().toString() | money }}</td></tr></tfoot>
       </table>

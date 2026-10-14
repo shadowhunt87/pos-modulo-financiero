@@ -38,7 +38,7 @@ interface OpeningResponse { entry: (Entry & { lines: (Entry['lines'][number] & {
           <section class="panel" style="margin-top:16px">
             <div class="table-wrap">
               <table class="table">
-                <thead><tr><th>Cuenta</th><th>Tercero</th><th>Descripción</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
+                <thead><tr><th>Cuenta</th><th>Cliente / proveedor</th><th>Descripción</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
                 <tbody>
                   @for (l of e.lines; track l.id) {
                     <tr><td><span class="mono">{{ l.account.code }}</span> {{ l.account.name }}</td><td>{{ partnerName(l.partnerId) }}</td><td>{{ l.description }}</td>
@@ -74,7 +74,7 @@ interface OpeningResponse { entry: (Entry & { lines: (Entry['lines'][number] & {
           <div class="panel-head"><h2>Saldos por cuenta</h2><button type="button" class="btn btn-sm" (click)="addLine()">Agregar línea</button></div>
           <div class="table-wrap">
             <table class="table">
-              <thead><tr><th>Cuenta</th><th>Tercero</th><th>Descripción</th><th class="num">Débito</th><th class="num">Crédito</th><th></th></tr></thead>
+              <thead><tr><th>Cuenta</th><th>Cliente / proveedor</th><th>Descripción</th><th class="num">Débito</th><th class="num">Crédito</th><th></th></tr></thead>
               <tbody formArrayName="lines">
                 @for (g of lines.controls; track g; let i = $index) {
                   <tr [formGroupName]="i">

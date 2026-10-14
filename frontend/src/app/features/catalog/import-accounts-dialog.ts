@@ -1,3 +1,4 @@
+import { EmptyState } from '../../shared/ui';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -22,7 +23,7 @@ const FILTERS: ImportAction[] = ['error', 'create', 'update', 'skip', 'unchanged
 @Component({
   selector: 'app-import-accounts-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Modal, FieldHelp, ErrorNotice, RouterLink],
+  imports: [EmptyState, Modal, FieldHelp, ErrorNotice, RouterLink],
   template: `
     <app-modal [open]="open()" title="Cargar o importar plan de cuentas" width="860px" (closed)="close()">
       <ol class="steps" aria-label="Pasos">
@@ -94,7 +95,7 @@ const FILTERS: ImportAction[] = ['error', 'create', 'update', 'skip', 'unchanged
                   <td>{{ tipo(r) }}</td>
                   <td class="mono">{{ r.padre }}</td>
                 </tr>
-              } @empty { <tr><td colspan="6" class="table-empty">No hay filas con ese filtro.</td></tr> }
+              } @empty { <tr><td colspan="6"><app-empty-state title="No hay filas con ese filtro." /></td></tr> }
             </tbody>
           </table>
         </div>

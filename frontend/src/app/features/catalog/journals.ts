@@ -27,7 +27,7 @@ import { UI } from '../../shared/ui';
         }
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
@@ -49,7 +49,7 @@ import { UI } from '../../shared/ui';
                   </td>
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="6" class="table-empty">No hay diarios. Usa «Crear diarios estándar» para empezar.</td></tr> }
+                @if (!loading()) { <tr><td colspan="6"><app-empty-state title="No hay diarios. Usa «Crear diarios estándar» para empezar." actionLabel="Nuevo diario" (action)="openNew()" [canAct]="canEdit" /></td></tr> }
               }
             </tbody>
           </table>

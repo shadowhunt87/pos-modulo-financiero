@@ -135,7 +135,7 @@
                   <td>@switch (i.improved) { @case (true) { <span class="pos">▲ Mejoró</span> } @case (false) { <span class="neg">▼ Empeoró</span> } @default { <span class="hint">Sin comparar</span> } }</td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="table-empty">Sin indicadores para comparar en estas fechas.</td></tr>
+                <tr><td colspan="6"><app-empty-state title="Sin indicadores para comparar en estas fechas." /></td></tr>
               }
             </tbody>
           </table>
@@ -166,7 +166,7 @@
                   <td>@if (l.custom) { <button type="button" class="btn btn-ghost btn-sm" (click)="restore(l)">Restaurar</button> }</td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="table-empty">Cargando límites…</td></tr>
+                <tr><td colspan="6"><app-empty-state title="Cargando límites…" /></td></tr>
               }
             </tbody>
           </table>

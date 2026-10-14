@@ -34,7 +34,7 @@ interface AutoResult { applied: boolean; classified: number; proposals: Proposal
         }
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       @if (data(); as d) {
         <div class="figures" style="margin-bottom:16px">
           <div class="figure"><div class="f-label">Cuentas con movimientos</div><div class="f-value">{{ d.summary.leafAccounts }}</div></div>
@@ -79,7 +79,7 @@ interface AutoResult { applied: boolean; classified: number; proposals: Proposal
                   }
                 </tr>
               } @empty {
-                @if (!loading()) { <tr><td colspan="6" class="table-empty">No hay cuentas con esos filtros.</td></tr> }
+                @if (!loading()) { <tr><td colspan="6"><app-empty-state title="No hay cuentas con esos filtros." /></td></tr> }
               }
             </tbody>
           </table>

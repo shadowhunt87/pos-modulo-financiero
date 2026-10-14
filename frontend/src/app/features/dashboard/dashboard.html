@@ -14,7 +14,7 @@
 
   <app-fiscal-alerts />
   <app-setup-checklist />
-  @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+  <app-error-notice [error]="error()" />
   @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando cifras…</div> }
   @else {
     @if (overdueCount() || pendingEntries()) {
@@ -58,7 +58,7 @@
       <div class="panel-head"><h2>Últimas facturas</h2><a routerLink="/invoices">Ver todas</a></div>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>Número</th><th>Tipo</th><th>Tercero</th><th>Fecha</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead>
+          <thead><tr><th>Número</th><th>Tipo</th><th>Cliente / proveedor</th><th>Fecha</th><th>Estado</th><th class="num">Total</th><th class="num">Saldo</th></tr></thead>
           <tbody>
             @for (i of recent(); track i.id) {
               <tr>
@@ -71,7 +71,7 @@
                 <td class="num">{{ i.balance | money }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="7" class="table-empty">Aún no hay facturas. Crea la primera desde “Nueva factura”.</td></tr>
+              <tr><td colspan="7"><app-empty-state title="Aún no hay facturas. Crea la primera desde “Nueva factura”." /></td></tr>
             }
           </tbody>
         </table>

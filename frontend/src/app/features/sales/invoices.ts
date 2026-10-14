@@ -41,7 +41,7 @@ import { InvoiceRow } from './invoice-types';
         <label class="check" style="height:36px"><input type="checkbox" (change)="setOverdue($any($event.target).checked)" /> Solo vencidas</label>
       </div>
 
-      @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
+      <app-error-notice [error]="error()" />
       <section class="panel">
         <div class="table-wrap">
           <table class="table">
