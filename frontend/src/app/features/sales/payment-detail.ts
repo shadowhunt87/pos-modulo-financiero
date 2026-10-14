@@ -7,7 +7,7 @@ import { errorMessage } from '../../core/errors';
 import { Notify } from '../../core/notify';
 import { clean, dec, sumDec, today } from '../../shared/format';
 import { INVOICE_TYPE, PAYMENT_DIRECTION, PAYMENT_METHOD, PAYMENT_STATUS, ENTRY_STATUS } from '../../shared/labels';
-import { AttachmentsPanel, UI } from '../../shared/ui';
+import { AttachmentsPanel, ErrorNotice, UI } from '../../shared/ui';
 import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './payment-shared';
 
 interface PaymentFull {
@@ -23,7 +23,7 @@ interface PaymentFull {
 @Component({
   selector: 'app-payment-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AttachmentsPanel, ...UI],
+  imports: [RouterLink, AttachmentsPanel, ErrorNotice, ...UI],
   template: `
     <div class="page">
       @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
@@ -52,7 +52,7 @@ interface PaymentFull {
         <div class="cols-2">
           <section class="panel panel-pad">
             <dl class="kv">
-              <dt>Tercero</dt><dd>{{ p.partner.name }}@if (p.partner.taxId) { <span class="dim mono"> · {{ p.partner.taxId }}</span> }</dd>
+              <dt>Cliente / proveedor</dt><dd>{{ p.partner.name }}@if (p.partner.taxId) { <span class="dim mono"> · {{ p.partner.taxId }}</span> }</dd>
               <dt>Método</dt><dd>{{ p.method | lbl: PAYMENT_METHOD }}</dd>
               <dt>{{ p.direction === 'RECEIVED' ? 'Depositado en' : 'Pagado desde' }}</dt>
               <dd>@if (p.bankAccount; as b) { {{ b.bankName }} · <span class="mono">{{ b.accountNumber }}</span> } @else if (p.cashRegister; as c) { Caja {{ c.name }} } @else { — }</dd>
@@ -94,14 +94,14 @@ interface PaymentFull {
                     <tr><td class="mono">{{ i.number }}</td><td>{{ i.dueDate | fdate }}</td><td class="num">{{ i.balance | money }}</td>
                       <td class="num"><input class="input num" type="number" min="0" step="0.01" [attr.aria-label]="'Monto a aplicar a ' + i.number"
                         [value]="alloc()[i.id] ?? ''" (input)="setAlloc(i, $any($event.target).value)" /></td></tr>
-                  } @empty { <tr><td colspan="4" class="table-empty">El tercero no tiene facturas pendientes en {{ p.currency }}.</td></tr> }
+                  } @empty { <tr><td colspan="4" class="table-empty">El cliente / proveedor no tiene facturas pendientes en {{ p.currency }}.</td></tr> }
                 </tbody>
                 <tfoot><tr><td colspan="3">Total a aplicar</td><td class="num">{{ allocTotal() | money }}</td></tr></tfoot>
               </table>
             </div>
             <div class="field" style="margin-top:12px;max-width:220px"><label for="a-date">Fecha de aplicación</label><input id="a-date" class="input" type="date" [value]="allocDate()" (input)="allocDate.set($any($event.target).value)" /></div>
             @if (allocTotal().gt(dec(p.unapplied))) { <div class="notice neg" style="margin-top:12px" role="alert">Lo que aplicas supera el anticipo disponible. Reduce los montos.</div> }
-            @if (allocError()) { <div class="notice neg" style="margin-top:12px" role="alert">{{ allocError() }}</div> }
+            <app-error-notice style="display:block;margin-top:12px" [error]="allocError()" />
           }
           <ng-container modal-actions>
             <button type="button" class="btn" (click)="allocOpen.set(false)">Cancelar</button>
@@ -138,7 +138,7 @@ export class PaymentDetail {
   protected readonly allocOpen = signal(false);
   protected readonly allocLoading = signal(false);
   protected readonly allocSaving = signal(false);
-  protected readonly allocError = signal('');
+  protected readonly allocError = signal<unknown>('');
   protected readonly allocDate = signal(today());
   protected readonly open = signal<OpenInvoice[]>([]);
   protected readonly alloc = signal<Record<string, string>>({});
@@ -177,7 +177,7 @@ export class PaymentDetail {
     this.allocError.set(''); this.alloc.set({}); this.open.set([]); this.allocDate.set(today());
     this.allocOpen.set(true); this.allocLoading.set(true);
     try { this.open.set(await loadOpenInvoices(this.api, p.partner.id, p.direction, p.currency)); }
-    catch (e) { this.allocError.set(errorMessage(e)); }
+    catch (e) { this.allocError.set(e); }
     this.allocLoading.set(false);
   }
   protected setAlloc(i: OpenInvoice, raw: string): void {
@@ -200,7 +200,7 @@ export class PaymentDetail {
       this.notify.ok('Anticipo aplicado a las facturas.');
       this.allocOpen.set(false);
       await this.load(p.id);
-    } catch (e) { this.allocError.set(errorMessage(e)); }
+    } catch (e) { this.allocError.set(e); }
     this.allocSaving.set(false);
   }
 }
