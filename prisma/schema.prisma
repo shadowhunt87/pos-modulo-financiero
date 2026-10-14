@@ -53,6 +53,7 @@ model Company {
   ecfDocuments        EcfDocument[]
   ecfImports          EcfImport[]
   serviceKeys         ServiceKey[]
+  ratioThresholds     RatioThreshold[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1249,4 +1250,20 @@ model ServiceKey {
   createdAt    DateTime  @default(now())
 
   @@index([companyId])
+}
+
+// Límites del semáforo financiero que cambió la empresa (sin fila = valor por defecto del código,
+// src/financial-analysis/ratio-thresholds.ts). La dirección ("más es mejor") es fija en el código.
+model RatioThreshold {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  ratioKey    String // ej: "currentRatio"
+  greenAt     Decimal  @db.Decimal(19, 4)
+  redAt       Decimal  @db.Decimal(19, 4)
+  enabled     Boolean  @default(true)
+  updatedById String // "quién", sin relación (como FiscalYear.closedById)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, ratioKey])
 }

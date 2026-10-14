@@ -20,6 +20,7 @@ import { ChartOfAccountsModule } from './chart-of-accounts/chart-of-accounts.mod
 import { EcfModule } from './ecf/ecf.module.js';
 import { MetaModule } from './meta/meta.module.js';
 import { ServiceKeysModule } from './service-keys/service-keys.module.js';
+import { FinancialAnalysisModule } from './financial-analysis/financial-analysis.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -46,6 +47,7 @@ import { validate } from './config/env.validation.js';
     EcfModule,
     MetaModule,
     ServiceKeysModule,
+    FinancialAnalysisModule,
   ],
 })
 export class AppModule {}

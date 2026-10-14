@@ -1,0 +1,180 @@
+<div class="page">
+  <div class="page-head">
+    <div><h1>Semáforo financiero</h1><p class="sub">Cómo está tu empresa en verde, amarillo o rojo, con una frase sencilla por indicador.</p></div>
+    @if (tab() === 'health') { <app-export-buttons path="/financial-analysis/export/health" [query]="{ from, to }" name="semaforo-financiero" /> }
+    @if (tab() === 'compare') { <app-export-buttons path="/financial-analysis/export/compare" [query]="compareQuery()" name="comparacion-periodos" /> }
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Semáforo financiero">
+    @for (t of tabs(); track t.id) {
+      <button type="button" class="tab" role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="selectTab(t.id)">{{ t.label }}</button>
+    }
+  </div>
+
+  @switch (tab()) {
+
+    <!-- ---------- Semáforo ---------- -->
+    @case ('health') {
+      <form class="filters" (ngSubmit)="loadHealth()" novalidate>
+        <div class="field"><label for="a-from">Desde</label><input id="a-from" name="from" class="input" type="date" [(ngModel)]="from" required /></div>
+        <div class="field"><label for="a-to">Hasta</label><input id="a-to" name="to" class="input" type="date" [(ngModel)]="to" required /></div>
+        <button type="submit" class="btn btn-primary" [disabled]="loading()">{{ loading() ? 'Cargando…' : 'Actualizar' }}</button>
+      </form>
+
+      <app-error-notice [error]="error()" />
+      @if (loading()) { <div class="loading"><span class="spinner"></span> Calculando indicadores…</div> }
+      @else if (health(); as h) {
+        <div class="summary" aria-label="Resumen">
+          <span class="badge pos">✓&nbsp;{{ h.summary.green }} bien</span>
+          <span class="badge warn">!&nbsp;{{ h.summary.yellow }} atención</span>
+          <span class="badge neg">✕&nbsp;{{ h.summary.red }} riesgo</span>
+          <span class="badge">?&nbsp;{{ h.summary.gray }} sin dato</span>
+        </div>
+        @for (w of h.warnings; track $index) { <div class="notice warn" role="status">{{ w }}</div> }
+        @if (h.unclassifiedCount) {
+          <div class="notice warn" role="status">
+            Hay {{ h.unclassifiedCount }} {{ h.unclassifiedCount === 1 ? 'cuenta sin categoría' : 'cuentas sin categoría' }}: algunos indicadores pueden salir incompletos.
+            <a routerLink="/account-classification">Clasificar cuentas</a>
+          </div>
+        }
+
+        @for (g of byGroup(); track g.group) {
+          <h2 class="group-title">{{ RATIO_GROUP[g.group] }}</h2>
+          <div class="grid">
+            @for (i of g.items; track i.key) {
+              <article class="panel card">
+                <div class="top">
+                  <h3>{{ i.label }} <app-field-help [text]="i.formula" /></h3>
+                  <app-analysis-light [color]="i.color" />
+                </div>
+                <div class="val">{{ fmtValue(i.value, i.unit) }}</div>
+                @if (i.annualized) { <span class="hint">Anualizado: el valor se llevó a un año completo para poder compararlo.</span> }
+                <p class="msg">{{ i.message }}</p>
+                @if (i.note) { <p class="hint msg">{{ i.note }}</p> }
+                @if (i.enabled && i.greenAt !== null) {
+                  <span class="hint">Verde {{ fmtLimit(i.greenAt, i.unit, i.direction, true) }} · rojo {{ fmtLimit(i.redAt, i.unit, i.direction, false) }}@if (i.custom) { (límite propio de la empresa) }</span>
+                }
+              </article>
+            }
+          </div>
+        } @empty {
+          <div class="empty"><h3>Todavía no hay indicadores</h3><p>Registra facturas y asientos contabilizados en este período y vuelve a consultar.</p>
+            <a class="btn btn-primary" routerLink="/invoices/new">Crear una factura</a></div>
+        }
+      }
+    }
+
+    <!-- ---------- Tendencia ---------- -->
+    @case ('trend') {
+      <form class="filters" (ngSubmit)="loadTrend()" novalidate>
+        <div class="field"><label for="t-from">Desde (mes)</label><input id="t-from" name="tfrom" class="input" type="month" [(ngModel)]="trendFrom" /></div>
+        <div class="field"><label for="t-to">Hasta (mes)</label><input id="t-to" name="tto" class="input" type="month" [(ngModel)]="trendTo" /></div>
+        <div class="field"><label for="t-gr">Agrupar por</label>
+          <select id="t-gr" name="gr" class="input" [(ngModel)]="granularity">
+            <option value="MONTH">Mes</option><option value="QUARTER">Trimestre</option><option value="YEAR">Año</option>
+          </select></div>
+        <button type="submit" class="btn btn-primary" [disabled]="trendLoading()">{{ trendLoading() ? 'Cargando…' : 'Ver tendencia' }}</button>
+      </form>
+      <fieldset class="field">
+        <legend class="label">Indicadores (hasta 4)</legend>
+        <div class="keys">
+          @for (o of trendOptions(); track o.key) {
+            <label class="check"><input type="checkbox" [checked]="trendKeys().includes(o.key)" [disabled]="!trendKeys().includes(o.key) && trendKeys().length >= 4" (change)="toggleKey(o.key, $any($event.target).checked)" /> {{ o.label }}</label>
+          }
+        </div>
+      </fieldset>
+
+      <app-error-notice [error]="trendError()" />
+      @if (trendLoading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+      @else if (trend(); as t) {
+        @if (t.points.length > 24) { <div class="notice info" role="status">Son {{ t.points.length }} puntos: agrupa por trimestre o por año para leerlo mejor.</div> }
+        @if (trendChart(); as cfg) {
+          <section class="panel panel-pad section"><app-chart [config]="cfg" height="280px" /></section>
+          <div class="table-wrap section">
+            <table class="table">
+              <thead><tr><th>Período</th>@for (k of t.keys; track k) { <th class="num">{{ t.labels[k] ?? k }}</th> }</tr></thead>
+              <tbody>
+                @for (p of t.points; track p.period) {
+                  <tr><td>{{ p.period }}</td>@for (k of t.keys; track k) { <td class="num">{{ p.values[k]?.value ?? '—' }} <app-analysis-light [color]="p.values[k]?.color ?? 'NONE'" /></td> }</tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty"><h3>Sin datos en este rango</h3><p>Elige otros meses o registra asientos contabilizados.</p></div>
+        }
+      }
+    }
+
+    <!-- ---------- Comparar ---------- -->
+    @case ('compare') {
+      <form class="filters" (ngSubmit)="loadCompare()" novalidate>
+        <div class="field"><label for="c-from">Período actual: desde</label><input id="c-from" name="cfrom" class="input" type="date" [(ngModel)]="from" /></div>
+        <div class="field"><label for="c-to">Hasta</label><input id="c-to" name="cto" class="input" type="date" [(ngModel)]="to" /></div>
+        <div class="field"><label for="c-pfrom">Comparar con: desde <app-field-help text="Si lo dejas vacío se compara con el mismo tramo del año anterior." /></label><input id="c-pfrom" name="pfrom" class="input" type="date" [(ngModel)]="compareFrom" /></div>
+        <div class="field"><label for="c-pto">Hasta</label><input id="c-pto" name="pto" class="input" type="date" [(ngModel)]="compareTo" /></div>
+        <button type="submit" class="btn btn-primary" [disabled]="compareLoading()">{{ compareLoading() ? 'Cargando…' : 'Comparar' }}</button>
+      </form>
+
+      <app-error-notice [error]="compareError()" />
+      @if (compareLoading()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+      @else if (compare(); as c) {
+        <p class="sub">Del {{ c.current.from }} al {{ c.current.to }} contra del {{ c.previous.from }} al {{ c.previous.to }}.</p>
+        @for (w of c.warnings; track $index) { <div class="notice warn" role="status">{{ w }}</div> }
+        <div class="table-wrap section">
+          <table class="table">
+            <thead><tr><th>Indicador</th><th class="num">Antes</th><th class="num">Ahora</th><th class="num">Diferencia</th><th class="num">%</th><th>¿Mejoró?</th></tr></thead>
+            <tbody>
+              @for (i of c.items; track i.key) {
+                <tr>
+                  <td>{{ i.label }}</td>
+                  <td class="num">{{ fmtValue(i.previous, i.unit) }} <app-analysis-light [color]="i.previousColor" /></td>
+                  <td class="num">{{ fmtValue(i.current, i.unit) }} <app-analysis-light [color]="i.color" /></td>
+                  <td class="num">{{ fmtDiff(i.difference, i.unit) }}</td>
+                  <td class="num">{{ i.changePct === null ? '—' : i.changePct + ' %' }}</td>
+                  <td>@switch (i.improved) { @case (true) { <span class="pos">▲ Mejoró</span> } @case (false) { <span class="neg">▼ Empeoró</span> } @default { <span class="hint">Sin comparar</span> } }</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="table-empty">Sin indicadores para comparar en estas fechas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ---------- Límites (ADMIN y ACCOUNTANT) ---------- -->
+    @case ('limits') {
+      @if (canEdit) {
+        <p class="sub">El verde y el rojo de cada indicador. Entre los dos se ve amarillo. «Restaurar» vuelve al valor recomendado.</p>
+        <app-error-notice [error]="limitsError()" />
+        <div class="table-wrap section">
+          <table class="table">
+            <thead><tr><th>Indicador</th><th>Mejor si es</th><th>Verde desde / hasta</th><th>Rojo</th><th>Activo</th><th></th></tr></thead>
+            <tbody>
+              @for (l of limits(); track l.ratioKey; let n = $index) {
+                <tr>
+                  <td>{{ l.label }}@if (l.custom) { <span class="badge info">propio</span> }</td>
+                  <td>{{ l.direction === 'more' ? 'Más alto' : 'Más bajo' }}</td>
+                  <td><label class="sr-only" [for]="'g-' + l.ratioKey">Verde de {{ l.label }}</label>
+                    <input class="input num-input" type="number" step="0.0001" [id]="'g-' + l.ratioKey" [ngModel]="l.green" (ngModelChange)="edit(n, { green: $event === null ? '' : '' + $event })" />
+                    <span class="hint">Recomendado: {{ l.defaultGreenAt ?? '—' }}</span></td>
+                  <td><label class="sr-only" [for]="'r-' + l.ratioKey">Rojo de {{ l.label }}</label>
+                    <input class="input num-input" type="number" step="0.0001" [id]="'r-' + l.ratioKey" [ngModel]="l.red" (ngModelChange)="edit(n, { red: $event === null ? '' : '' + $event })" />
+                    <span class="hint">Recomendado: {{ l.defaultRedAt ?? '—' }}</span></td>
+                  <td><label class="check"><input type="checkbox" [checked]="l.on" (change)="edit(n, { on: $any($event.target).checked })" /> Sí</label></td>
+                  <td>@if (l.custom) { <button type="button" class="btn btn-ghost btn-sm" (click)="restore(l)">Restaurar</button> }</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="table-empty">Cargando límites…</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" [disabled]="saving() || !dirtyCount()" (click)="saveLimits()">{{ saving() ? 'Guardando…' : 'Guardar ' + (dirtyCount() || '') + ' cambios' }}</button>
+        </div>
+      }
+    }
+  }
+</div>

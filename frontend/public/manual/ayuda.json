@@ -10,7 +10,8 @@
     { "slug": "bancos-y-conciliacion", "archivo": "07-bancos-y-conciliacion.md", "titulo": "Bancos, cajas y conciliación" },
     { "slug": "reportes-dgii-presupuestos", "archivo": "08-reportes-dgii-presupuestos.md", "titulo": "Reportes, DGII y presupuestos" },
     { "slug": "usuarios-y-permisos", "archivo": "09-usuarios-y-permisos.md", "titulo": "Usuarios y permisos" },
-    { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" }
+    { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" },
+    { "slug": "semaforo-financiero", "archivo": "11-semaforo-financiero.md", "titulo": "Semáforo financiero" }
   ],
 
   "pantallas": {
@@ -142,6 +143,10 @@
       "seccion": "reportes-dgii-presupuestos", "ancla": "estados-financieros",
       "siguiente": { "texto": "Prepara los reportes para la DGII", "ruta": "/dgii" }
     },
+    "/analysis": {
+      "seccion": "semaforo-financiero", "ancla": "ver-el-semaforo",
+      "siguiente": { "texto": "Revisa los estados financieros", "ruta": "/reports" }
+    },
     "/dgii": {
       "seccion": "reportes-dgii-presupuestos", "ancla": "dgii-606-607-y-608",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
@@ -261,6 +266,7 @@
   },
 
   "errores": [
+    { "patron": "granularity|mes con formato AAAA-MM", "explicacion": "Elige los meses con el selector de mes (año y mes) y una agrupación: mes, trimestre o año." },
     {
       "patron": "falta conectar tu proveedor de facturación electrónica",
       "explicacion": "Las facturas electrónicas (E31, E32…) las firma y envía a la DGII tu proveedor de facturación electrónica. Mientras no esté conectado, emítela en su portal, descarga el XML y súbelo aquí.",
