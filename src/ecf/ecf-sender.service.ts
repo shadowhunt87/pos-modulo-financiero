@@ -24,6 +24,7 @@ export class EcfSenderService implements OnModuleInit, OnModuleDestroy {
   private readonly log = new Logger('EcfSender');
   private timer: NodeJS.Timeout | null = null;
   private busy = false;
+  private lastError: string | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -39,7 +40,14 @@ export class EcfSenderService implements OnModuleInit, OnModuleDestroy {
     const enabled = (this.config.get<string>('ECF_WORKER_ENABLED') ?? 'true') !== 'false' && !process.env.VITEST;
     if (!enabled) return;
     const every = Number(this.config.get('ECF_WORKER_INTERVAL_MS') ?? 30_000);
-    this.timer = setInterval(() => void this.tick(), every);
+    // Un error en una vuelta (base caída, migración pendiente) no puede tumbar la aplicación: se anota y se reintenta.
+    this.timer = setInterval(() => {
+      this.tick().then(() => { this.lastError = null; }, (e: unknown) => {
+        const msg = (e as Error).message.split('\n').filter(Boolean).pop() ?? String(e);
+        if (msg !== this.lastError) this.log.error(`Falló la cola de e-CF (se reintenta cada ${every / 1000} s): ${msg}`);
+        this.lastError = msg;
+      });
+    }, every);
     this.timer.unref();
   }
   onModuleDestroy() { if (this.timer) clearInterval(this.timer); }
