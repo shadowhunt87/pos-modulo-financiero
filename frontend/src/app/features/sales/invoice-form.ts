@@ -13,6 +13,7 @@ import { Notify } from '../../core/notify';
 import { clean, dec, isoDate, money, today } from '../../shared/format';
 import { INVOICE_TYPE, opts } from '../../shared/labels';
 import { ComboOption, ErrorNotice, FieldHelp, UI } from '../../shared/ui';
+import { ReadinessNotice } from '../../shared/ui/readiness-notice';
 import { PartnerDialog } from '../catalog/partner-dialog';
 import { DGII_EXPENSE_TYPE, DGII_INCOME_TYPE, InvoiceFull, InvoiceRow, NcfType } from './invoice-types';
 
@@ -32,7 +33,7 @@ const NOTE_TYPES = ['CREDIT_NOTE', 'DEBIT_NOTE'];
 @Component({
   selector: 'app-invoice-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, PartnerDialog, ErrorNotice, FieldHelp, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, PartnerDialog, ErrorNotice, FieldHelp, ReadinessNotice, ...UI],
   templateUrl: './invoice-form.html',
   styles: `
     .line { display: grid; gap: 10px 12px; grid-template-columns: minmax(180px, 3fr) 90px 120px 110px minmax(150px, 1.4fr) minmax(190px, 1.8fr) 120px 36px; align-items: end; padding: 12px 16px; border-bottom: 1px solid var(--line); }

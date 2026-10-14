@@ -12,7 +12,8 @@
     { "slug": "usuarios-y-permisos", "archivo": "09-usuarios-y-permisos.md", "titulo": "Usuarios y permisos" },
     { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" },
     { "slug": "semaforo-financiero", "archivo": "11-semaforo-financiero.md", "titulo": "Semáforo financiero" },
-    { "slug": "seguridad-y-exportacion", "archivo": "12-seguridad-y-exportacion.md", "titulo": "Seguridad de la cuenta y exportación de datos" }
+    { "slug": "seguridad-y-exportacion", "archivo": "12-seguridad-y-exportacion.md", "titulo": "Seguridad de la cuenta y exportación de datos" },
+    { "slug": "arranque", "archivo": "13-arranque.md", "titulo": "Arranque: tu primera factura en 15 minutos" }
   ],
 
   "pantallas": {
@@ -173,6 +174,18 @@
       "seccion": "usuarios-y-permisos", "ancla": "crear-un-usuario",
       "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
     },
+    "/setup": {
+      "seccion": "arranque", "ancla": "los-cinco-pasos",
+      "siguiente": { "texto": "Haz tu primera factura", "ruta": "/invoices/new" }
+    },
+    "/setup/ncf": {
+      "seccion": "arranque", "ancla": "cargar-tus-comprobantes-ncf",
+      "siguiente": { "texto": "Vuelve a la configuración inicial", "ruta": "/setup" }
+    },
+    "/period-close": {
+      "seccion": "arranque", "ancla": "cierre-de-mes-guiado",
+      "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
+    },
     "/security": {
       "seccion": "seguridad-y-exportacion", "ancla": "activar-la-verificacion-en-dos-pasos",
       "siguiente": { "texto": "Vuelve al Panel", "ruta": "/" }
@@ -295,6 +308,9 @@
   },
 
   "errores": [
+    { "patron": "ya tiene plan de cuentas y cuentas automáticas", "explicacion": "Tu contabilidad ya estaba preparada: no se cambió nada. Si quieres ajustar algo, hazlo en Plan de cuentas o Cuentas automáticas." },
+    { "patron": "Primero prepara tu contabilidad", "explicacion": "Los datos de ejemplo necesitan el plan de cuentas. Pulsa «Preparar mi contabilidad» en Configuración inicial.", "enlace": { "texto": "Ir a Configuración inicial", "ruta": "/setup" } },
+    { "patron": "Un documento real usa una factura de ejemplo|documentos reales con un cliente", "explicacion": "Anula o cambia ese documento real primero; después podrás borrar los ejemplos sin perder nada tuyo." },
     { "patron": "El código no es correcto o ya se usó", "explicacion": "Espera a que tu aplicación muestre un número nuevo y escríbelo enseguida. Si sigue fallando, revisa que la hora del teléfono esté en automático, o usa un código de emergencia." },
     { "patron": "La verificación venció", "explicacion": "Pasaron más de 5 minutos. Vuelve a escribir tu correo y tu clave." },
     { "patron": "exige la verificación en dos pasos", "explicacion": "Tu rol debe tener la verificación activada. Pide a otro administrador de tu empresa que la restablezca: tendrás 72 horas para inscribir tu teléfono." },

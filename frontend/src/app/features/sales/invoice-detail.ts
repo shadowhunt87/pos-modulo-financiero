@@ -11,6 +11,7 @@ import { Notify } from '../../core/notify';
 import { clean, dec, isoDate, sumDec } from '../../shared/format';
 import { ENTRY_STATUS, INVOICE_STATUS, INVOICE_TYPE, PAYMENT_METHOD, PAYMENT_STATUS } from '../../shared/labels';
 import { AttachmentsPanel, ErrorNotice, UI } from '../../shared/ui';
+import { Stepper, type Step } from '../../shared/ui/stepper';
 import { DGII_EXPENSE_TYPE, DGII_INCOME_TYPE, InvoiceFull, NcfType, VOID_REASON_CODE } from './invoice-types';
 
 interface PaymentLite {
@@ -30,7 +31,7 @@ const OPEN = ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'];
 @Component({
   selector: 'app-invoice-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, AttachmentsPanel, ErrorNotice, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, AttachmentsPanel, ErrorNotice, Stepper, ...UI],
   templateUrl: './invoice-detail.html',
 })
 export class InvoiceDetail {
@@ -58,6 +59,7 @@ export class InvoiceDetail {
   protected readonly canAttach = this.auth.has('ADMIN', 'ACCOUNTANT', 'APPROVER');
 
   protected readonly inv = signal<InvoiceFull | null>(null);
+  protected readonly flow = signal<{ voided: boolean; current: string | null; steps: Step[] } | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly payments = signal<AppliedPayment[]>([]);
@@ -102,6 +104,8 @@ export class InvoiceDetail {
       ]);
       this.inv.set(inv); this.ncfTypes.set(ncf);
       void this.loadPayments(inv);
+      // Pasos de la factura (E2): creada → emitida → cobrada → conciliada
+      void this.api.getP<{ voided: boolean; current: string | null; steps: Step[] }>(`/guidance/invoice-flow/${inv.id}`).then((f) => this.flow.set(f)).catch(() => this.flow.set(null));
     } catch (e) { this.error.set(errorMessage(e)); }
     this.loading.set(false);
   }

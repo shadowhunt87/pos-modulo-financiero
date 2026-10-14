@@ -11,13 +11,14 @@ import { Notify } from '../../core/notify';
 import { clean, dec, sumDec, today } from '../../shared/format';
 import { opts } from '../../shared/labels';
 import { ComboOption, ErrorNotice, UI } from '../../shared/ui';
+import { ReadinessNotice } from '../../shared/ui/readiness-notice';
 import { PartnerDialog } from '../catalog/partner-dialog';
 import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './payment-shared';
 
 @Component({
   selector: 'app-payment-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, PartnerDialog, ErrorNotice, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, PartnerDialog, ErrorNotice, ReadinessNotice, ...UI],
   template: `
     <div class="page">
       <div class="page-head">
@@ -25,6 +26,7 @@ import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './
         <a routerLink="/payments" class="btn">Volver al listado</a>
       </div>
 
+      <app-readiness-notice [needs]="['accounting', 'money']" action="Para registrar cobros y pagos" />
       <form [formGroup]="form" (ngSubmit)="save()" novalidate>
         <section class="panel panel-pad">
           <div class="form-grid">

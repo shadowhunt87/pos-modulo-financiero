@@ -14,6 +14,7 @@
   } @else if (loadError()) {
     <div class="notice neg" role="alert">{{ loadError() }}</div>
   } @else {
+    <app-readiness-notice [needs]="['accounting', 'ncf']" action="Para emitir facturas" />
     <form [formGroup]="form" (ngSubmit)="submit(false)" novalidate>
       <section class="panel panel-pad">
         <div class="form-grid">

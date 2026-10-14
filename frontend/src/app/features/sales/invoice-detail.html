@@ -30,6 +30,10 @@
       </div>
     </div>
 
+    @if (flow(); as f) {
+      @if (!f.voided) { <section class="panel panel-pad no-print" style="margin-bottom:16px"><app-stepper [steps]="f.steps" [current]="f.current" label="Pasos de esta factura" /></section> }
+    }
+
     @if (i.status === 'VOIDED') {
       <div class="notice neg" role="status" style="margin-bottom:16px">
         <div><strong>Factura anulada</strong> el {{ i.voidedAt | fdate }}.

@@ -9,7 +9,7 @@ export interface NavGroup { title: string; items: NavItem[] }
  * como un grupo más antes de "Configuración". "Comentarios recibidos" (ADMIN) se suma a "Ayuda" con "Enviar comentario".
  */
 export const NAV: NavGroup[] = [
-  { title: '', items: [{ label: 'Panel', path: '/' }] },
+  { title: '', items: [{ label: 'Panel', path: '/' }, { label: 'Configuración inicial', path: '/setup' }] },
   { title: 'Ventas y compras', items: [
     { label: 'Clientes y proveedores', path: '/partners' },
     { label: 'Facturas', path: '/invoices' },
@@ -25,6 +25,7 @@ export const NAV: NavGroup[] = [
     { label: 'Asientos', path: '/entries' },
     { label: 'Plan de cuentas', path: '/accounts' },
     { label: 'Períodos fiscales', path: '/fiscal-periods' },
+    { label: 'Cierre de mes guiado', path: '/period-close' },
     { label: 'Años fiscales y cierre', path: '/fiscal-years' },
     { label: 'Saldos iniciales', path: '/opening-balances', roles: ['ADMIN', 'ACCOUNTANT'] },
   ] },

@@ -14,13 +14,14 @@ import { Breadcrumbs, NextStep } from '../shared/ui';
 import { FeedbackDialog } from '../features/feedback/feedback-dialog';
 import { HelpDrawer } from '../features/help/help-drawer';
 import { NAV } from './nav';
+import { SampleDataBanner } from '../features/setup/sample-data-banner';
 
 interface Ledger { totalDebit: string; totalCredit: string }
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog, SampleDataBanner],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })
