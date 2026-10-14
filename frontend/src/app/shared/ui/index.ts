@@ -18,3 +18,4 @@ export { Breadcrumbs } from './breadcrumbs';
 export { NextStep } from './next-step';
 export { ErrorNotice } from './error-notice';
 export { FieldHelp } from './field-help';
+export { EmptyState } from './empty-state';
