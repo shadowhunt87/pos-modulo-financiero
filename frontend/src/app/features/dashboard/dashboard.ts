@@ -10,6 +10,7 @@ import { Lookups } from '../../core/lookups';
 import { dec, sumDec, today, yearStart } from '../../shared/format';
 import { INVOICE_STATUS, INVOICE_TYPE } from '../../shared/labels';
 import { UI } from '../../shared/ui';
+import { KpiStrip } from './kpi-strip';
 
 interface Income { totalIncome: string; totalExpenses: string; netIncome: string }
 interface Aging { current: string; d1_30: string; d31_60: string; d61_90: string; over90: string; total: string }
@@ -18,7 +19,7 @@ interface Inv { id: string; number: string | null; type: string; status: string;
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ...UI],
+  imports: [RouterLink, KpiStrip, ...UI],
   templateUrl: './dashboard.html',
   styles: `
     .alerts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }

@@ -99,3 +99,13 @@ export const IMPORT_ACTION_LOOK: Record<string, { icon: string; tone: Tone; text
   unchanged: { icon: '=', tone: '', text: 'Sin cambios', plural: 'Sin cambios' },
   skip: { icon: '⊘', tone: 'warn', text: 'Omitida', plural: 'Omitidas' },
 };
+
+// Semáforo financiero: icono + color + texto (nunca solo el color)
+export const RATIO_LIGHT_LOOK: Record<string, { icon: string; tone: Tone; text: string }> = {
+  GREEN: { icon: '✓', tone: 'pos', text: 'Bien' }, YELLOW: { icon: '!', tone: 'warn', text: 'Atención' },
+  RED: { icon: '✕', tone: 'neg', text: 'Riesgo' }, GRAY: { icon: '?', tone: '', text: 'Sin dato' }, NONE: { icon: '–', tone: '', text: 'Sin semáforo' },
+};
+export const RATIO_GROUP: Record<string, string> = {
+  LIQUIDITY: 'Liquidez: ¿puedo pagar lo de corto plazo?', LEVERAGE: 'Endeudamiento: ¿cuánto dependo de la deuda?',
+  PROFITABILITY: 'Rentabilidad: ¿cuánto gano?', ACTIVITY: 'Actividad: ¿qué tan rápido cobro, pago y vendo?',
+};

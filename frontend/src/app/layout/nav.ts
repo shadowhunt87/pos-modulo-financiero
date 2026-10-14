@@ -29,6 +29,7 @@ export const NAV: NavGroup[] = [
   ] },
   { title: 'Reportes', items: [
     { label: 'Estados financieros', path: '/reports' },
+    { label: 'Semáforo financiero', path: '/analysis' },
     { label: 'DGII 606 · 607 · 608', path: '/dgii' },
     { label: 'Presupuestos', path: '/budgets' },
   ] },
