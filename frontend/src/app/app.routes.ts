@@ -16,6 +16,7 @@ import { Shell } from './layout/shell';
  *  ecf       : ecf/import
  *  fiscal    : fiscal-values, company/fiscal
  *  setup     : setup, setup/ncf
+ *  auditing  : auditing, auditing/:id
  */
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/auth/login').then((m) => m.Login), title: 'Iniciar sesión' },
@@ -36,6 +37,7 @@ export const routes: Routes = [
       { path: '', loadChildren: () => import('./features/ecf/ecf.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/fiscal/fiscal.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/setup/setup.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/auditing/auditing.routes').then((m) => m.routes) },
       { path: '**', loadComponent: () => import('./features/not-found').then((m) => m.NotFound), title: 'No encontrado' },
     ],
   },

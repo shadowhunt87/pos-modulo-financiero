@@ -13,7 +13,8 @@
     { "slug": "preguntas-frecuentes", "archivo": "10-preguntas-frecuentes.md", "titulo": "Preguntas frecuentes" },
     { "slug": "semaforo-financiero", "archivo": "11-semaforo-financiero.md", "titulo": "Semáforo financiero" },
     { "slug": "seguridad-y-exportacion", "archivo": "12-seguridad-y-exportacion.md", "titulo": "Seguridad de la cuenta y exportación de datos" },
-    { "slug": "arranque", "archivo": "13-arranque.md", "titulo": "Arranque: tu primera factura en 15 minutos" }
+    { "slug": "arranque", "archivo": "13-arranque.md", "titulo": "Arranque: tu primera factura en 15 minutos" },
+    { "slug": "auditoria", "archivo": "14-auditoria.md", "titulo": "Auditoría" }
   ],
 
   "pantallas": {
@@ -174,6 +175,14 @@
       "seccion": "usuarios-y-permisos", "ancla": "crear-un-usuario",
       "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
     },
+    "/auditing": {
+      "seccion": "auditoria", "ancla": "crear-un-encargo",
+      "siguiente": { "texto": "Abre un encargo para trabajarlo", "ruta": "/auditing" }
+    },
+    "/auditing/:id": {
+      "seccion": "auditoria", "ancla": "papeles-de-trabajo",
+      "siguiente": { "texto": "Vuelve a los encargos", "ruta": "/auditing" }
+    },
     "/setup": {
       "seccion": "arranque", "ancla": "los-cinco-pasos",
       "siguiente": { "texto": "Haz tu primera factura", "ruta": "/invoices/new" }
@@ -308,6 +317,9 @@
   },
 
   "errores": [
+    { "patron": "El encargo está cerrado", "explicacion": "Un encargo cerrado es de solo lectura. Si de verdad hay que cambiarlo, la auditora lo reabre desde el Resumen escribiendo el motivo." },
+    { "patron": "Para cerrar faltan", "explicacion": "Termina las áreas pendientes (Revisado) y comunica o borra los hallazgos en borrador antes de cerrar." },
+    { "patron": "fuera del período del encargo", "explicacion": "Ese documento es de otra fecha: solo se revisan partidas del período del encargo." },
     { "patron": "ya tiene plan de cuentas y cuentas automáticas", "explicacion": "Tu contabilidad ya estaba preparada: no se cambió nada. Si quieres ajustar algo, hazlo en Plan de cuentas o Cuentas automáticas." },
     { "patron": "Primero prepara tu contabilidad", "explicacion": "Los datos de ejemplo necesitan el plan de cuentas. Pulsa «Preparar mi contabilidad» en Configuración inicial.", "enlace": { "texto": "Ir a Configuración inicial", "ruta": "/setup" } },
     { "patron": "Un documento real usa una factura de ejemplo|documentos reales con un cliente", "explicacion": "Anula o cambia ese documento real primero; después podrás borrar los ejemplos sin perder nada tuyo." },

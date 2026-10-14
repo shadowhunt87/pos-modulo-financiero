@@ -35,6 +35,9 @@ export const NAV: NavGroup[] = [
     { label: 'DGII 606 · 607 · 608', path: '/dgii' },
     { label: 'Presupuestos', path: '/budgets' },
   ] },
+  { title: 'Auditoría', items: [
+    { label: 'Encargos de auditoría', path: '/auditing', roles: ['ADMIN', 'AUDITOR'] },
+  ] },
   { title: 'Configuración', items: [
     { label: 'Empresa', path: '/company' },
     { label: 'Datos fiscales', path: '/company/fiscal' },

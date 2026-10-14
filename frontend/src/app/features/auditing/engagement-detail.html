@@ -1,0 +1,197 @@
+<div class="page">
+  @if (e(); as en) {
+    <div class="page-head">
+      <div><h1>{{ en.name }}</h1>
+        <p class="sub"><app-status [value]="en.status" [map]="L.ENGAGEMENT_STATUS" /> · {{ en.periodStart | fdate }} – {{ en.periodEnd | fdate }}@if (en.auditorFirm) { · {{ en.auditorFirm }} }</p></div>
+      <div class="btn-row"><a class="btn" routerLink="/auditing">Volver</a></div>
+    </div>
+    @if (isAuditor) {
+      @for (n of en.accountNotices ?? []; track n.at) { <div class="notice neg" role="alert"><strong>Aviso de la cuenta auditora:</strong> {{ n.message }}</div> }
+    }
+    <app-error-notice [error]="error()" />
+
+    <div class="tabs" role="tablist" aria-label="Encargo">
+      @for (t of tabs(); track t.id) { <button type="button" class="tab" role="tab" [class.active]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="selectTab(t.id)">{{ t.label }}</button> }
+    </div>
+
+    @switch (tab()) {
+      @case ('summary') {
+        <div class="cols-2">
+          <section class="panel panel-pad">
+            <h2>Avance</h2>
+            <p>Áreas: {{ (en.summary?.workpapers?.['DONE'] ?? 0) }} terminadas de {{ (en.summary?.workpapers?.['DONE'] ?? 0) + (en.summary?.workpapers?.['IN_PROGRESS'] ?? 0) + (en.summary?.workpapers?.['PENDING'] ?? 0) }}</p>
+            <p>Partidas revisadas: {{ (en.summary?.marks?.['JOURNAL_ENTRY'] ?? 0) + (en.summary?.marks?.['INVOICE'] ?? 0) + (en.summary?.marks?.['PAYMENT'] ?? 0) + (en.summary?.marks?.['BANK_RECONCILIATION'] ?? 0) }}</p>
+            <p>Hallazgos: @for (s of ['DRAFT', 'COMMUNICATED', 'RESPONDED', 'RESOLVED', 'RISK_ACCEPTED']; track s) { @if (en.summary?.findings?.[s]) { {{ L.FINDING_STATUS[s] }} {{ en.summary?.findings?.[s] }} · } }</p>
+            @if (en.reopenReason) { <p class="hint">Reabierto: {{ en.reopenReason }}</p> }
+            @if (isAuditor) {
+              <div class="btn-row">
+                @for (n of next(); track n.to) { <button type="button" class="btn" [class.btn-primary]="n.to !== 'IN_PROGRESS' || en.status === 'PLANNED'" [disabled]="busy()" (click)="move(n.to)">{{ n.label }}</button> }
+              </div>
+            }
+            @if (en.status === 'PLANNED') { <button type="button" class="btn btn-danger btn-sm" style="margin-top:10px" (click)="remove()">Borrar encargo</button> }
+          </section>
+          <section class="panel panel-pad">
+            <h2>Conclusión general</h2>
+            @if (isAuditor && !closed()) {
+              <label class="sr-only" for="conc">Conclusión general</label>
+              <textarea id="conc" #conc class="input" rows="6" maxlength="10000" [value]="en.overallConclusion ?? ''"></textarea>
+              <button type="button" class="btn btn-sm" style="margin-top:8px" [disabled]="busy()" (click)="saveConclusion(conc.value)">Guardar</button>
+            } @else { <p>{{ en.overallConclusion || 'Todavía sin conclusión.' }}</p> }
+          </section>
+        </div>
+      }
+
+      @case ('workpapers') {
+        @for (w of wps(); track w.id) {
+          <section class="panel panel-pad wp">
+            <div class="page-head" style="margin-bottom:6px">
+              <h3>{{ w.reference }} · {{ w.title }} <app-status [value]="w.status" [map]="L.WORKPAPER_STATUS" /></h3>
+              @if (!closed()) {
+                <div class="btn-row">
+                  <button type="button" class="btn btn-sm" (click)="signOff(w, 'PREPARED')">Preparado</button>
+                  <button type="button" class="btn btn-sm" [disabled]="!w.preparedAt" (click)="signOff(w, 'REVIEWED')">Revisado</button>
+                </div>
+              }
+            </div>
+            <p class="hint">{{ w.objective }}@if (w.preparedByName) { · Preparó {{ w.preparedByName }} el {{ w.preparedAt | fdate }} }@if (w.reviewedByName) { · Revisó {{ w.reviewedByName }} el {{ w.reviewedAt | fdate }} }</p>
+            @for (p of w.procedures; track p.id) {
+              <div class="proc">
+                <input type="checkbox" [attr.aria-label]="'Hecho: ' + p.description" [checked]="p.done" [disabled]="closed()" (change)="toggleProc(p, $any($event.target).checked)" />
+                <div><div>{{ p.description }}</div>
+                  <label class="sr-only" [for]="'r-' + p.id">Resultado</label>
+                  <input class="input" [id]="'r-' + p.id" placeholder="Resultado obtenido" maxlength="2000" [value]="p.result ?? ''" [disabled]="closed()" (change)="procResult(p, $any($event.target).value)" />
+                  @if (p.doneByName) { <span class="hint">Hecho por {{ p.doneByName }}</span> }</div>
+              </div>
+            }
+            @if (!closed()) {
+              <div class="btn-row" style="margin-top:8px">
+                <label class="sr-only" [for]="'np-' + w.id">Nuevo procedimiento</label>
+                <input class="input" [id]="'np-' + w.id" #np placeholder="Agregar un procedimiento" maxlength="1000" />
+                <button type="button" class="btn btn-sm" (click)="addProc(w, np.value); np.value = ''">Agregar</button>
+              </div>
+              <div class="field" style="margin-top:8px"><label [for]="'c-' + w.id">Conclusión del área</label>
+                <textarea class="input" [id]="'c-' + w.id" rows="2" maxlength="5000" [value]="w.conclusion ?? ''" (change)="wpConclusion(w, $any($event.target).value)"></textarea></div>
+              <div class="field"><label [for]="'f-' + w.id">Subir un soporte ({{ w._count.files }} archivos)</label><input type="file" [id]="'f-' + w.id" (change)="upload({ workpaperId: w.id }, $any($event.target))" /></div>
+            }
+          </section>
+        } @empty { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+      }
+
+      @case ('items') {
+        <div class="toolbar">
+          <div class="field"><label for="it-type">Tipo</label>
+            <select id="it-type" class="select" [value]="entityType()" (change)="entityType.set($any($event.target).value); page.set(1); loadItems()">@for (x of ENTITIES; track x[0]) { <option [value]="x[0]">{{ x[1] }}</option> }</select></div>
+          <div class="field"><label for="it-f">Mostrar</label>
+            <select id="it-f" class="select" (change)="filter.set($any($event.target).value); page.set(1); loadItems()"><option value="">Todas</option><option value="pending">Pendientes</option><option value="reviewed">Revisadas</option></select></div>
+          <div class="field wide"><label for="it-q">Buscar</label><input id="it-q" class="input" (change)="q.set($any($event.target).value); page.set(1); loadItems()" placeholder="Número, NCF, cliente…" /></div>
+        </div>
+        @if (items(); as it) {
+          <p class="hint">{{ it.reviewed }} revisadas de {{ it.total }}.</p>
+          <section class="panel"><div class="table-wrap"><table class="table">
+            <thead><tr><th>Fecha</th><th>Número</th><th>Descripción</th><th class="num">Monto</th><th>Marca</th><th></th></tr></thead>
+            <tbody>
+              @for (r of it.data; track r.id) {
+                <tr>
+                  <td class="nowrap">{{ r.date | fdate }}</td><td class="mono">{{ r.number ?? '—' }}</td>
+                  <td>{{ r.description }}@if (r.changedAfterReview) { <div class="changed">! Cambió después de revisado</div> }</td>
+                  <td class="num">{{ r.amount | money }}</td>
+                  <td><label class="sr-only" [for]="'m-' + r.id">Marca</label>
+                    <select class="select" [id]="'m-' + r.id" [value]="r.mark?.mark ?? ''" [disabled]="closed()" (change)="setMark(r, $any($event.target).value)">
+                      <option value="">Sin revisar</option>@for (m of MARKS; track m[0]) { <option [value]="m[0]">{{ m[1] }}</option> }
+                    </select></td>
+                  <td><button type="button" class="btn btn-ghost btn-sm" (click)="showHistory(r)">Historial</button></td>
+                </tr>
+              } @empty { <tr><td colspan="6"><app-empty-state title="No hay partidas de este tipo en el período" /></td></tr> }
+            </tbody>
+          </table></div>
+          <app-pagination [page]="page()" [limit]="50" [total]="it.total" (pageChange)="page.set($event); loadItems()" /></section>
+        }
+      }
+
+      @case ('findings') {
+        @if (isAuditor && !closed()) { <div class="btn-row" style="margin-bottom:10px"><button type="button" class="btn btn-primary" (click)="newFinding()">Nuevo hallazgo</button></div> }
+        @for (f of findings(); track f.id) {
+          <section class="panel panel-pad wp">
+            <h3>{{ f.code }} · {{ f.title }} <app-status [value]="f.status" [map]="L.FINDING_STATUS" />@if (f.severity) { <span class="badge">{{ L.FINDING_SEVERITY[f.severity] }}</span> }</h3>
+            <dl class="kv">
+              <dt>Condición</dt><dd>{{ f.condition }}</dd>
+              @if (f.criteria) { <dt>Criterio</dt><dd>{{ f.criteria }}</dd> }
+              @if (f.cause) { <dt>Causa</dt><dd>{{ f.cause }}</dd> }
+              @if (f.effect) { <dt>Efecto</dt><dd>{{ f.effect }}</dd> }
+              @if (f.recommendation) { <dt>Recomendación</dt><dd>{{ f.recommendation }}</dd> }
+              @if (f.managementResponse) { <dt>Respuesta de la gerencia</dt><dd>{{ f.managementResponse }}@if (f.respondedByName) { <span class="hint"> — {{ f.respondedByName }}</span> }</dd> }
+              @if (f.actionPlan) { <dt>Plan de acción</dt><dd>{{ f.actionPlan }}@if (f.responsible) { · {{ f.responsible }} }@if (f.dueDate) { · {{ f.dueDate | fdate }} }</dd> }
+              @if (f.closeNote) { <dt>Cierre</dt><dd>{{ f.closeNote }}</dd> }
+            </dl>
+            @if (!closed()) {
+              <div class="btn-row">
+                @if (isAuditor) {
+                  @if (f.status === 'DRAFT') {
+                    <button type="button" class="btn btn-sm" (click)="editFinding(f)">Editar</button>
+                    <button type="button" class="btn btn-sm btn-primary" (click)="act(f, 'communicate')">Comunicar a la gerencia</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="act(f, 'delete')">Borrar</button>
+                  }
+                  @if (f.status === 'COMMUNICATED' || f.status === 'RESPONDED') {
+                    <button type="button" class="btn btn-sm" (click)="closeFinding(f, 'RESOLVED')">Resuelto</button>
+                    <button type="button" class="btn btn-sm" (click)="closeFinding(f, 'RISK_ACCEPTED')">Riesgo aceptado</button>
+                  }
+                  <label class="btn btn-sm">Subir soporte<input type="file" class="sr-only" (change)="upload({ findingId: f.id }, $any($event.target))" /></label>
+                }
+                @if (auth.has('ADMIN') && (f.status === 'COMMUNICATED' || f.status === 'RESPONDED')) {
+                  <button type="button" class="btn btn-sm btn-primary" (click)="openRespond(f)">{{ f.managementResponse ? 'Cambiar respuesta' : 'Responder' }}</button>
+                }
+              </div>
+            }
+          </section>
+        } @empty {
+          <app-empty-state [title]="isAuditor ? 'Todavía no hay hallazgos' : 'La auditora todavía no ha comunicado hallazgos'" [text]="isAuditor ? 'Un hallazgo describe la condición encontrada, el criterio, la causa, el efecto y tu recomendación.' : ''" />
+        }
+      }
+
+      @case ('report') {
+        <section class="panel panel-pad">
+          <h2>Informe de revisión</h2>
+          <p>Resumen, alcance por área, hallazgos comunicados, partidas revisadas y el control de la cuenta auditora.
+            @if (!closed()) { Mientras el encargo no esté cerrado, el informe dice <strong>BORRADOR — no es el informe final</strong>. }</p>
+          <app-export-buttons [path]="'/auditing/engagements/' + en.id + '/report'" name="informe-de-revision" />
+        </section>
+      }
+    }
+  } @else {
+    <app-error-notice [error]="error()" />
+    @if (!error()) { <div class="loading"><span class="spinner"></span> Cargando…</div> }
+  }
+</div>
+
+<app-modal [open]="formOpen()" [title]="form().id ? 'Editar hallazgo' : 'Nuevo hallazgo'" width="680px" (closed)="formOpen.set(false)">
+  <div class="form-grid">
+    <div class="field span-2"><label for="h-t">Título</label><input id="h-t" class="input" maxlength="200" [value]="form().title" (input)="patchForm('title', $any($event.target).value)" /></div>
+    <div class="field"><label for="h-k">Tipo</label><select id="h-k" class="select" [value]="form().kind" (change)="patchForm('kind', $any($event.target).value)"><option value="FINDING">Hallazgo</option><option value="NOTE">Nota</option></select></div>
+    <div class="field"><label for="h-s">Gravedad</label><select id="h-s" class="select" [value]="form().severity" (change)="patchForm('severity', $any($event.target).value)"><option value="">Sin gravedad</option>@for (s of SEVERITIES; track s[0]) { <option [value]="s[0]">{{ s[1] }}</option> }</select></div>
+    @for (k of [['condition', 'Condición (qué encontraste)'], ['criteria', 'Criterio (qué debía ser)'], ['cause', 'Causa'], ['effect', 'Efecto'], ['recommendation', 'Recomendación']]; track k[0]) {
+      <div class="field span-all"><label [for]="'h-' + k[0]">{{ k[1] }}</label><textarea class="input" [id]="'h-' + k[0]" rows="2" maxlength="5000" [value]="$any(form())[k[0]]" (input)="patchForm(k[0], $any($event.target).value)"></textarea></div>
+    }
+  </div>
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="formOpen.set(false)">Cancelar</button>
+    <button type="button" class="btn btn-primary" [disabled]="busy() || !form().title.trim() || !form().condition.trim()" (click)="saveFinding()">Guardar</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="!!respondTo()" [title]="'Respuesta de la gerencia a ' + (respondTo()?.code ?? '')" width="620px" (closed)="respondTo.set(null)">
+  <div class="field"><label for="rp-r">Respuesta</label><textarea id="rp-r" class="input" rows="3" maxlength="5000" [value]="resp().managementResponse" (input)="patchResp('managementResponse', $any($event.target).value)"></textarea></div>
+  <div class="field"><label for="rp-p">Plan de acción (opcional)</label><textarea id="rp-p" class="input" rows="2" maxlength="5000" [value]="resp().actionPlan" (input)="patchResp('actionPlan', $any($event.target).value)"></textarea></div>
+  <div class="form-grid">
+    <div class="field"><label for="rp-w">Responsable</label><input id="rp-w" class="input" maxlength="120" [value]="resp().responsible" (input)="patchResp('responsible', $any($event.target).value)" /></div>
+    <div class="field"><label for="rp-d">Fecha compromiso</label><input id="rp-d" class="input" type="date" [value]="resp().dueDate" (input)="patchResp('dueDate', $any($event.target).value)" /></div>
+  </div>
+  <ng-container modal-actions>
+    <button type="button" class="btn" (click)="respondTo.set(null)">Cancelar</button>
+    <button type="button" class="btn btn-primary" [disabled]="busy() || !resp().managementResponse.trim()" (click)="sendResponse()">Enviar respuesta</button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="!!history()" title="Historial del documento" width="620px" (closed)="history.set(null)">
+  <ul>@for (h of history() ?? []; track h.id) { <li>{{ h.at | fdatetime }} · {{ h.by }} · {{ h.action }}</li> } @empty { <li>Sin registros en la bitácora.</li> }</ul>
+  <ng-container modal-actions><button type="button" class="btn" (click)="history.set(null)">Cerrar</button></ng-container>
+</app-modal>

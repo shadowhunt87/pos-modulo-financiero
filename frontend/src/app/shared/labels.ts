@@ -4,7 +4,7 @@ export interface Option { value: string; label: string }
 
 const mk = (m: Record<string, string>): Option[] => Object.entries(m).map(([value, label]) => ({ value, label }));
 
-export const ROLE = { ADMIN: 'Administrador', ACCOUNTANT: 'Contador', APPROVER: 'Aprobador', VIEWER: 'Solo lectura' } as const;
+export const ROLE = { ADMIN: 'Administrador', ACCOUNTANT: 'Contador', APPROVER: 'Aprobador', VIEWER: 'Solo lectura', AUDITOR: 'Auditora (solo lectura + auditoría)' } as const;
 export const ACCOUNT_TYPE = { ASSET: 'Activo', LIABILITY: 'Pasivo', EQUITY: 'Patrimonio', INCOME: 'Ingreso', EXPENSE: 'Gasto' } as const;
 export const ACCOUNT_CATEGORY: Record<string, string> = {
   CASH_AND_EQUIVALENTS: 'Efectivo y equivalentes', ACCOUNTS_RECEIVABLE: 'Cuentas por cobrar', INVENTORY: 'Inventarios',
@@ -134,3 +134,15 @@ export const SECURITY_EVENT: Record<string, string> = {
   LOGIN_2FA: 'Entró', DATA_EXPORT_STARTED: 'Empezó una exportación completa', DATA_EXPORT_COMPLETED: 'Exportación completa terminada',
   DATA_EXPORT_FAILED: 'Exportación completa interrumpida',
 };
+
+// Auditoría (PLAN-v0.2 §5): textos de estados y tipos
+export const AUDIT_AREA: Record<string, string> = {
+  CASH_AND_BANKS: 'Caja y bancos', RECEIVABLES: 'Cuentas por cobrar', PAYABLES: 'Cuentas por pagar', REVENUE: 'Ingresos', EXPENSES: 'Costos y gastos',
+  TAXES: 'Impuestos', EQUITY: 'Patrimonio', FIXED_ASSETS: 'Activos fijos', INVENTORY: 'Inventarios', OTHER: 'Otras áreas',
+};
+export const ENGAGEMENT_STATUS: Record<string, string> = { PLANNED: 'Planificado', IN_PROGRESS: 'En curso', IN_REVIEW: 'En revisión', CLOSED: 'Cerrado' };
+export const WORKPAPER_STATUS: Record<string, string> = { PENDING: 'Pendiente', IN_PROGRESS: 'En curso', DONE: 'Terminado' };
+export const FINDING_STATUS: Record<string, string> = { DRAFT: 'Borrador', COMMUNICATED: 'Comunicado', RESPONDED: 'Respondido', RESOLVED: 'Resuelto', RISK_ACCEPTED: 'Riesgo aceptado' };
+export const FINDING_SEVERITY: Record<string, string> = { LOW: 'Baja', MEDIUM: 'Media', HIGH: 'Alta', CRITICAL: 'Crítica' };
+export const AUDIT_MARK: Record<string, string> = { VERIFIED: '✓ Verificado', VOUCHED: '⌕ Cotejado con soporte', RECALCULATED: '∑ Recalculado', CONFIRMED: '☎ Confirmado con tercero', EXCEPTION: '✕ Excepción' };
+export const AUDIT_ENTITY: Record<string, string> = { JOURNAL_ENTRY: 'Asientos', INVOICE: 'Facturas', PAYMENT: 'Cobros y pagos', BANK_RECONCILIATION: 'Conciliaciones' };
