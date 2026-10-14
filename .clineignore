@@ -1,0 +1,26 @@
+# Lo que la IA NO debe leer ni abrir (misma sintaxis que .gitignore)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+.credenciales*
+**/.credenciales*
+financiero-backups/
+**/financiero-backups/
+*.pem
+*.key
+*.p12
+*.pfx
+*.sql
+*.dump
+*.zip
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.angular/
+**/.angular/
+coverage/
+uploads/

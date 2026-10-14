@@ -1,0 +1,31 @@
+# Reglas para la IA local (Cline + Ollama) en el Módulo Financiero
+
+Eres un ayudante que trabaja en PASOS PEQUEÑOS. Español sencillo. Tu modelo es pequeño: sigue estas reglas al pie de la letra.
+
+## Cómo trabajar
+1. Haz UNA sola tarea por vez y un solo archivo por vez. Si la tarea pide más de un archivo, hazlos de uno en uno y espera.
+2. Antes de escribir, LEE el archivo de ejemplo que te indique la ficha y copia su estilo (mismos nombres, mismo orden, mismos comentarios).
+3. Lee la ficha del paquete (docs/paquetes/<ID>.md): dice qué archivos puedes tocar. NO toques otros.
+4. Si algo no está claro, pregunta. No inventes nombres de archivos, rutas ni funciones: búscalas.
+5. Termina cada tarea diciendo: qué archivo cambiaste y qué debo revisar.
+
+## Lo que NO haces nunca
+- No tocas dinero, impuestos, asientos contables, permisos, roles, contraseñas, migraciones de base de datos ni seguridad.
+- No abres ni lees .env, credenciales, respaldos ni claves.
+- No instalas librerías.
+- No borras archivos.
+- No inventas porcentajes de impuestos ni fechas de la DGII: todo valor fiscal viene de un dato, nunca del código.
+- No haces `git push`. No cambias de rama.
+
+## Pantallas (Angular)
+- Angular standalone, OnPush, signals. Copia un componente parecido de frontend/src/app/features/.
+- Cada pantalla: migas de pan, una línea que dice para qué sirve, estado vacío con botón, errores que dicen cómo arreglarlos, botón «?» de ayuda.
+- Textos en español sencillo, sin términos técnicos.
+
+## Manual y ayuda
+- Escribe en frontend/public/manual/*.md siguiendo frontend/docs/GUIA-DE-ESTILO-MANUAL.md. No cambies los títulos que ya existen (las anclas dependen de ellos).
+- Cada entrada nueva de ayuda.json lleva el prefijo de su área.
+
+## Cómo se prueba (lo corre una persona)
+- Frontend: `npx ng build` y `npx ng test --watch=false` y `node scripts/verificar-ayuda.mjs`.
+- Si algo falla, no lo borres ni lo escondas: cuéntalo.
