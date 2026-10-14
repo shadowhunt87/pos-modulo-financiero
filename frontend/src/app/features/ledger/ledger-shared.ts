@@ -13,7 +13,7 @@ export interface Entry {
   description: string; reference: string | null; sourceType: string; sourceId: string | null; currency: string; status: string;
   reconciled: boolean; createdById: string; postedAt: string | null; approvedById: string | null; approvedAt: string | null;
   rejectReason: string | null; rejectedAt: string | null; voidedById: string | null; voidedAt: string | null; voidReason: string | null;
-  reversalOfId: string | null; lines: EntryLine[];
+  reversalOfId: string | null; reversedBy?: { id: string; number: string | null } | null; lines: EntryLine[];
 }
 export interface FiscalYear {
   id: string; name: string; startDate: string; endDate: string; status: string; closingEntryId: string | null;

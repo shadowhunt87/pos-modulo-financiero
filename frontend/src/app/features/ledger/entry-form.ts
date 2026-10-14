@@ -99,6 +99,8 @@ export class EntryForm {
 
   /** Viene de la ruta `entries/:id/edit`; sin id es un asiento nuevo. */
   readonly id = input<string>();
+  /** `?copy=<id>`: asiento nuevo con las líneas de uno ya reversado, para registrarlo bien (N1). */
+  readonly copy = input<string>();
   protected readonly isEdit = computed(() => !!this.id());
 
   protected readonly loading = signal(false);
@@ -147,6 +149,7 @@ export class EntryForm {
   constructor() {
     void this.lookups.ensureAccounts().catch((e) => this.notify.error(errorMessage(e)));
     effect(() => { const id = this.id(); if (id) void this.loadEntry(id); });
+    effect(() => { const c = this.copy(); if (c && !this.id()) void this.loadEntry(c, true); });
   }
 
   private newLine(l: { accountId?: string; description?: string; debit?: string; credit?: string } = {}) {
@@ -174,17 +177,17 @@ export class EntryForm {
     g.patchValue(diff.isPositive() ? { debit: '', credit: diff.toString() } : { debit: diff.abs().toString(), credit: '' });
   }
 
-  private async loadEntry(id: string): Promise<void> {
+  private async loadEntry(id: string, asCopy = false): Promise<void> {
     this.loading.set(true); this.loadError.set('');
     try {
       const e = await this.api.getP<Entry>(`/accounting/journal-entries/${id}`);
       const mine = e.createdById === this.auth.user()?.id;
-      if (e.status !== 'DRAFT' && e.status !== 'REJECTED') throw new Error('Solo se pueden corregir asientos pendientes de aprobar o rechazados.');
-      if (!this.auth.has('ADMIN') && !(this.auth.has('ACCOUNTANT') && mine)) throw new Error('Solo quien creó el asiento (o un administrador) puede corregirlo.');
+      if (!asCopy && e.status !== 'DRAFT' && e.status !== 'REJECTED') throw new Error('Solo se pueden corregir asientos pendientes de aprobar o rechazados.');
+      if (!asCopy && !this.auth.has('ADMIN') && !(this.auth.has('ACCOUNTANT') && mine)) throw new Error('Solo quien creó el asiento (o un administrador) puede corregirlo.');
       this.extraAccountIds.set(e.lines.map((l) => l.accountId));
       this.rejectReason.set(e.status === 'REJECTED' ? (e.rejectReason ?? '') : '');
-      this.form.controls.date.setValue(isoDate(e.date));
-      this.form.controls.description.setValue(e.description);
+      this.form.controls.date.setValue(asCopy ? today() : isoDate(e.date));
+      this.form.controls.description.setValue(asCopy ? `Corrección de ${e.number ?? 'asiento'}: ${e.description}`.slice(0, 500) : e.description);
       this.form.controls.reference.setValue(e.reference ?? '');
       this.lines.clear();
       for (const l of e.lines) {

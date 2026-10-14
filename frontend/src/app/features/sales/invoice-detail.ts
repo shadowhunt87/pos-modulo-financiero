@@ -84,6 +84,8 @@ export class InvoiceDetail {
   protected readonly issueOpen = signal(false);
   protected readonly voidOpen = signal(false);
   protected readonly actionError = signal<unknown>('');
+  /** El backend no deja anular (mes cerrado, declarado o e-CF): se ofrece la nota de crédito (N1, D34). */
+  protected readonly needsCreditNote = computed(() => { const e = this.actionError(); return !!e && /nota de cr[eé]dito/i.test(errorMessage(e)); });
   protected readonly issueForm = this.fb.nonNullable.group({ ncfType: [''], ncf: ['', Validators.maxLength(13)] });
   protected readonly voidForm = this.fb.nonNullable.group({ reason: ['', [Validators.required, Validators.maxLength(500)]], reasonCode: [''] });
 

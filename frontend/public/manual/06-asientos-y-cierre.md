@@ -36,7 +36,13 @@ En el detalle de un asiento, según su estado y tu rol, aparecen estos botones:
 - **Aprobar**: lo contabiliza y le da número. Quien lo creó no lo puede aprobar.
 - **Rechazar**: lo devuelve con un motivo.
 - **Corregir**: edita un asiento pendiente o rechazado. Al guardar vuelve a pendiente.
-- **Anular**: revierte un asiento contabilizado. Pide un motivo. No se puede anular uno conciliado con el banco ni el de cierre de año.
+- **Corregir con reverso**: para un asiento ya contabilizado. No se borra: se registra un **reverso** con los débitos y créditos invertidos y los dos quedan a la vista en los libros. Elige **Solo reversar** o **Reversar y crear la copia para corregir** (abre un asiento nuevo con las mismas líneas para que lo registres bien). Si el mes del asiento ya está cerrado, elige una **Fecha del reverso** de un mes abierto.
+
+No se reversa un asiento conciliado con el banco, el de cierre de año ni un reverso. Los asientos que vienen de una factura o de un pago se corrigen desde ese documento.
+
+En el listado, el estado **Reversados** muestra los asientos que ya tienen su reverso; cada uno lleva la marca **↺ Reversado** y, en su detalle, el enlace al reverso.
+
+[CAPTURA: ventana "Corregir un asiento contabilizado"]
 
 ## Plan de cuentas
 

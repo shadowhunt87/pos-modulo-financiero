@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Api } from '../../core/api';
 import { Auth } from '../../core/auth';
 import { Confirm } from '../../core/confirm';
@@ -8,13 +8,15 @@ import { Lookups } from '../../core/lookups';
 import { Notify } from '../../core/notify';
 import { ENTRY_STATUS, ENTRY_TYPE, SOURCE_DOC } from '../../shared/labels';
 import { AttachmentsPanel, UI } from '../../shared/ui';
+import { ErrorNotice } from '../../shared/ui/error-notice';
+import { FieldHelp } from '../../shared/ui/field-help';
 import { Entry, balanceOf, send } from './ledger-shared';
 
 /** Detalle de un asiento con sus líneas, soportes y las acciones que permite su estado y tu rol. */
 @Component({
   selector: 'app-entry-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, AttachmentsPanel, ...UI],
+  imports: [RouterLink, AttachmentsPanel, ErrorNotice, FieldHelp, ...UI],
   template: `
     <div class="page">
       @if (error()) { <div class="notice neg" role="alert">{{ error() }}</div> }
@@ -30,7 +32,7 @@ import { Entry, balanceOf, send } from './ledger-shared';
             @if (canEdit()) { <a class="btn" [routerLink]="['/entries', e.id, 'edit']">Corregir</a> }
             @if (canApprove()) { <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="approve()">Aprobar</button> }
             @if (canReject()) { <button type="button" class="btn" [disabled]="busy()" (click)="reject()">Rechazar</button> }
-            @if (canVoid()) { <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="voidEntry()">Anular</button> }
+            @if (canVoid()) { <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="openFix()">Corregir con reverso</button> }
           </div>
         </div>
 
@@ -45,6 +47,12 @@ import { Entry, balanceOf, send } from './ledger-shared';
         }
         @if (e.status === 'VOIDED') {
           <div class="notice neg" role="status">Anulado{{ e.voidedAt ? ' el ' + (e.voidedAt | fdate) : '' }}. Ya no cuenta en los libros.</div>
+        }
+        @if (e.reversedBy; as r) {
+          <div class="notice warn" role="status">Reversado por el asiento <a [routerLink]="['/entries', r.id]">{{ r.number || 'sin número' }}</a>: ya no suma en los saldos, pero los dos se ven en los libros.</div>
+        }
+        @if (e.status === 'POSTED' && !e.reversedBy && fromDocument()) {
+          <div class="notice info" role="status">Este asiento viene de un documento. Para corregirlo, anula o corrige el documento (factura o pago) con una nota de crédito.</div>
         }
         @if (e.type === 'CLOSING' && e.status === 'POSTED') {
           <div class="notice info" role="status">Es el asiento de cierre del año fiscal. Solo se anula reabriendo el año en “Años fiscales y cierre”.</div>
@@ -92,6 +100,19 @@ import { Entry, balanceOf, send } from './ledger-shared';
           </div>
         </section>
 
+        <app-modal [open]="fixOpen()" title="Corregir un asiento contabilizado" width="560px" (closed)="fixOpen.set(false)">
+          <p>Lo contabilizado no se borra: se registra un <strong>reverso</strong> (el mismo asiento con débitos y créditos invertidos). El original y el reverso quedan a la vista en los libros.</p>
+          <div class="field"><label for="fx-reason">Motivo</label><textarea id="fx-reason" class="input" rows="2" maxlength="500" [value]="fixReason()" (input)="fixReason.set($any($event.target).value)"></textarea></div>
+          <div class="field"><label for="fx-date">Fecha del reverso (opcional) <app-field-help text="Déjala vacía para usar la fecha del asiento. Si ese mes ya está cerrado, elige una fecha de un mes abierto." /></label>
+            <input id="fx-date" class="input" type="date" [value]="fixDate()" (input)="fixDate.set($any($event.target).value)" /></div>
+          <app-error-notice [error]="fixError()" />
+          <div class="btn-row" style="margin-top:12px">
+            <button type="button" class="btn" (click)="fixOpen.set(false)">Cancelar</button>
+            <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="reverse(false)">Solo reversar</button>
+            <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="reverse(true)">Reversar y crear la copia para corregir</button>
+          </div>
+        </app-modal>
+
         <app-attachments parent="journalEntryId" [parentId]="e.id" [canEdit]="canAttach()" />
       }
     </div>
@@ -103,6 +124,7 @@ export class EntryDetail {
   private readonly confirm = inject(Confirm);
   private readonly lookups = inject(Lookups);
   protected readonly auth = inject(Auth);
+  private readonly router = inject(Router);
 
   readonly id = input.required<string>();
   protected readonly ENTRY_STATUS = ENTRY_STATUS;
@@ -124,8 +146,10 @@ export class EntryDetail {
     this.entry()?.status === 'DRAFT' && (this.auth.has('ADMIN', 'APPROVER') || (this.auth.has('ACCOUNTANT') && this.isOwn())));
   protected readonly canVoid = computed(() => {
     const e = this.entry();
-    return !!e && e.status === 'POSTED' && !e.reconciled && e.type !== 'CLOSING' && this.auth.has('ADMIN', 'APPROVER');
+    return !!e && e.status === 'POSTED' && !e.reconciled && e.type !== 'CLOSING' && e.type !== 'REVERSAL' && !e.reversedBy && !this.fromDocument() && this.auth.has('ADMIN', 'APPROVER');
   });
+  /** Los asientos de factura, pago, cierre o vertical se corrigen desde su documento (el backend da 422). */
+  protected readonly fromDocument = computed(() => !['MANUAL', 'BANK_TRANSACTION', 'OTHER'].includes(this.entry()?.sourceType ?? 'MANUAL'));
   protected readonly canEdit = computed(() => {
     const s = this.entry()?.status;
     return (s === 'DRAFT' || s === 'REJECTED') && (this.auth.has('ADMIN') || (this.auth.has('ACCOUNTANT') && this.isOwn()));
@@ -186,12 +210,28 @@ export class EntryDetail {
     if (reason.length > 500) { this.notify.error('El motivo admite máximo 500 caracteres.'); return; }
     await this.act('reject', { reason }, 'Asiento rechazado.');
   }
-  protected async voidEntry(): Promise<void> {
-    const reason = await this.confirm.reason({
-      title: 'Anular asiento', message: 'Dejará de contar en los libros y reportes. Esta acción no se puede deshacer.', confirmText: 'Anular asiento', danger: true, label: 'Motivo de la anulación',
-    });
-    if (reason === null) return;
-    if (reason.length > 500) { this.notify.error('El motivo admite máximo 500 caracteres.'); return; }
-    await this.act('void', { reason }, 'Asiento anulado.');
+  // ---------- Corregir con reverso (N1) ----------
+  protected readonly fixOpen = signal(false);
+  protected readonly fixReason = signal('');
+  protected readonly fixDate = signal('');
+  protected readonly fixError = signal<unknown>(null);
+
+  protected openFix(): void { this.fixReason.set(''); this.fixDate.set(''); this.fixError.set(null); this.fixOpen.set(true); }
+
+  protected async reverse(andCopy: boolean): Promise<void> {
+    const e = this.entry();
+    const reason = this.fixReason().trim();
+    if (!e || this.busy()) return;
+    if (!reason) { this.fixError.set('Escribe el motivo de la corrección.'); return; }
+    this.busy.set(true); this.fixError.set(null);
+    try {
+      await send(this.api.post(`/accounting/journal-entries/${e.id}/void`, { reason, ...(this.fixDate() ? { reverseOn: this.fixDate() } : {}) }));
+      this.fixOpen.set(false);
+      this.notify.ok('Asiento reversado.');
+      if (andCopy) await this.router.navigate(['/entries/new'], { queryParams: { copy: e.id } });
+      else await this.load(e.id);
+    } catch (err) { this.fixError.set(err); }
+    this.busy.set(false);
   }
+
 }

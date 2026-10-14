@@ -15,6 +15,7 @@ import { NCF_TYPE_REGEX } from '../masters/dto/ncf.dto.js';
 import { DocumentSequencesService, type DocType } from '../masters/sequences/document-sequences.service.js';
 import { AccountingSettingsService } from '../masters/accounting-settings/accounting-settings.service.js';
 import { PostingService, type PostLine } from '../posting/posting.service.js';
+import { isMonthDeclared } from '../common/declared-month.js';
 import { CreateInvoiceDto, IssueInvoiceDto, ListInvoicesQuery, UpdateInvoiceDto, VoidInvoiceDto } from './dto/invoice.dto.js';
 
 type Tx = Prisma.TransactionClient;
@@ -563,6 +564,10 @@ export class InvoicingService {
       } catch (e) {
         if (!(e instanceof UnprocessableEntityException)) throw e;
         throw new UnprocessableEntityException('Esta factura es de un mes cerrado. No se anula: corrígela con una nota de crédito');
+      }
+      // N6: pasado el día 15 del mes siguiente el 606/607 ya se presentó; anularla lo cambiaría
+      if (inv.ncf && isMonthDeclared(inv.issueDate)) {
+        throw new UnprocessableEntityException('Esta factura es de un mes ya declarado a la DGII. No se anula: corrígela con una nota de crédito');
       }
       const allocations = await tx.paymentAllocation.count({ where: { invoiceId: id, payment: { status: { not: 'VOIDED' } } } });
       if (inv.amountPaid.gt(0) || allocations > 0) {

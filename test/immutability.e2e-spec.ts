@@ -158,6 +158,15 @@ describe('Corregir sin borrar: reverso y nota de crédito (e2e)', () => {
     });
   });
 
+  describe('mes ya declarado (N6)', () => {
+    it('factura con NCF de un mes abierto cuyo día 15 siguiente ya pasó: 422 nota de crédito y sigue emitida', async () => {
+      const inv = await sale('2020-01-10', 500);
+      const res = await api('post', `/invoices/${inv.id}/void`, 'appr').send({ reason: 'x', reasonCode: '01' }).expect(422);
+      expect(res.body.message).toBe('Esta factura es de un mes ya declarado a la DGII. No se anula: corrígela con una nota de crédito');
+      expect((await prisma.invoice.findUniqueOrThrow({ where: { id: inv.id } })).status).not.toBe('VOIDED');
+    });
+  });
+
   describe('mes cerrado', () => {
     let febSale: string, febPay: string, febEntry: string;
     beforeAll(async () => {

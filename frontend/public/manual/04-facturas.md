@@ -125,6 +125,8 @@ La suma de las notas de crédito no puede pasar del total de la factura original
 
 Los botones de nota y de anular solo aparecen en facturas ya emitidas y sin anular.
 
+**Cuándo no se puede anular.** Una factura de un **mes cerrado**, de un mes **ya declarado** a la DGII (pasó el día 15 del mes siguiente) o una **factura electrónica (e-CF)** no se anula: anularla cambiaría lo que ya se presentó. Se corrige con una **nota de crédito**. Si lo intentas, el sistema te lo explica y te ofrece el botón **Crear nota de crédito**.
+
 [CAPTURA: ventana "Anular factura" con Motivo y Código de anulación DGII]
 
 ## Importar facturas electrónicas (XML)
@@ -213,6 +215,7 @@ El **Vencimiento** es la fecha límite para pagar. Si lo dejas vacío, el sistem
 | "El período fiscal … está cerrado" | Ese mes está cerrado. Usa otra fecha o pide a tu contadora que lo reabra. |
 | "Solo se pueden editar borradores" | Es una factura emitida. Usa una nota de crédito o anula. |
 | No puedo anular: "Tiene pagos aplicados" | Anula antes los cobros o pagos desde su detalle. |
+| "Esta factura es de un mes ya declarado…" o "de un mes cerrado…" | No se anula: pulsa **Crear nota de crédito**. |
 | "Excede el límite de crédito" | El cliente ya debe demasiado. Revisa su límite en Clientes y proveedores. |
 | "Falta la tasa de cambio" | Escribe la tasa a mano en la factura. |
 | "Configura la cuenta contable del impuesto" | Pide a tu contadora que complete el impuesto en [Impuestos](/tax-rates). |

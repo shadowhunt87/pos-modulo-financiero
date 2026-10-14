@@ -26,8 +26,9 @@ import { Entry } from './ledger-shared';
       <div class="toolbar">
         <div class="field wide"><label for="q">Buscar</label><input id="q" class="input" placeholder="Número, descripción o referencia" (input)="search$.next($any($event.target).value)" /></div>
         <div class="field"><label for="st">Estado</label>
-          <select id="st" class="select" (change)="setServer('status', $any($event.target).value)">
+          <select id="st" class="select" (change)="setStatus($any($event.target).value)">
             <option value="">Todos</option>@for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+            <option value="REVERSED">Reversados</option>
           </select></div>
         <div class="field"><label for="ty">Tipo</label>
           <select id="ty" class="select" (change)="setType($any($event.target).value)">
@@ -55,7 +56,7 @@ import { Entry } from './ledger-shared';
                   <td><a [routerLink]="['/entries', e.id]"><strong>{{ e.description }}</strong></a>@if (e.reference) { <div class="dim">Ref. {{ e.reference }}</div> }</td>
                   <td>{{ e.type | lbl: ENTRY_TYPE }}</td>
                   <td>{{ journalName(e.journalId) }}</td>
-                  <td><app-status [value]="e.status" [map]="ENTRY_STATUS" /></td>
+                  <td><app-status [value]="e.status" [map]="ENTRY_STATUS" />@if (e.reversedBy) { <span class="badge warn" [title]="'Reversado por ' + (e.reversedBy.number ?? '')">↺ Reversado</span> }</td>
                   <td class="num">{{ total(e) | money }}</td>
                 </tr>
               } @empty {
@@ -126,6 +127,12 @@ export class Entries {
   protected total(e: Entry): string { return sumDec(e.lines.map((l) => l.debit)).toString(); }
 
   protected setServer(key: string, value: string): void { this.server = { ...this.server, [key]: value }; this.allRows.set(null); this.page.set(1); void this.refresh(); }
+  /** «Reversados» no es un estado: es `?reversed=true` (siguen POSTED y tienen su reverso). */
+  protected setStatus(v: string): void {
+    const { status: _s, reversed: _r, ...rest } = this.server;
+    this.server = v === 'REVERSED' ? { ...rest, reversed: 'true' } : { ...rest, ...(v ? { status: v } : {}) };
+    this.allRows.set(null); this.page.set(1); void this.refresh();
+  }
   protected setType(v: string): void { this.typeF.set(v); this.page.set(1); void this.refresh(); }
   protected setJournal(v: string): void { this.journalF.set(v); this.page.set(1); void this.refresh(); }
   protected goTo(p: number): void { this.page.set(p); if (!this.clientActive()) void this.refresh(); }

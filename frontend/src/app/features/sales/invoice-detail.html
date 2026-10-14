@@ -195,6 +195,9 @@
         <span class="hint">{{ needsVoidCode() ? 'Obligatorio porque el comprobante lo emitiste tú (reporte 608).' : 'Se reporta en el 608 solo si el comprobante es tuyo.' }}</span></div>
     </div>
     <app-error-notice style="display:block;margin-top:14px" [error]="actionError()" />
+    @if (needsCreditNote() && inv(); as i) {
+      <a class="btn btn-primary" style="margin-top:10px" routerLink="/invoices/new" [queryParams]="{ type: 'CREDIT_NOTE', related: i.id }" (click)="voidOpen.set(false)">Crear nota de crédito</a>
+    }
   </form>
   <ng-container modal-actions>
     <button type="button" class="btn" (click)="voidOpen.set(false)">Cancelar</button>

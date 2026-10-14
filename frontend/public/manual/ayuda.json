@@ -278,6 +278,9 @@
   },
 
   "errores": [
+    { "patron": "mes ya declarado|mes cerrado. No se anula|electrónica \\(e-CF\\). No se anula", "explicacion": "Lo ya cerrado o declarado no se cambia. Corrige la factura con una nota de crédito por el monto que sobra (o por el total)." },
+    { "patron": "ya fue reversado", "explicacion": "Otra persona ya reversó este asiento. Recarga la página para ver el reverso." },
+    { "patron": "reverseOn|mes abierto", "explicacion": "El mes del asiento está cerrado. En «Fecha del reverso» elige una fecha de un mes abierto (por ejemplo, hoy)." },
     { "patron": "granularity|mes con formato AAAA-MM", "explicacion": "Elige los meses con el selector de mes (año y mes) y una agrupación: mes, trimestre o año." },
     {
       "patron": "falta conectar tu proveedor de facturación electrónica",
