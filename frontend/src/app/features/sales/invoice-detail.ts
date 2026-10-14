@@ -10,7 +10,7 @@ import { Lookups } from '../../core/lookups';
 import { Notify } from '../../core/notify';
 import { clean, dec, isoDate, sumDec } from '../../shared/format';
 import { ENTRY_STATUS, INVOICE_STATUS, INVOICE_TYPE, PAYMENT_METHOD, PAYMENT_STATUS } from '../../shared/labels';
-import { AttachmentsPanel, UI } from '../../shared/ui';
+import { AttachmentsPanel, ErrorNotice, UI } from '../../shared/ui';
 import { DGII_EXPENSE_TYPE, DGII_INCOME_TYPE, InvoiceFull, NcfType, VOID_REASON_CODE } from './invoice-types';
 
 interface PaymentLite {
@@ -29,7 +29,7 @@ const OPEN = ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'];
 @Component({
   selector: 'app-invoice-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, AttachmentsPanel, ...UI],
+  imports: [ReactiveFormsModule, RouterLink, AttachmentsPanel, ErrorNotice, ...UI],
   templateUrl: './invoice-detail.html',
 })
 export class InvoiceDetail {
@@ -80,7 +80,7 @@ export class InvoiceDetail {
 
   protected readonly issueOpen = signal(false);
   protected readonly voidOpen = signal(false);
-  protected readonly actionError = signal('');
+  protected readonly actionError = signal<unknown>('');
   protected readonly issueForm = this.fb.nonNullable.group({ ncfType: [''], ncf: ['', Validators.maxLength(13)] });
   protected readonly voidForm = this.fb.nonNullable.group({ reason: ['', [Validators.required, Validators.maxLength(500)]], reasonCode: [''] });
 
@@ -108,7 +108,7 @@ export class InvoiceDetail {
     try {
       const list = await this.api.getAll<{ id: string; status: string }>('/payments', { partnerId: inv.partner.id, from: isoDate(inv.issueDate) });
       const live = list.filter((p) => p.status !== 'VOIDED');
-      if (live.length > 60) this.paymentsNote.set('Hay muchos pagos de este tercero: se muestran solo los primeros 60 revisados.');
+      if (live.length > 60) this.paymentsNote.set('Hay muchos pagos de este cliente / proveedor: se muestran solo los primeros 60 revisados.');
       const details = await Promise.all(live.slice(0, 60).map((p) => this.api.getP<PaymentLite>(`/payments/${p.id}`)));
       this.payments.set(details.flatMap((p) => p.allocations.filter((a) => a.invoiceId === inv.id).map((a) => ({ payment: p, amount: a.amount }))));
     } catch { this.paymentsNote.set('No se pudo cargar el detalle de los pagos aplicados.'); }
@@ -136,7 +136,7 @@ export class InvoiceDetail {
       this.inv.set(res); this.issueOpen.set(false);
       this.notify.ok(`Factura ${res.number} emitida.`);
       void this.loadPayments(res);
-    } catch (e) { this.actionError.set(errorMessage(e)); }
+    } catch (e) { this.actionError.set(e); }
     this.busy.set(false);
   }
 
@@ -156,7 +156,7 @@ export class InvoiceDetail {
       const res = await firstValueFrom(this.api.post<InvoiceFull>(`/invoices/${i.id}/void`, clean({ reason: v.reason.trim(), reasonCode: v.reasonCode })));
       this.inv.set(res); this.voidOpen.set(false);
       this.notify.ok('Factura anulada y asiento revertido.');
-    } catch (e) { this.actionError.set(errorMessage(e)); }
+    } catch (e) { this.actionError.set(e); }
     this.busy.set(false);
   }
 
