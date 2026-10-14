@@ -1,5 +1,7 @@
 # Anexo S0 — Verificación en dos pasos (2FA) y exportación completa de datos
 
+> **Aprobado por Carlos el 2026-10-13** con las opciones recomendadas de D17, D18, D41–D48 (ver docs/DECISIONES-APROBADAS.md). Ya se puede programar S1, S2 y S4 con este anexo.
+
 > **Versión 1.2 · 2026-10-12 · Autor: Arquitecto · Estado: corregido tras la revisión de comprobación** (v1.0: revisor-critico
 > «aprobar con cambios», seguridad «programable con cambios»; v1.1: «aprobar con cambios menores»). Falta la aprobación de Carlos. Paquete S0 (`docs/paquetes/S0.md`),
 > tarea 0.5 de `docs/PLAN-v0.3.md`.
