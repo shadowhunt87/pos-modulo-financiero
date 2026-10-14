@@ -4,30 +4,82 @@ import { payloadToXml } from './payload.js';
 
 /**
  * Adaptador HTTP CONFIGURABLE para el proveedor certificado (lo que falte del proveedor es configuración, no código):
- *   settings = { baseUrl, sendPath, statusPath, voidPath, checkPath, format: 'json' | 'xml', authHeader?, timeoutMs?,
- *                fields?: { trackId, status, eNcf, securityCode, message, xml }, statusMap?: { "<valor del proveedor>": "ACCEPTED" | ... } }
- *   credentials = { token } (Bearer) o { user, password } (Basic) o { apiKey } (cabecera authHeader)
- * Las rutas aceptan {trackId} y {eNcf}. Un error de red o 5xx = proveedor caído → contingencia y reintento.
+ *   settings = {
+ *     baseUrl, sendPath, statusPath, voidPath, checkPath, format: 'json' | 'xml', timeoutMs?,
+ *     headers?: { "<cabecera fija>": "<valor>" },             // p. ej. el RNC del emisor o la versión de su API
+ *     authHeader?: "X-Api-Key",                               // cabecera donde va credentials.apiKey
+ *     login?: { path, userField?, passwordField?, tokenField?, expiresField?, ttlSeconds? },  // token temporal
+ *     bodyWrap?: "documento",                                 // si piden el e-CF dentro de una propiedad (solo json)
+ *     responseRoot?: "data",                                  // si la respuesta viene dentro de una propiedad
+ *     fields?: { trackId, status, eNcf, securityCode, message, xml },  // admiten rutas con punto: "resultado.estado"
+ *     statusMap?: { "<valor del proveedor>": "ACCEPTED" | "ACCEPTED_CONDITIONAL" | "REJECTED" | "IN_PROCESS" }
+ *   }
+ *   credentials = { token } (Bearer) o { user, password } (Basic, o login si hay settings.login) o { apiKey } (cabecera authHeader)
+ * Las rutas aceptan {trackId}, {eNcf} y {rnc}. Un error de red, 5xx o 429 = proveedor caído → contingencia y reintento.
  */
 const DEFAULT_MAP: Record<string, EcfOutcome> = {
   aceptado: 'ACCEPTED', accepted: 'ACCEPTED', 'aceptado condicional': 'ACCEPTED_CONDITIONAL', accepted_conditional: 'ACCEPTED_CONDITIONAL',
   rechazado: 'REJECTED', rejected: 'REJECTED', 'en proceso': 'IN_PROCESS', processing: 'IN_PROCESS', pending: 'IN_PROCESS',
 };
 
+interface LoginCfg { path: string; userField?: string; passwordField?: string; tokenField?: string; expiresField?: string; ttlSeconds?: number }
+interface Settings {
+  baseUrl: string; sendPath?: string; statusPath?: string; voidPath?: string; checkPath?: string; format?: 'json' | 'xml'; authHeader?: string;
+  timeoutMs?: number; headers?: Record<string, string>; login?: LoginCfg; bodyWrap?: string; responseRoot?: string;
+  fields?: Record<string, string>; statusMap?: Record<string, EcfOutcome>;
+}
+
+/** Lee "a.b.c" dentro de un objeto. */
+function pick(o: unknown, path: string): unknown {
+  return path.split('.').reduce<unknown>((v, k) => (v && typeof v === 'object' ? (v as Record<string, unknown>)[k] : undefined), o);
+}
+
 export class HttpEcfProvider implements EcfProvider {
   readonly code = 'http';
   readonly label = 'Proveedor certificado (HTTP configurable)';
+  /** Tokens temporales por empresa y ambiente (solo en memoria; nunca se guardan). */
+  private readonly tokens = new Map<string, { token: string; until: number }>();
 
-  private s(ctx: EcfContext) {
+  private s(ctx: EcfContext): Settings {
     const s = ctx.settings as Record<string, unknown>;
     if (typeof s.baseUrl !== 'string' || !/^https:\/\//.test(s.baseUrl)) throw new Error('Falta la URL https del proveedor (settings.baseUrl)');
-    return s as { baseUrl: string; sendPath?: string; statusPath?: string; voidPath?: string; checkPath?: string; format?: 'json' | 'xml'; authHeader?: string; timeoutMs?: number; fields?: Record<string, string>; statusMap?: Record<string, EcfOutcome> };
+    return s as unknown as Settings;
   }
 
-  private headers(ctx: EcfContext, contentType: string): Record<string, string> {
+  private path(ctx: EcfContext, p: string, ref?: EcfRef): string {
+    return p.replace('{trackId}', encodeURIComponent(ref?.trackId ?? '')).replace('{eNcf}', encodeURIComponent(ref?.eNcf ?? ''))
+      .replace('{rnc}', encodeURIComponent(String(ctx.settings.rnc ?? '')));
+  }
+
+  private async fetchRaw(s: Settings, method: string, path: string, headers: Record<string, string>, body?: string): Promise<Response> {
+    try {
+      return await fetch(new URL(path, s.baseUrl), { method, headers, body, signal: AbortSignal.timeout(s.timeoutMs ?? 30_000) });
+    } catch (e) { throw new EcfUnavailableError(`No se pudo conectar con el proveedor: ${(e as Error).message}`); }
+  }
+
+  /** Inicia sesión con usuario y clave para obtener un token temporal (si el proveedor lo pide). */
+  private async loginToken(ctx: EcfContext, force = false): Promise<string> {
+    const s = this.s(ctx), l = s.login!, key = `${ctx.companyId}:${ctx.environment}:${ctx.credentials.user ?? ''}`;
+    const hit = this.tokens.get(key);
+    if (!force && hit && hit.until > Date.now()) return hit.token;
+    if (!ctx.credentials.user || !ctx.credentials.password) throw new Error('El proveedor pide iniciar sesión: faltan el usuario y la clave en las credenciales');
+    const res = await this.fetchRaw(s, 'POST', l.path, { 'Content-Type': 'application/json', Accept: 'application/json', ...(s.headers ?? {}) },
+      JSON.stringify({ [l.userField ?? 'username']: ctx.credentials.user, [l.passwordField ?? 'password']: ctx.credentials.password }));
+    if (res.status >= 500 || res.status === 429) throw new EcfUnavailableError(`El proveedor respondió ${res.status} al iniciar sesión`);
+    const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const token = pick(json, l.tokenField ?? 'token');
+    if (res.status >= 400 || typeof token !== 'string' || !token) throw new Error(`El proveedor no aceptó el usuario y la clave (respuesta ${res.status})`);
+    const exp = Number(pick(json, l.expiresField ?? 'expires_in'));
+    const ttl = Number.isFinite(exp) && exp > 0 ? exp : (l.ttlSeconds ?? 3000);
+    this.tokens.set(key, { token, until: Date.now() + Math.max(ttl - 60, 30) * 1000 });
+    return token;
+  }
+
+  private async headers(ctx: EcfContext, contentType: string, forceLogin = false): Promise<Record<string, string>> {
     const s = this.s(ctx), c = ctx.credentials;
-    const h: Record<string, string> = { 'Content-Type': contentType, Accept: 'application/json' };
-    if (c.token) h.Authorization = `Bearer ${c.token}`;
+    const h: Record<string, string> = { 'Content-Type': contentType, Accept: 'application/json', ...(s.headers ?? {}) };
+    if (s.login) h.Authorization = `Bearer ${await this.loginToken(ctx, forceLogin)}`;
+    else if (c.token) h.Authorization = `Bearer ${c.token}`;
     else if (c.user && c.password) h.Authorization = `Basic ${Buffer.from(`${c.user}:${c.password}`).toString('base64')}`;
     if (c.apiKey) h[s.authHeader ?? 'X-Api-Key'] = c.apiKey;
     return h;
@@ -35,25 +87,25 @@ export class HttpEcfProvider implements EcfProvider {
 
   private async call(ctx: EcfContext, method: string, path: string, body?: string, contentType = 'application/json'): Promise<Record<string, unknown>> {
     const s = this.s(ctx);
-    let res: Response;
-    try {
-      res = await fetch(new URL(path, s.baseUrl), { method, headers: this.headers(ctx, contentType), body, signal: AbortSignal.timeout(s.timeoutMs ?? 30_000) });
-    } catch (e) { throw new EcfUnavailableError(`No se pudo conectar con el proveedor: ${(e as Error).message}`); }
+    let res = await this.fetchRaw(s, method, path, await this.headers(ctx, contentType), body);
+    // Token temporal vencido antes de tiempo: se pide otro una sola vez.
+    if (res.status === 401 && s.login) res = await this.fetchRaw(s, method, path, await this.headers(ctx, contentType, true), body);
     if (res.status >= 500 || res.status === 429) throw new EcfUnavailableError(`El proveedor respondió ${res.status}`);
     const text = await res.text();
     let json: Record<string, unknown> = {};
     try { json = text ? (JSON.parse(text) as Record<string, unknown>) : {}; } catch { json = { message: text.slice(0, 500) }; }
+    if (s.responseRoot) { const inner = pick(json, s.responseRoot); if (inner && typeof inner === 'object') json = { ...(inner as Record<string, unknown>), __outer: json }; }
     if (res.status >= 400) return { __error: true, ...json, __status: res.status };
     return json;
   }
 
   private read(ctx: EcfContext, r: Record<string, unknown>) {
     const s = this.s(ctx), f = s.fields ?? {};
-    const get = (k: string, d: string) => r[f[k] ?? d];
+    const get = (k: string, d: string) => pick(r, f[k] ?? d);
     const raw = String(get('status', 'status') ?? (r.__error ? 'rejected' : '')).toLowerCase();
     const map = { ...DEFAULT_MAP, ...Object.fromEntries(Object.entries(s.statusMap ?? {}).map(([k, v]) => [k.toLowerCase(), v])) };
     const outcome: EcfOutcome = map[raw] ?? (r.__error ? 'REJECTED' : 'IN_PROCESS');
-    const str = (v: unknown) => (v === undefined || v === null ? null : String(v));
+    const str = (v: unknown) => (v === undefined || v === null ? null : typeof v === 'object' ? JSON.stringify(v).slice(0, 1000) : String(v));
     return {
       outcome, trackId: str(get('trackId', 'trackId')), eNcf: str(get('eNcf', 'eNCF')), securityCode: str(get('securityCode', 'codigoSeguridad')),
       message: str(get('message', 'mensaje')) ?? (r.__error ? `Error ${String(r.__status)}` : null), xml: str(get('xml', 'xml')),
@@ -63,24 +115,24 @@ export class HttpEcfProvider implements EcfProvider {
   async send(doc: EcfPayload, ctx: EcfContext): Promise<EcfSendResult> {
     const s = this.s(ctx);
     const xml = s.format === 'xml';
-    const r = await this.call(ctx, 'POST', s.sendPath ?? '/ecf', xml ? payloadToXml(doc) : JSON.stringify(doc), xml ? 'application/xml' : 'application/json');
+    const body = xml ? payloadToXml(doc) : JSON.stringify(s.bodyWrap ? { [s.bodyWrap]: doc } : doc);
+    const r = await this.call(ctx, 'POST', this.path(ctx, s.sendPath ?? '/ecf'), body, xml ? 'application/xml' : 'application/json');
     return this.read(ctx, r);
   }
 
   async status(ref: EcfRef, ctx: EcfContext): Promise<EcfStatusResult> {
     const s = this.s(ctx);
-    const path = (s.statusPath ?? '/ecf/{trackId}').replace('{trackId}', encodeURIComponent(ref.trackId ?? '')).replace('{eNcf}', encodeURIComponent(ref.eNcf ?? ''));
-    return this.read(ctx, await this.call(ctx, 'GET', path));
+    return this.read(ctx, await this.call(ctx, 'GET', this.path(ctx, s.statusPath ?? '/ecf/{trackId}', ref)));
   }
 
   async voidUnused(r: { ecfType: string; from: string; to: string }, ctx: EcfContext) {
-    const res = await this.call(ctx, 'POST', this.s(ctx).voidPath ?? '/anecf', JSON.stringify(r));
+    const res = await this.call(ctx, 'POST', this.path(ctx, this.s(ctx).voidPath ?? '/anecf'), JSON.stringify(r));
     return { ok: !res.__error, message: res.__error ? String(res.message ?? 'Error') : undefined };
   }
 
   async check(ctx: EcfContext) {
     try {
-      const r = await this.call(ctx, 'GET', this.s(ctx).checkPath ?? '/health');
+      const r = await this.call(ctx, 'GET', this.path(ctx, this.s(ctx).checkPath ?? '/health'));
       return r.__error ? { ok: false, message: `El proveedor respondió con error ${String(r.__status)}: revisa las credenciales` } : { ok: true, message: 'Conexión con el proveedor correcta' };
     } catch (e) { return { ok: false, message: (e as Error).message }; }
   }

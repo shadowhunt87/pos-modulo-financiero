@@ -33,7 +33,17 @@ interface ConnInfo {
             @if (providerCode === 'http') {
               <div class="field span-all"><label for="c-s">Configuración técnica del proveedor (JSON) <app-field-help text="La da el proveedor: baseUrl, sendPath, statusPath, format (json o xml), fields y statusMap. Sin claves aquí." /></label>
                 <textarea id="c-s" name="s" class="input mono" rows="8" [(ngModel)]="settingsText"></textarea></div>
-              <div class="field"><label for="c-t">Token del proveedor (se guarda cifrado)</label><input id="c-t" name="t" class="input" type="password" autocomplete="off" [(ngModel)]="tokenValue" [placeholder]="i.connection?.hasCredentials ? 'Guardado: déjalo vacío para no cambiarlo' : ''" /></div>
+              <div class="field"><label for="c-am">¿Cómo se identifica el sistema ante el proveedor? <app-field-help text="Lo dice la documentación del proveedor. Si piden iniciar sesión para obtener un token, elige «Usuario y clave» y agrega «login» en la configuración técnica." /></label>
+                <select id="c-am" name="am" class="select" [(ngModel)]="authMode"><option value="token">Token fijo</option><option value="user">Usuario y clave</option><option value="apiKey">Llave de API (API key)</option></select></div>
+              @if (i.connection?.hasCredentials) { <p class="hint span-all">Ya hay credenciales guardadas (cifradas). Deja estos campos vacíos para no cambiarlas.</p> }
+              @switch (authMode) {
+                @case ('token') { <div class="field"><label for="c-t">Token del proveedor (se guarda cifrado)</label><input id="c-t" name="t" class="input" type="password" autocomplete="off" [(ngModel)]="tokenValue" /></div> }
+                @case ('user') {
+                  <div class="field"><label for="c-u">Usuario del proveedor</label><input id="c-u" name="u" class="input" autocomplete="off" [(ngModel)]="userValue" /></div>
+                  <div class="field"><label for="c-pw">Clave del proveedor (se guarda cifrada)</label><input id="c-pw" name="pw" class="input" type="password" autocomplete="new-password" [(ngModel)]="passwordValue" /></div>
+                }
+                @case ('apiKey') { <div class="field"><label for="c-k">Llave de API (se guarda cifrada)</label><input id="c-k" name="k" class="input" type="password" autocomplete="off" [(ngModel)]="apiKeyValue" /></div> }
+              }
             }
             <div class="field"><label class="check" for="c-a"><input id="c-a" name="a" type="checkbox" [(ngModel)]="active" /> Conexión activa</label></div>
           </div>
@@ -60,7 +70,11 @@ export class EcfConnection {
   protected numbering = 'OURS';
   protected active = false;
   protected settingsText = '{\n  "baseUrl": "https://",\n  "sendPath": "/ecf",\n  "statusPath": "/ecf/{trackId}",\n  "format": "json"\n}';
+  protected authMode: 'token' | 'user' | 'apiKey' = 'token';
   protected tokenValue = '';
+  protected userValue = '';
+  protected passwordValue = '';
+  protected apiKeyValue = '';
 
   constructor() { void this.load(); }
 
@@ -79,16 +93,26 @@ export class EcfConnection {
     if (this.providerCode === 'http') {
       try { settings = JSON.parse(this.settingsText) as Record<string, unknown>; } catch { this.error.set('La configuración técnica no es un JSON válido.'); return; }
     }
+    const credentials = this.credentials();
+    if (credentials === 'incompleto') { this.error.set('Escribe el usuario y la clave del proveedor (los dos).'); return; }
     this.busy.set(true); this.error.set(null);
     try {
       const i = await firstValueFrom(this.api.put<ConnInfo>('/ecf/connection', {
         providerCode: this.providerCode, environment: this.environment, numbering: this.numbering, ecfTypes: this.types(), active: this.active,
-        ...(settings ? { settings } : {}), ...(this.tokenValue ? { credentials: { token: this.tokenValue } } : {}),
+        ...(settings ? { settings } : {}), ...(credentials ? { credentials } : {}),
       }));
-      this.info.set(i); this.tokenValue = '';
+      this.info.set(i); this.tokenValue = this.userValue = this.passwordValue = this.apiKeyValue = '';
       this.notify.ok('Conexión guardada.');
     } catch (e) { this.error.set(e); }
     this.busy.set(false);
+  }
+  /** Solo se envían credenciales si se escribió algo; nunca se leen de vuelta del servidor. */
+  private credentials(): Record<string, string> | null | 'incompleto' {
+    if (this.providerCode !== 'http') return null;
+    if (this.authMode === 'token') return this.tokenValue ? { token: this.tokenValue } : null;
+    if (this.authMode === 'apiKey') return this.apiKeyValue ? { apiKey: this.apiKeyValue } : null;
+    if (!this.userValue && !this.passwordValue) return null;
+    return this.userValue && this.passwordValue ? { user: this.userValue, password: this.passwordValue } : 'incompleto';
   }
   protected async check(): Promise<void> {
     this.busy.set(true);

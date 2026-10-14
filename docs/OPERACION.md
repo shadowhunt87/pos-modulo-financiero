@@ -93,7 +93,10 @@ Todo está programado; lo que falta es **configuración** cuando se elija el pro
 3. En la aplicación, el ADMIN de cada empresa va a **Configuración › Facturación electrónica: conexión**:
    - primero con **Pruebas** (proveedor `sandbox`) para practicar el flujo completo sin enviar nada a la DGII;
    - luego con **Proveedor certificado** (`http`), pegando la configuración técnica del proveedor (URL `https`, rutas de envío y de
-     estado, formato `json` o `xml`, y si hace falta los nombres de sus campos en `fields` y sus estados en `statusMap`) y su token.
+     estado, formato `json` o `xml`, y si hace falta los nombres de sus campos en `fields` y sus estados en `statusMap`) y sus
+     credenciales: token fijo, usuario y clave (con o sin inicio de sesión para obtener un token temporal) o llave de API.
+     La plantilla está en `docs/ecf-proveedores/PLANTILLA_configuracion.json` y las preguntas que hay que hacerle al
+     proveedor para llenarla, en `docs/ecf-proveedores/PREGUNTAS_AL_PROVEEDOR.md`.
 4. Carga las secuencias **E** autorizadas por la DGII en Comprobantes fiscales (si el sistema numera los e-NCF).
 5. **Probar la conexión** y emitir una factura de prueba en el ambiente de pruebas del proveedor.
 

@@ -1,0 +1,38 @@
+{
+  "_instrucciones": "Copia este archivo como <proveedor>.json, cambia los valores con la documentación del proveedor y pega el contenido (sin las claves que empiezan con _) en Configuración › Facturación electrónica: conexión › Configuración técnica. Las claves NO van aquí: se escriben en los campos de credenciales.",
+  "baseUrl": "https://api-pruebas.proveedor.com",
+  "format": "json",
+  "sendPath": "/v1/ecf",
+  "statusPath": "/v1/ecf/{trackId}",
+  "voidPath": "/v1/anecf",
+  "checkPath": "/v1/health",
+  "timeoutMs": 30000,
+  "rnc": "RNC del emisor, si alguna ruta usa {rnc}",
+  "headers": { "X-Version": "1" },
+  "authHeader": "X-Api-Key",
+  "login": {
+    "_nota": "Bórralo si el proveedor da un token fijo o una API key. Déjalo si hay que iniciar sesión para obtener un token.",
+    "path": "/v1/auth/login",
+    "userField": "username",
+    "passwordField": "password",
+    "tokenField": "access_token",
+    "expiresField": "expires_in",
+    "ttlSeconds": 3000
+  },
+  "bodyWrap": null,
+  "responseRoot": null,
+  "fields": {
+    "trackId": "trackId",
+    "status": "estado",
+    "eNcf": "eNCF",
+    "securityCode": "codigoSeguridad",
+    "message": "mensaje",
+    "xml": "xmlFirmado"
+  },
+  "statusMap": {
+    "Aceptado": "ACCEPTED",
+    "Aceptado Condicional": "ACCEPTED_CONDITIONAL",
+    "Rechazado": "REJECTED",
+    "En Proceso": "IN_PROCESS"
+  }
+}
