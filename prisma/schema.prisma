@@ -52,6 +52,7 @@ model Company {
   feedbacks           Feedback[]
   ecfDocuments        EcfDocument[]
   ecfImports          EcfImport[]
+  serviceKeys         ServiceKey[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -126,6 +127,8 @@ model User {
   lastLoginAt       DateTime?
   // Los tokens emitidos antes de esta fecha dejan de servir (cambio/reseteo de clave)
   passwordChangedAt DateTime?
+  // Usuario técnico de una llave de servicio (otro sistema): no puede iniciar sesión con clave
+  isService         Boolean   @default(false)
 
   journalEntriesCreated  JournalEntry[]       @relation("JournalEntryCreatedBy")
   journalEntriesApproved JournalEntry[]       @relation("JournalEntryApprovedBy")
@@ -1226,4 +1229,24 @@ enum EcfImportStatus {
   PREPARED
   IMPORTED
   DISCARDED
+}
+
+// Llave de servicio con alcance (INTEGRACION-TALLER §4.7, S-b): otro sistema entra con
+// "Authorization: Bearer fsk_<prefijo>_<secreto>". Se guarda solo el hash del secreto.
+model ServiceKey {
+  id           String    @id @default(uuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id])
+  userId       String // usuario técnico (isService) a cuyo nombre quedan facturas, cobros y bitácora
+  name         String // ej: "Taller Sirtech"
+  prefix       String    @unique // se muestra para reconocerla; no sirve para entrar
+  keyHash      String // SHA-256 del secreto (el secreto es aleatorio de 256 bits)
+  sourceModule String // único origen que puede usar en sus facturas, ej: "taller.orden"
+  lastUsedAt   DateTime?
+  revokedAt    DateTime?
+  revokedById  String?
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  @@index([companyId])
 }

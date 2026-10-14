@@ -19,6 +19,7 @@ import { FeedbackModule } from './feedback/feedback.module.js';
 import { ChartOfAccountsModule } from './chart-of-accounts/chart-of-accounts.module.js';
 import { EcfModule } from './ecf/ecf.module.js';
 import { MetaModule } from './meta/meta.module.js';
+import { ServiceKeysModule } from './service-keys/service-keys.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -44,6 +45,7 @@ import { validate } from './config/env.validation.js';
     ChartOfAccountsModule,
     EcfModule,
     MetaModule,
+    ServiceKeysModule,
   ],
 })
 export class AppModule {}

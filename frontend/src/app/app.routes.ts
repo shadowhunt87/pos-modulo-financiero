@@ -10,7 +10,7 @@ import { Shell } from './layout/shell';
  *  ledger    : entries, fiscal-periods, fiscal-years, opening-balances
  *  treasury  : bank-accounts, reconciliations
  *  reporting : reports, dgii, budgets
- *  admin     : users, company, profile
+ *  admin     : users, service-keys, company, profile
  *  help      : help, help/:slug
  *  feedback  : feedback/mine, feedback
  *  ecf       : ecf/import

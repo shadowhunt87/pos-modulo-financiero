@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     // Si desactivan al usuario o a su empresa, el token deja de servir al instante
-    if (!user || !user.active || !user.company.active) {
+    if (!user || !user.active || !user.company.active || user.isService) {
       throw new UnauthorizedException();
     }
     // Cambió o reseteó la clave: los tokens anteriores ya no sirven

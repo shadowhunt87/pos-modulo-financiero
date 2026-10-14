@@ -159,6 +159,10 @@
       "seccion": "configuracion", "ancla": "datos-de-la-empresa",
       "siguiente": { "texto": "Agrega a tus clientes y proveedores", "ruta": "/partners" }
     },
+    "/service-keys": {
+      "seccion": "usuarios-y-permisos", "ancla": "conectar-otro-sistema",
+      "siguiente": { "texto": "Entrega la llave a quien instala el otro sistema", "ruta": "/service-keys" }
+    },
     "/users": {
       "seccion": "usuarios-y-permisos", "ancla": "crear-un-usuario",
       "siguiente": { "texto": "Cada persona debe cambiar su clave al entrar por primera vez", "ruta": "/profile" }
@@ -190,6 +194,10 @@
   },
 
   "campos": {
+    "conexiones.origen": {
+      "texto": "Identifica de dónde vienen las facturas de ese sistema, como taller.orden. Te lo da quien instala la conexión; no se puede cambiar después.",
+      "seccion": "usuarios-y-permisos", "ancla": "conectar-otro-sistema"
+    },
     "ecf.tipoGasto": {
       "texto": "La DGII pide clasificar cada compra en el 606 (por ejemplo, 02 servicios o 09 costo de venta). Si no sabes cuál, pregúntale a tu contadora; se puede cambiar en la factura.",
       "seccion": "facturas", "ancla": "importar-facturas-electronicas-xml"

@@ -44,6 +44,21 @@ Menú **Configuración › Usuarios**. Esta pantalla solo la ve el Administrador
 3. Pulsa **Restablecer**. Las sesiones abiertas de esa persona se cierran.
 4. Dile la clave nueva de forma segura y que la cambie al entrar.
 
+## Conectar otro sistema
+
+Si otro programa (por ejemplo, el del taller) va a registrar aquí sus facturas y cobros, necesita una **llave**.
+Solo el Administrador la crea, en **Configuración → Conexiones con otros sistemas**:
+
+1. Pulsa **Nueva conexión**.
+2. Escribe un **Nombre** para reconocerla (ej: Taller Sirtech) y el **Origen de sus facturas** que te indique
+   quien instala la conexión (ej: taller.orden).
+3. Pulsa **Crear conexión** y **copia la llave**: se muestra una sola vez. Entrégasela a quien instala el otro sistema
+   por un medio seguro (no por correo ni chat).
+
+Con esa llave el otro sistema **solo** puede crear clientes, facturas de venta y cobros, y ver lo que él mismo creó.
+No entra a las pantallas, no ve reportes ni la DGII y no puede anular nada. Si la llave se pierde o ya no se usa,
+pulsa **Revocar**: deja de funcionar en el acto y lo que registró se queda.
+
 ## Si algo sale mal
 
 | Qué ves | Qué hacer |

@@ -76,7 +76,8 @@ export class AuthService {
       user?.password ?? DUMMY_HASH,
     );
 
-    if (!user || !user.active || !user.company.active || !passwordMatches) {
+    // Un usuario técnico (llave de servicio) nunca entra con clave, aunque alguien se la cambie
+    if (!user || !user.active || !user.company.active || !passwordMatches || user.isService) {
       this.limiter.recordFailure(rules);
       throw new UnauthorizedException('Credenciales inválidas');
     }
