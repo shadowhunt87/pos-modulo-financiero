@@ -31,3 +31,30 @@ Las contadoras envían comentarios desde la pantalla de Ayuda. Se guardan en la 
 ## Manual de ayuda (nginx)
 
 Los archivos de `/manual/` (ayuda.json, .md e imágenes) se sirven con `Cache-Control: no-cache`: el navegador revalida en cada uso y los cambios del documentador se ven al recargar, sin esperar. El resto de estáticos (js, css, png...) sigue con caché de 1 año; la excepción `location ^~ /manual/` en `frontend/deploy/nginx.conf` es la que hace que el manual no caiga en esa regla.
+
+## Vigilancia de dependencias (librerías de terceros)
+
+**Cada cuánto:** el primer lunes de cada mes y antes de cada lanzamiento, o el mismo día si GitHub avisa de una
+alerta de seguridad. Lo corre Claude (o quien mantenga el código) y anota el resultado en el PR del mes.
+
+**Cómo** (desde la raíz del repositorio):
+```
+npm audit --omit=dev                 # backend: solo lo que corre en el servidor
+(cd frontend && npm audit)           # pantallas
+npm ls exceljs uuid                  # de dónde viene cada librería señalada
+```
+`npm audit fix --force` **no se usa**: propone bajar Prisma de la 7 a la 6 o `exceljs` a la 3, y eso rompe el sistema.
+Una alerta se resuelve actualizando la librería con su propio PR y la suite completa en verde.
+
+**`exceljs` lee archivos que suben los usuarios** (importar el plan de cuentas): `src/chart-of-accounts/chart-of-accounts.file.ts`
+limita el tamaño del zip, los rangos y el tamaño antes de leer. También escribe las exportaciones a Excel
+(`src/exports/xlsx.renderer.ts`) y se usa en `src/chart-of-accounts/chart-of-accounts.service.ts`. Si sale una alerta de
+`exceljs` que afecte la **lectura** de archivos, se trata como urgente: mientras se corrige, se puede pedir que solo
+el ADMIN importe.
+
+**Resultado del 2026-10-14** (rama `fase-1`): pantallas **0** alertas. Backend: 8 (4 altas, 4 moderadas), ninguna nueva:
+| Librería | Gravedad | Viene de | Riesgo real aquí |
+|---|---|---|---|
+| `mysql2`, `deepmerge-ts` (vía `@prisma/config`) | Alta | `prisma` 7.10.0 (herramienta de migraciones) | Bajo: solo corre en el contenedor `migrate`, no recibe datos de usuarios. Esperar la corrección de Prisma 7 |
+| `uuid` 8.3.2 | Moderada | `exceljs` 4.4.0 y `bull` 4.16.5 | Bajo: la falla es al pasar un búfer propio a `uuid` v3/v5/v6, que el sistema no hace |
+| `bull`, `@nestjs/bull` | Moderada | dependencia directa **que no se usa** | Ninguno en uso. Quitarlas cierra 2 alertas (lo decide Carlos con el socio; ver PLAN.md, deuda 16) |
