@@ -19,7 +19,8 @@ interface PaymentLite {
 }
 interface AppliedPayment { payment: PaymentLite; amount: string }
 
-const SALES_NCF = ['B01', 'B02', 'B14', 'B15', 'B16', 'E31', 'E32', 'E44', 'E45', 'E46'];
+// Serie E fuera mientras no haya proveedor e-CF conectado: el backend la rechaza (PLAN-v0.3 §7.1)
+const SALES_NCF = ['B01', 'B02', 'B12', 'B14', 'B15', 'B16'];
 const OPEN = ['ISSUED', 'PARTIALLY_PAID', 'OVERDUE'];
 
 /**
@@ -75,7 +76,7 @@ export class InvoiceDetail {
   /** El código de anulación DGII es obligatorio cuando el comprobante lo emitió la empresa. */
   protected readonly needsVoidCode = computed(() => {
     const i = this.inv();
-    return !!i?.ncf && (['B11', 'B13'].includes(i.ncfType ?? '') || i.type !== 'PURCHASE');
+    return !!i?.ncf && (['B11', 'B13', 'B17', 'E41', 'E43', 'E47'].includes(i.ncfType ?? '') || i.type !== 'PURCHASE');
   });
 
   protected readonly issueOpen = signal(false);
@@ -128,7 +129,7 @@ export class InvoiceDetail {
     if (!i || this.busy()) return;
     const v = this.issueForm.getRawValue();
     if (i.type === 'SALE' && !v.ncfType) { this.actionError.set('Elige el tipo de comprobante (NCF) de la venta.'); return; }
-    if (i.type === 'PURCHASE' && !v.ncf.trim() && !v.ncfType) { this.actionError.set('Escribe el NCF del proveedor o elige un comprobante propio (B11 o B13).'); return; }
+    if (i.type === 'PURCHASE' && !v.ncf.trim() && !v.ncfType) { this.actionError.set('Escribe el NCF del proveedor o elige un comprobante propio (B11, B13 o B17).'); return; }
     this.busy.set(true); this.actionError.set('');
     try {
       const body = clean({ ncfType: i.type === 'SALE' || i.type === 'PURCHASE' ? v.ncfType : '', ncf: i.type === 'SALE' ? '' : v.ncf.trim().toUpperCase() });

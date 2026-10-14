@@ -1,5 +1,8 @@
 import { appendFileSync } from 'node:fs';
-const out = (...a: unknown[]) => appendFileSync('/tmp/claude-1000/-home-claude-claude-docker-proyectos-Software/0d2212e7-b317-437b-a8b4-03cda158e67b/scratchpad/qa-out.txt', a.map(String).join(' ') + '\n');
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+// Bitácora del ataque: en la carpeta temporal del sistema (antes, una ruta fija de la máquina donde se escribió)
+const out = (...a: unknown[]) => appendFileSync(join(tmpdir(), 'qa-fase1-out.txt'), a.map(String).join(' ') + '\n');
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import * as bcrypt from 'bcrypt';

@@ -4,12 +4,14 @@ import {
   Matches, Max, MaxLength, Min,
 } from 'class-validator';
 import { PartnerType, TaxIdType } from '../../generated/prisma/enums.js';
+import { NCF_TYPE_REGEX } from './ncf.dto.js';
 
 const toBool = ({ value }: { value: unknown }) =>
   value === 'true' ? true : value === 'false' ? false : value;
 // RNC/cédula: se guardan solo con dígitos ("131-12345-6" -> "131123456")
 const digitsOnly = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.replace(/[\s-]/g, '') : value;
+const upper = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim().toUpperCase() : value);
 
 export class CreatePartnerDto {
   @IsEnum(PartnerType) type: PartnerType;
@@ -28,7 +30,7 @@ export class CreatePartnerDto {
 
   @IsOptional() @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) creditLimit?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(365) paymentTermsDays?: number;
-  @IsOptional() @IsString() @MaxLength(10) defaultNcfType?: string;
+  @IsOptional() @Transform(upper) @IsString() @Matches(NCF_TYPE_REGEX, { message: 'defaultNcfType: tipo de comprobante inválido (ej: B01, B02)' }) defaultNcfType?: string;
   @IsOptional() @IsBoolean() isWithholdingAgent?: boolean;
 }
 
@@ -45,7 +47,7 @@ export class UpdatePartnerDto {
   @IsOptional() @IsString() @Matches(/^[A-Z]{2}$/) country?: string;
   @IsOptional() @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) creditLimit?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(365) paymentTermsDays?: number;
-  @IsOptional() @IsString() @MaxLength(10) defaultNcfType?: string;
+  @IsOptional() @Transform(upper) @IsString() @Matches(NCF_TYPE_REGEX, { message: 'defaultNcfType: tipo de comprobante inválido (ej: B01, B02)' }) defaultNcfType?: string;
   @IsOptional() @IsBoolean() isWithholdingAgent?: boolean;
   @IsOptional() @IsBoolean() active?: boolean;
 }

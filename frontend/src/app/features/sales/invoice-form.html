@@ -53,7 +53,7 @@
                 <option value="">{{ isNote() ? 'Automático (nota)' : partnerDefaultNcf() ? 'Según el cliente (' + partnerDefaultNcf() + ')' : 'Elige un tipo' }}</option>
                 @for (n of salesNcf(); track n.code) { <option [value]="n.code">{{ n.code }} · {{ n.name }}</option> }
               </select>
-              <span class="hint">El número de NCF se asigna al emitir.</span></div>
+              <span class="hint">El número de NCF se asigna al emitir. Las facturas electrónicas (E31, E32…) se emiten en el portal de tu proveedor y se importan.</span></div>
             <div class="field"><label for="f-inc">Tipo de ingreso (607)</label>
               <select id="f-inc" class="select" formControlName="dgiiIncomeType"><option value="">Sin clasificar</option>
                 @for (t of incomeTypes; track t[0]) { <option [value]="t[0]">{{ t[0] }} · {{ t[1] }}</option> }</select></div>
@@ -67,6 +67,7 @@
                 <option value="">No, el proveedor entrega NCF</option>
                 <option value="B11">B11 · Proveedor informal</option>
                 <option value="B13">B13 · Gastos menores</option>
+                <option value="B17">B17 · Pagos al exterior</option>
               </select></div>
             <div class="field"><label for="f-exp">Tipo de gasto (606)</label>
               <select id="f-exp" class="select" formControlName="dgiiExpenseType"><option value="">Sin clasificar</option>
