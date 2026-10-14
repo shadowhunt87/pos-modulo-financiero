@@ -45,6 +45,10 @@ const SELF_ISSUED_PURCHASE_NCF = ['B11', 'B13', 'B17', 'E41', 'E43', 'E47'];
  * recibió (PLAN-v0.3 §7.1). Se emite en el portal del proveedor y se importa el XML.
  */
 const isElectronic = (ncfType: string | null | undefined) => !!ncfType && ncfType.startsWith('E');
+/** Opciones internas, nunca del cliente: la importación de XML trae el e-NCF ya emitido por el proveedor. */
+export interface IssueOptions {
+  assignedNcf?: string;
+}
 const ECF_NOT_CONNECTED =
   'Para emitir e-CF desde el sistema falta conectar tu proveedor de facturación electrónica. ' +
   'Mientras tanto, emítelo en su portal e importa el XML aquí.';
@@ -245,20 +249,26 @@ export class InvoicingService {
   // Crear / editar / eliminar borradores
   // ------------------------------------------------------------------
   async create(dto: CreateInvoiceDto, user: AuthUser) {
-    const id = await this.prisma.$transaction(async (tx) => {
-      const built = await this.build(tx, user, {
-        ...dto, issueDate: new Date(dto.issueDate), dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
-        withholdings: dto.withholdings ?? [],
-      });
-      const inv = await tx.invoice.create({
-        data: { ...built.header, companyId: user.companyId, number: `BORR-${randomUUID().slice(0, 8)}`, status: InvoiceStatus.DRAFT, createdById: user.id },
-      });
-      await this.persistChildren(tx, inv.id, built);
-      await writeAudit(tx, user, 'Invoice', inv.id, AuditAction.CREATE, { type: inv.type, total: inv.total.toString() });
-      if (dto.issueNow) await this.issueTx(tx, inv.id, {}, user);
-      return inv.id;
-    });
+    const id = await this.prisma.$transaction((tx) => this.createInTx(tx, dto, user));
     return this.get(id, user);
+  }
+
+  /**
+   * Crea (y si `issueNow`, emite) dentro de una transacción ajena: así quien llama puede guardar
+   * algo más en la misma transacción (p. ej. el EcfDocument de una importación). Devuelve el id.
+   */
+  async createInTx(tx: Tx, dto: CreateInvoiceDto, user: AuthUser, opts: IssueOptions = {}) {
+    const built = await this.build(tx, user, {
+      ...dto, issueDate: new Date(dto.issueDate), dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+      withholdings: dto.withholdings ?? [],
+    });
+    const inv = await tx.invoice.create({
+      data: { ...built.header, companyId: user.companyId, number: `BORR-${randomUUID().slice(0, 8)}`, status: InvoiceStatus.DRAFT, createdById: user.id },
+    });
+    await this.persistChildren(tx, inv.id, built);
+    await writeAudit(tx, user, 'Invoice', inv.id, AuditAction.CREATE, { type: inv.type, total: inv.total.toString() });
+    if (dto.issueNow) await this.issueTx(tx, inv.id, {}, user, opts);
+    return inv.id;
   }
 
   async update(id: string, dto: UpdateInvoiceDto, user: AuthUser) {
@@ -315,7 +325,7 @@ export class InvoicingService {
     return this.get(id, user);
   }
 
-  private async issueTx(tx: Tx, id: string, dto: IssueInvoiceDto, user: AuthUser) {
+  private async issueTx(tx: Tx, id: string, dto: IssueInvoiceDto, user: AuthUser, opts: IssueOptions = {}) {
     const { companyId } = user;
     // Si dos usuarios emiten a la vez, solo uno pasa de DRAFT a ISSUED
     const claimed = await tx.invoice.updateMany({ where: { id, companyId, status: InvoiceStatus.DRAFT }, data: { status: InvoiceStatus.ISSUED } });
@@ -358,15 +368,17 @@ export class InvoicingService {
       if (!allowed.includes(ncfType)) {
         throw new UnprocessableEntityException(`El comprobante ${ncfType} no corresponde a ${LABEL[inv.type].toLowerCase()}; usa ${allowed.join(', ')}`);
       }
-      // Una nota modifica un comprobante de su misma serie: B04 sobre B, E34 sobre E
-      if (isNote && relatedNcf && relatedNcf[0] !== ncfType[0]) {
-        throw new UnprocessableEntityException(`La factura original tiene ${relatedNcf}: la nota debe ser de la serie ${relatedNcf[0]}`);
+      // Un e-CF solo se corrige con nota electrónica (E33/E34). Al revés sí se puede: pasado el fin de
+      // las B, una E34 corrige una B01 (PLAN-v0.3 §4.2, N1)
+      if (isNote && relatedNcf?.startsWith('E') && !isElectronic(ncfType)) {
+        throw new UnprocessableEntityException(`La factura original tiene ${relatedNcf}: la nota debe ser de la serie E`);
       }
       if ((ncfType === 'B01' || ncfType === 'E31') && !partner.taxId) {
         throw new UnprocessableEntityException('El crédito fiscal requiere que el cliente tenga RNC/cédula');
       }
-      if (isElectronic(ncfType)) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
-      ncf = (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
+      ncf = isElectronic(ncfType)
+        ? this.assigned(ncfType, opts)
+        : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else if (ncf) {
       ncfType = ncf.slice(0, 3);
       if (SELF_ISSUED_PURCHASE_NCF.includes(ncfType)) {
@@ -378,8 +390,9 @@ export class InvoicingService {
       if (dup) throw new ConflictException(`El NCF ${ncf} ya está registrado para este proveedor (${dup.number})`);
     } else if (ncfType && SELF_ISSUED_PURCHASE_NCF.includes(ncfType)) {
       // Proveedor informal / gasto menor / pago al exterior: el comprobante lo emite la empresa
-      if (isElectronic(ncfType)) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
-      ncf = (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
+      ncf = isElectronic(ncfType)
+        ? this.assigned(ncfType, opts)
+        : (await this.ncf.consumeNext(tx, companyId, ncfType, inv.issueDate)).ncf;
     } else {
       throw new UnprocessableEntityException('Las compras requieren el NCF del proveedor (o ncfType B11/B13/B17 si lo emites tú)');
     }
@@ -547,6 +560,13 @@ export class InvoicingService {
     return this.get(id, user);
   }
 
+  /** e-NCF propio: solo existe si lo trae la importación (ya emitido en el portal del proveedor). */
+  private assigned(ncfType: string, opts: IssueOptions): string {
+    if (!opts.assignedNcf) throw new UnprocessableEntityException(ECF_NOT_CONNECTED);
+    if (opts.assignedNcf.slice(0, 3) !== ncfType) throw new UnprocessableEntityException(`El e-NCF ${opts.assignedNcf} no es del tipo ${ncfType}`);
+    return opts.assignedNcf;
+  }
+
   /** Una nota/factura de venta siempre usa NCF propio; esto solo distingue compras con NCF del proveedor. */
   private async isSupplierNcf(tx: Tx, inv: { partnerId: string; relatedInvoiceId: string | null; type: InvoiceType }) {
     if (inv.type === InvoiceType.SALE) return false;
@@ -585,6 +605,7 @@ export class InvoicingService {
         withholdings: { include: { taxRate: { select: { name: true, rate: true } } } },
         journalEntry: { select: { id: true, number: true, status: true } },
         relatedInvoice: { select: { id: true, number: true, ncf: true } },
+        ecfDocument: { select: { status: true, origin: true, verification: true, eNcf: true, issuerRnc: true, createdAt: true } },
       },
     });
     if (!inv) throw new NotFoundException('Factura no encontrada');

@@ -127,6 +127,28 @@ Los botones de nota y de anular solo aparecen en facturas ya emitidas y sin anul
 
 [CAPTURA: ventana "Anular factura" con Motivo y Código de anulación DGII]
 
+## Importar facturas electrónicas (XML)
+
+Las facturas electrónicas (las que empiezan con **E**, como E310000000001) las firma y las envía a la DGII tu
+proveedor de facturación electrónica. Mientras ese proveedor no esté conectado al sistema, el camino es:
+
+1. Emite la factura en el **portal de tu proveedor** (o recibe la de tu suplidor) y descarga su **XML**.
+2. Entra a **Ventas y compras → Importar facturas electrónicas** y pulsa **Elegir archivos XML**. Puedes subir hasta
+   10 a la vez, de hasta 1 MB cada uno.
+3. Revisa lo que muestra cada archivo: si es venta o compra, el cliente o proveedor (si no existe, dice **Se creará**),
+   el total y si modifica otra factura.
+4. En una compra, elige el **Tipo de gasto (606)**; en una venta, el **Tipo de ingreso (607)**.
+5. Pulsa **Importar y contabilizar**. La factura queda emitida, con su asiento, y marcada **No verificado con la DGII**
+   (el sistema no comprueba la firma del XML).
+
+Si el archivo tiene un problema (no es de tu empresa, el total no cuadra, ya se importó, falta el impuesto), lo dice
+en rojo y no deja importarlo hasta corregirlo. **Descartar** lo quita de la lista sin guardar nada.
+
+**Una factura electrónica no se anula.** Se corrige con una **nota de crédito E34**: emítela en el portal de tu
+proveedor e impórtala aquí. El sistema la enlaza con la factura que corrige y le descuenta el saldo.
+
+[CAPTURA: pantalla "Importar facturas electrónicas" con un archivo revisado]
+
 ## Imprimir y adjuntar archivos
 
 - **Imprimir** (arriba, en el detalle) abre la ventana de impresión del navegador.

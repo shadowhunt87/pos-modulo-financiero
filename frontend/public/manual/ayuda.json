@@ -51,6 +51,10 @@
       "seccion": "clientes-y-proveedores", "ancla": "ver-tus-clientes-y-proveedores",
       "siguiente": { "texto": "Crea una factura para uno de tus clientes", "ruta": "/invoices/new" }
     },
+    "/ecf/import": {
+      "seccion": "facturas", "ancla": "importar-facturas-electronicas-xml",
+      "siguiente": { "texto": "Revisa las facturas importadas", "ruta": "/invoices" }
+    },
     "/invoices": {
       "seccion": "facturas", "ancla": "buscar-facturas",
       "siguiente": { "texto": "Registra el cobro de una factura", "ruta": "/payments/new" }
@@ -186,6 +190,10 @@
   },
 
   "campos": {
+    "ecf.tipoGasto": {
+      "texto": "La DGII pide clasificar cada compra en el 606 (por ejemplo, 02 servicios o 09 costo de venta). Si no sabes cuál, pregúntale a tu contadora; se puede cambiar en la factura.",
+      "seccion": "facturas", "ancla": "importar-facturas-electronicas-xml"
+    },
     "factura.tipoNcf": {
       "texto": "El NCF es el número de comprobante que exige la DGII en cada venta. Elige B01 (crédito fiscal) si tu cliente es una empresa que va a deducir el ITBIS; B02 (consumo) si le vendes a una persona final. El número se asigna solo al emitir.",
       "seccion": "facturas", "ancla": "que-es-el-ncf"
@@ -245,6 +253,21 @@
   },
 
   "errores": [
+    {
+      "patron": "falta conectar tu proveedor de facturación electrónica",
+      "explicacion": "Las facturas electrónicas (E31, E32…) las firma y envía a la DGII tu proveedor de facturación electrónica. Mientras no esté conectado, emítela en su portal, descarga el XML y súbelo aquí.",
+      "enlace": { "texto": "Importar facturas electrónicas", "ruta": "/ecf/import" }
+    },
+    {
+      "patron": "Este e-CF ya está registrado",
+      "explicacion": "Ese comprobante ya entró al sistema (quizás alguien lo importó antes). Búscalo por su e-NCF en Facturas; no hace falta importarlo otra vez.",
+      "enlace": { "texto": "Ir a Facturas", "ruta": "/invoices" }
+    },
+    {
+      "patron": "factura es electrónica",
+      "explicacion": "La ley no permite anular un comprobante electrónico: se corrige con una nota de crédito E34. Emítela en el portal de tu proveedor e impórtala; el sistema la enlaza a esta factura y le descuenta el saldo.",
+      "enlace": { "texto": "Importar facturas electrónicas", "ruta": "/ecf/import" }
+    },
     {
       "patron": "Credenciales inválidas",
       "explicacion": "El correo o la clave no coinciden. Revisa que no haya espacios al principio o al final si los copiaste y pegaste, y que la clave esté en las mayúsculas correctas. Después de 5 intentos fallidos el acceso se bloquea 15 minutos."

@@ -15,6 +15,7 @@ export const NAV: NavGroup[] = [
     { label: 'Facturas', path: '/invoices' },
     { label: 'Cobros y pagos', path: '/payments' },
     { label: 'Lo que me deben y lo que debo', path: '/receivables' },
+    { label: 'Importar facturas electrónicas', path: '/ecf/import' },
   ] },
   { title: 'Bancos y caja', items: [
     { label: 'Bancos y cajas', path: '/bank-accounts' },

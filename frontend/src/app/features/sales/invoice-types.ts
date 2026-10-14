@@ -21,6 +21,8 @@ export interface InvoiceFull extends Omit<InvoiceRow, 'partner'> {
   notes: string | null; journalEntryId: string | null; issuedAt: string | null; voidedAt: string | null; voidReason: string | null; voidReasonCode: string | null;
   journalEntry: { id: string; number: string; status: string } | null;
   relatedInvoice: { id: string; number: string; ncf: string | null } | null;
+  // e-CF importado de XML (PLAN-v0.3 §7.2); null en facturas serie B
+  ecfDocument?: { status: string; origin: string; verification: 'UNVERIFIED' | 'VERIFIED'; eNcf: string; issuerRnc: string; createdAt: string } | null;
 }
 export interface NcfType { code: string; name: string }
 

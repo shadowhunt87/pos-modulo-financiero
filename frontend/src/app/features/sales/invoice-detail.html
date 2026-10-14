@@ -20,11 +20,13 @@
           <button type="button" class="btn btn-danger" (click)="remove()">Eliminar borrador</button>
           <button type="button" class="btn btn-primary" (click)="openIssue()">Emitir factura</button>
         }
-        @if (canMakeNote()) {
+        @if (canMakeNote() && isEcf() && !isPurchase()) {
+          <a class="btn" routerLink="/ecf/import">Importar nota de crédito E34</a>
+        } @else if (canMakeNote()) {
           <a class="btn" routerLink="/invoices/new" [queryParams]="{ type: 'CREDIT_NOTE', related: i.id }">Nota de crédito</a>
           <a class="btn" routerLink="/invoices/new" [queryParams]="{ type: 'DEBIT_NOTE', related: i.id }">Nota de débito</a>
         }
-        @if (isOpen() && canVoid) { <button type="button" class="btn btn-danger" (click)="openVoid()">Anular</button> }
+        @if (isOpen() && canVoid && !isEcf()) { <button type="button" class="btn btn-danger" (click)="openVoid()">Anular</button> }
       </div>
     </div>
 
@@ -32,6 +34,13 @@
       <div class="notice neg" role="status" style="margin-bottom:16px">
         <div><strong>Factura anulada</strong> el {{ i.voidedAt | fdate }}.
           Motivo: {{ i.voidReason }}@if (i.voidReasonCode) { <span> (código {{ i.voidReasonCode }})</span> }</div>
+      </div>
+    }
+    @if (i.ecfDocument; as e) {
+      <div class="notice" [class.warn]="e.verification === 'UNVERIFIED'" [class.info]="e.verification === 'VERIFIED'" role="status" style="margin-bottom:16px">
+        <div><strong>Factura electrónica {{ e.origin === 'IMPORTED' ? 'importada de XML' : '' }}</strong> ·
+          {{ e.verification === 'UNVERIFIED' ? 'No verificada con la DGII: el sistema no comprobó la firma del XML.' : 'Verificada con la DGII.' }}
+          @if (!isPurchase()) { Un e-CF no se anula: para corregirlo, emite una nota de crédito E34 en el portal de tu proveedor e impórtala. }</div>
       </div>
     }
     @if (isDraft()) {

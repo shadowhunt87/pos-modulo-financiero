@@ -55,6 +55,13 @@ export class Api {
     return this.http.post<T>(this.url(path), fd);
   }
 
+  /** Sube varios archivos en un solo envío (multipart), todos en el mismo campo. */
+  uploadFiles<T>(path: string, files: File[], field = 'files'): Observable<T> {
+    const fd = new FormData();
+    for (const f of files) fd.append(field, f, f.name);
+    return this.http.post<T>(this.url(path), fd);
+  }
+
   /** Versión en promesa de get (cómoda dentro de async/await). */
   getP<T>(path: string, q?: Query): Promise<T> {
     return firstValueFrom(this.get<T>(path, q));

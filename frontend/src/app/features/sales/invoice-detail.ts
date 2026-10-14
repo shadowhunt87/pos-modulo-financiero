@@ -69,6 +69,8 @@ export class InvoiceDetail {
   protected readonly isOpen = computed(() => OPEN.includes(this.inv()?.status ?? ''));
   protected readonly isNote = computed(() => ['CREDIT_NOTE', 'DEBIT_NOTE'].includes(this.inv()?.type ?? ''));
   protected readonly canMakeNote = computed(() => this.canWrite && this.isOpen() && ['SALE', 'PURCHASE'].includes(this.inv()?.type ?? ''));
+  /** Comprobante electrónico: no se anula; se corrige con una nota E34 emitida en el portal e importada. */
+  protected readonly isEcf = computed(() => !!this.inv()?.ncf?.startsWith('E'));
   protected readonly isPurchase = computed(() => this.inv()?.type === 'PURCHASE');
   protected readonly salesNcf = computed(() => this.ncfTypes().filter((n) => SALES_NCF.includes(n.code)));
   protected readonly lineTotal = computed(() => sumDec(this.inv()?.lines.map((l) => l.total) ?? []).toFixed(2));

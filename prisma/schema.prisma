@@ -50,6 +50,8 @@ model Company {
   financialSnapshots  FinancialRatioSnapshot[]
   accountingSettings  AccountingSettings?
   feedbacks           Feedback[]
+  ecfDocuments        EcfDocument[]
+  ecfImports          EcfImport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,15 +115,15 @@ model DocumentSequence {
 // ============================================================
 
 model User {
-  id          String    @id @default(uuid())
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
-  email       String    @unique
-  password    String
-  name        String
-  role        UserRole  @default(ACCOUNTANT)
-  active      Boolean   @default(true)
-  lastLoginAt DateTime?
+  id                String    @id @default(uuid())
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id])
+  email             String    @unique
+  password          String
+  name              String
+  role              UserRole  @default(ACCOUNTANT)
+  active            Boolean   @default(true)
+  lastLoginAt       DateTime?
   // Los tokens emitidos antes de esta fecha dejan de servir (cambio/reseteo de clave)
   passwordChangedAt DateTime?
 
@@ -635,7 +637,8 @@ model Invoice {
   voidReasonCode String? // código de anulación DGII (608)
 
   createdById String
-  createdBy   User   @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  createdBy   User         @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  ecfDocument EcfDocument?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1137,4 +1140,78 @@ enum FeedbackStatus {
   DONE
   WONT_DO
   DUPLICATE
+}
+
+// ============================================================
+// FACTURACIÓN ELECTRÓNICA (e-CF) — PLAN-v0.3 §7.2
+// ============================================================
+
+// Estado e-CF de una factura. Se crea en la MISMA transacción que la factura (A9).
+model EcfDocument {
+  id           String          @id @default(uuid())
+  companyId    String
+  company      Company         @relation(fields: [companyId], references: [id])
+  invoiceId    String          @unique
+  invoice      Invoice         @relation(fields: [invoiceId], references: [id])
+  ecfType      String // "31", "34", "41"...
+  eNcf         String
+  status       EcfStatus
+  origin       EcfOrigin
+  verification EcfVerification @default(UNVERIFIED)
+  issuerRnc    String // RNC de quien emitió el e-CF (la empresa o el proveedor)
+  securityCode String?
+  xmlFileUrl   String? // clave del XML guardado (R12: se conserva el documento original)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // El mismo e-CF no entra dos veces, aunque lleguen dos importaciones a la vez (N7, D36)
+  @@unique([companyId, issuerRnc, eNcf])
+  @@index([companyId, status])
+}
+
+// Enum completo desde ya para no tener que ampliarlo después (ALTER TYPE)
+enum EcfStatus {
+  IMPORTED
+  PENDING_SEND
+  SENDING
+  ACCEPTED
+  ACCEPTED_CONDITIONAL
+  REJECTED
+  CONTINGENCY
+  VOID_UNUSED
+}
+
+enum EcfOrigin {
+  EMITTED
+  IMPORTED
+}
+
+// El sistema no comprueba la firma del XML (A8, D40): lo importado queda "No verificado"
+enum EcfVerification {
+  UNVERIFIED
+  VERIFIED
+}
+
+// Importación preparada: el XML ya está guardado y revisado; al confirmar solo se manda este id
+model EcfImport {
+  id          String          @id @default(uuid())
+  companyId   String
+  company     Company         @relation(fields: [companyId], references: [id])
+  createdById String
+  fileName    String
+  sha256      String
+  storageKey  String // dónde quedó el XML
+  preview     Json // lo que se va a registrar, tal como se mostró
+  status      EcfImportStatus @default(PREPARED)
+  invoiceId   String? // la factura creada al confirmar
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([companyId, createdAt])
+}
+
+enum EcfImportStatus {
+  PREPARED
+  IMPORTED
+  DISCARDED
 }

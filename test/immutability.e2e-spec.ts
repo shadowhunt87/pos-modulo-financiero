@@ -146,7 +146,10 @@ describe('Corregir sin borrar: reverso y nota de crédito (e2e)', () => {
     });
 
     it('factura electrónica (E31): 422 siempre, con la guía de nota de crédito', async () => {
-      const inv = await sale('2030-01-12', 1000, 'E31');
+      // Sin proveedor, el sistema ya no numera e-CF: la factura E llega importada de XML (N3). Se simula así
+      const inv = await sale('2030-01-12', 1000);
+      await prisma.invoice.update({ where: { id: inv.id, companyId: companyA }, data: { ncf: 'E310000000001', ncfType: 'E31' } });
+      inv.ncf = 'E310000000001';
       expect(inv.ncf).toMatch(/^E31/);
       const res = await api('post', `/invoices/${inv.id}/void`, 'appr').send({ reason: 'x', reasonCode: '01' }).expect(422);
       expect(res.body.message).toMatch(/electrónica.*nota de crédito/);
