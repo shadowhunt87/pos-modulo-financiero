@@ -1,7 +1,8 @@
 # Punto de partida: qué se hizo, dónde quedamos y por dónde seguir
 
-Última actualización: **14-oct-2026**, rama local `integracion`, commit `b3a45e0`.
+Última actualización: **15-oct-2026**, rama `main`, commit `afe9af2` (la rama `integracion` ya se integró en `main`).
 Léelo antes de retomar el trabajo en este módulo, seas una persona o una IA. Al cerrar una etapa, actualízalo.
+**El diario de cada sesión está en `docs/BITACORA.md`** (lo último que pasó, arriba). Al cerrar una sesión, agregar ahí una entrada.
 
 ---
 
@@ -91,20 +92,10 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 
 ## 6. Dónde quedamos (14-oct-2026)
 
-1. **La base local de Carlos (`financial_db`) quedó a medio arreglar.** Tenía aplicada una migración del borrador
-   `wp/N3-ecf-borrador` (`20261014120000_ecf_electronic_invoicing`, «no fusionar») que choca con las reales, y le faltaban 12
-   migraciones. Ya se hicieron tres cosas:
-   - el respaldo, en `~/respaldos-financiero/financial_db_antes-de-reparar_20261014-2004.dump`;
-   - el script `scripts/reparar-borrador-ecf.sql`;
-   - la prueba del script en una copia, donde la app arrancó sin errores.
-
-   **Falta que Carlos lo corra**, porque la IA no tiene permiso para borrar en su base:
-   ```
-   docker exec -i financial-db psql -U financial_user -d financial_db -v ON_ERROR_STOP=1 < scripts/reparar-borrador-ecf.sql
-   npx prisma migrate deploy
-   ```
-   Para comprobarlo, `npx prisma migrate status` debe decir «Database schema is up to date».
-2. **Carlos no recuerda su contraseña local.** La solución es `node --env-file=.env dist/cli/password-reset.js --lista` y luego
+1. **La base local (`financial_db`) quedó reparada el 15-oct-2026**: `migrate status` dice «up to date» y ya se puede entrar.
+   Quedan restos vacíos del borrador e-CF que no estorban. El detalle y cómo limpiarlos están en `docs/BITACORA.md`
+   (entrada del 15-oct).
+2. **Contraseña local olvidada:** el 15-oct se le puso una clave temporal al admin (ver `BITACORA.md`). Para la próxima vez, la solución es `node --env-file=.env dist/cli/password-reset.js --lista` y luego
    `--email <correo> --motivo "..."`. Lo corre él en su terminal, para que la clave no quede en la conversación.
 3. **Proveedor de e-CF:** Carlos tiene dos candidatos, pero los contrata el cliente. El módulo ya acepta cualquier API web
    (JSON o XML; token, usuario y clave, inicio de sesión o API key). Si da los nombres, se revisa su documentación pública y se
@@ -113,11 +104,11 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 
 ## 7. Qué falta y por dónde seguir (en este orden)
 
-1. **Terminar el punto 6.1** (reparar la base local) y entrar a la aplicación para revisarla a mano.
+1. **Revisar la aplicación a mano** (la base ya está reparada) y anotar lo que haya que corregir en `docs/BITACORA.md`.
 2. **QA y revisión de seguridad formal** de todo lo de esta etapa: agentes `qa` y `seguridad` según `CLAUDE.md`. Carlos lo dejó
    para después; preguntarle antes de empezar.
-3. **Push de `integracion` y fusión hacia `fase-1` y `main`**, solo con permiso de Carlos. Antes hay que avisarle al socio con
-   `AVISO-SOCIO-V03.md`.
+3. **El trabajo de `integracion` ya está en `main`** y en los dos remotos (`origin` y `mio`). Falta confirmar que el socio
+   recibió `AVISO-SOCIO-V03.md` y decidir qué pasa con `fase-1`.
 4. **Integración con el taller** (fuera del PDF; depende del acuerdo con el socio **a más tardar el 23-oct**, T0). Paquetes
    pendientes, detallados en `docs/INTEGRACION-TALLER.md` y `docs/tablero-paquetes.csv`:
    - T0b, T1, T1s;

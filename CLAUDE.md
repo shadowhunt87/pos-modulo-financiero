@@ -1,6 +1,7 @@
 # Módulo Financiero — instrucciones para Claude y sus agentes
 
-- **Para retomar el trabajo:** leer primero `docs/PUNTO-DE-PARTIDA.md` (qué se hizo, dónde quedamos y por dónde seguir).
+- **Para retomar el trabajo:** leer primero `docs/PUNTO-DE-PARTIDA.md` (qué se hizo, dónde quedamos y por dónde seguir)
+  y la última entrada de `docs/BITACORA.md` (diario por sesión). Al cerrar una sesión, agregar una entrada a la bitácora.
 - **Guía de producto obligatoria:** `docs/GUIA-PRODUCTO.md`. Todo plan, diseño, desarrollo, prueba y
   documentación se valida contra sus 14 principios y contra el checklist de aceptación por pantalla (sección 6).
   Si algo la contradice, se explica por qué y lo decide Carlos.
