@@ -73,6 +73,7 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 | **N7, N7b, N7c** | e-CF con proveedor certificado: conexión cifrada, adaptadores sandbox y HTTP configurable, cola con reintentos y contingencia; la cola ya no tumba la app si falla |
 | **D4** | notas de versión dentro del sistema («Novedades») |
 | **S1b** | `dist/cli/password-reset.js` (rescate de contraseña) y el seed declarado en `prisma.config.ts` (Prisma 7) |
+| **UI v2** | menú por secciones en acordeón (`frontend/src/app/layout/nav.ts`; al mover una opción, actualizar las rutas «Sección › Opción» de `public/manual`), diseño renovado con Inter (`@fontsource-variable/inter`), avisos fiscales agrupados |
 | docs | `AVISO-SOCIO-N1.md` y `AVISO-SOCIO-V03.md` (archivos del socio que cambiaron), `scripts/reparar-borrador-ecf.sql` |
 
 ### Dónde está cada cosa
