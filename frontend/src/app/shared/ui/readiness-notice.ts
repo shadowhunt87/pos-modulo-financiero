@@ -10,8 +10,8 @@ import { SetupState } from '../../core/setup-status';
   template: `
     @if (missing().length) {
       <div class="notice warn" role="status">
-        <strong>{{ action() }} falta:</strong>
-        @for (g of missing(); track g.key; let last = $last) { {{ g.title }} (<a [routerLink]="g.route">configurar</a>){{ last ? '.' : ',' }} }
+        <span><strong>{{ action() }} falta:</strong>
+        @for (g of missing(); track g.key; let last = $last) { {{ g.title }} (<a [routerLink]="g.route">configurar</a>){{ last ? '.' : ',' }} }</span>
       </div>
     }
   `,

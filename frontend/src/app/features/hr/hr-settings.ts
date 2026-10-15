@@ -58,7 +58,7 @@ type SettingsResponse = Record<AccountKey, { accountId: string } | null> & { srl
           </form>
           <ul class="plain">
             @for (d of departments(); track d.id) {
-              <li><span [class.dim]="!d.active">{{ d.name }}</span> <span class="dim">· {{ d._count?.employees ?? 0 }} {{ (d._count?.employees ?? 0) === 1 ? 'empleado' : 'empleados' }}</span>
+              <li><span [class.dim]="!d.active">{{ d.name }}</span>{{ ' ' }}<span class="dim">· {{ d._count?.employees ?? 0 }} {{ (d._count?.employees ?? 0) === 1 ? 'empleado' : 'empleados' }}</span>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="toggleDepartment(d)">{{ d.active ? 'Desactivar' : 'Activar' }}</button></li>
             } @empty { <li class="dim">Sin departamentos. Son opcionales: sirven para agrupar empleados.</li> }
           </ul>

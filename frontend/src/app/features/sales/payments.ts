@@ -35,8 +35,8 @@ interface PaymentRow {
           <select id="f-st" class="select" formControlName="status"><option value="">Todos</option>@for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
         <div class="field wide"><span class="label">Cliente / proveedor</span>
           <app-combobox formControlName="partnerId" [options]="partnerOptions()" placeholder="Todos los clientes y proveedores" /></div>
-        <div class="field"><label for="f-from">Desde</label><input id="f-from" class="input" type="date" formControlName="from" /></div>
-        <div class="field"><label for="f-to">Hasta</label><input id="f-to" class="input" type="date" formControlName="to" /></div>
+        <div class="field"><label for="f-from">Desde</label><app-date-input id="f-from" formControlName="from" /></div>
+        <div class="field"><label for="f-to">Hasta</label><app-date-input id="f-to" formControlName="to" /></div>
       </form>
 
       <app-error-notice [error]="error()" />

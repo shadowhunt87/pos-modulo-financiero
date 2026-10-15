@@ -22,7 +22,7 @@ import { ADJUSTMENT_STATUS, qty } from './labels';
       @if (adj(); as a) {
         <div class="page-head">
           <div>
-            <h1>Ajuste {{ a.number }} <span class="badge" [class.pos]="a.status === 'POSTED'" [class.neg]="a.status === 'VOIDED'">{{ a.status | lbl: ADJUSTMENT_STATUS }}</span></h1>
+            <h1>Ajuste {{ a.number }} <app-status [value]="a.status" [map]="ADJUSTMENT_STATUS" /></h1>
             <p class="sub">{{ a.date | fdate }} · {{ a.reason }}</p>
           </div>
           <div class="btn-row">

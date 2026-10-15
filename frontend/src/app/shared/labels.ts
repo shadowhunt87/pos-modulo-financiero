@@ -49,7 +49,7 @@ export function tone(status: string | null | undefined): Tone {
   switch (status) {
     case 'POSTED': case 'PAID': case 'COMPLETED': case 'APPROVED': case 'RECONCILED': case 'MATCHED': case 'ACTIVE': case 'CLOSED_OK': return 'pos';
     case 'VOIDED': case 'REJECTED': case 'OVERDUE': return 'neg';
-    case 'DRAFT': case 'PENDING': case 'PARTIALLY_PAID': return 'warn';
+    case 'DRAFT': case 'PENDING': case 'PARTIALLY_PAID': case 'SUSPENDED': return 'warn';
     case 'ISSUED': case 'OPEN': return 'info';
     default: return '';
   }

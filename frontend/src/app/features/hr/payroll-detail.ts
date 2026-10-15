@@ -29,6 +29,9 @@ const PARAM_LABEL: Record<string, string> = {
     .cards .panel { padding: 14px 16px; margin: 0; } .cards .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .item { display: grid; gap: 10px; grid-template-columns: minmax(200px, 2fr) 140px minmax(160px, 2fr) 36px; align-items: end; margin-bottom: 10px; }
     @media (max-width: 700px) { .item { grid-template-columns: 1fr 1fr; } }
+    .params { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 32px; margin: 0; }
+    .params > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+    .params dt { color: var(--text-dim); } .params dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
   `,
   template: `
     <div class="page">
@@ -37,7 +40,7 @@ const PARAM_LABEL: Record<string, string> = {
         <div class="page-head">
           <div>
             <h1>{{ r.type | lbl: RUN_TYPE }} {{ r.status === 'DRAFT' ? '(borrador)' : r.number }}
-              <span class="badge" [class]="tone(r.status)">{{ r.status | lbl: RUN_STATUS }}</span></h1>
+              <app-status [value]="r.status" [map]="RUN_STATUS" /></h1>
             <p class="sub">
               @if (r.type === 'REGULAR') { {{ r.frequency | lbl: PAY_FREQUENCY }} · }
               {{ r.periodStart | fdate }} – {{ r.periodEnd | fdate }} · se paga el {{ r.payDate | fdate }}
@@ -60,12 +63,12 @@ const PARAM_LABEL: Record<string, string> = {
         @if (r.status === 'VOIDED') { <div class="notice neg" role="status">Anulada: {{ r.voidReason }}. Sus asientos se reversaron.</div> }
 
         <div class="cards">
-          <div class="panel"><div class="dim">Bruto</div><div class="v">{{ r.grossTotal | money }}</div></div>
-          <div class="panel"><div class="dim">TSS del empleado</div><div class="v">{{ r.employeeTssTotal | money }}</div></div>
-          <div class="panel"><div class="dim">ISR retenido</div><div class="v">{{ r.isrTotal | money }}</div></div>
-          <div class="panel"><div class="dim">Otros descuentos</div><div class="v">{{ r.otherDeductionsTotal | money }}</div></div>
-          <div class="panel"><div class="dim">Neto a pagar</div><div class="v">{{ r.netTotal | money }}</div></div>
-          <div class="panel"><div class="dim">Aportes del empleador</div><div class="v">{{ r.employerTotal | money }}</div></div>
+          <div class="panel"><div class="dim">Bruto</div><div class="v"><span class="cur">RD$</span>{{ r.grossTotal | money }}</div></div>
+          <div class="panel"><div class="dim">TSS del empleado</div><div class="v"><span class="cur">RD$</span>{{ r.employeeTssTotal | money }}</div></div>
+          <div class="panel"><div class="dim">ISR retenido</div><div class="v"><span class="cur">RD$</span>{{ r.isrTotal | money }}</div></div>
+          <div class="panel"><div class="dim">Otros descuentos</div><div class="v"><span class="cur">RD$</span>{{ r.otherDeductionsTotal | money }}</div></div>
+          <div class="panel"><div class="dim">Neto a pagar</div><div class="v"><span class="cur">RD$</span>{{ r.netTotal | money }}</div></div>
+          <div class="panel"><div class="dim">Aportes del empleador</div><div class="v"><span class="cur">RD$</span>{{ r.employerTotal | money }}</div></div>
         </div>
 
         <section class="panel">
@@ -106,15 +109,15 @@ const PARAM_LABEL: Record<string, string> = {
 
         @if (r.parameters?.length) {
           <section class="panel" style="margin-top:16px">
-            <div class="panel-head"><h2>Valores legales usados</h2></div>
+            <div class="panel-head"><h2>Valores legales usados</h2>
+              @if (pendingParams(r) > 0) { <span class="badge warn">{{ pendingParams(r) }} por validar con la contadora</span> }</div>
             <div class="panel-pad">
-              <p class="hint">Salen de Valores fiscales, vigentes al cierre del período. «Por validar» significa que la contadora todavía no los confirmó.</p>
-              <ul style="margin:8px 0 0;padding-left:18px">
+              <dl class="params">
                 @for (p of r.parameters; track p.key) {
-                  <li>{{ paramLabel(p.key) }}@if (p.value) {: <strong>{{ paramValue(p.key, p.value) }}</strong>}
-                    @if (p.status === 'POR_VALIDAR') { <span class="badge warn" style="margin-left:6px">Por validar</span> }</li>
+                  <div><dt>{{ paramLabel(p.key) }}</dt><dd>{{ p.value ? paramValue(p.key, p.value) : 'Tabla anual' }}</dd></div>
                 }
-              </ul>
+              </dl>
+              <p class="hint" style="margin-top:12px">Salen de Valores fiscales, vigentes al cierre del período, y quedan guardados con esta nómina.</p>
             </div>
           </section>
         }
@@ -152,7 +155,7 @@ const PARAM_LABEL: Record<string, string> = {
           <div class="field span-2"><label for="p-bank">Cuenta bancaria</label>
             <select id="p-bank" class="select" formControlName="bankAccountId"><option value="">Elige…</option>
               @for (b of banks(); track b.id) { <option [value]="b.id">{{ b.bankName }} {{ b.accountNumber }}</option> }</select></div>
-          <div class="field"><label for="p-date">Fecha del pago</label><input id="p-date" class="input" type="date" formControlName="date" /></div>
+          <div class="field"><label for="p-date">Fecha del pago</label><app-date-input id="p-date" formControlName="date" /></div>
         </div>
         @if (payError()) { <app-error-notice style="display:block;margin-top:12px" [error]="payError()" /> }
       </form>
@@ -197,8 +200,8 @@ export class PayrollDetail {
     this.api.getP<PayrollConcept[]>('/hr/payroll-concepts').then((c) => this.concepts.set(c)).catch(() => undefined);
   }
 
-  protected tone(s: string): string { return s === 'PAID' ? 'pos' : s === 'POSTED' ? 'info' : s === 'VOIDED' ? 'neg' : 'warn'; }
   protected paramLabel(key: string): string { return PARAM_LABEL[key] ?? key; }
+  protected pendingParams(r: PayrollRun): number { return (r.parameters ?? []).filter((p) => p.status === 'POR_VALIDAR').length; }
   /** Tasas con %, montos con RD$ y topes en salarios mínimos. */
   protected paramValue(key: string, value: string): string {
     if (key === 'TSS_SALARIO_MINIMO_COTIZABLE') return `RD$${money(value)}`;

@@ -43,7 +43,7 @@ const fmt = (type: string, n: number) => `${type}${String(n).padStart(type.start
           <div class="field"><label for="g-from">Desde (número) <app-field-help text="Solo el número final de la autorización, sin la letra ni el tipo. Ej.: si dice B0100000051, escribe 51." /></label>
             <input id="g-from" class="input" type="number" min="1" [value]="from()" (input)="from.set(+$any($event.target).value)" /></div>
           <div class="field"><label for="g-to">Hasta (número)</label><input id="g-to" class="input" type="number" min="1" [value]="to()" (input)="to.set(+$any($event.target).value)" /></div>
-          <div class="field"><label for="g-exp">Vence el (opcional)</label><input id="g-exp" class="input" type="date" [value]="exp()" (input)="exp.set($any($event.target).value)" /></div>
+          <div class="field"><label for="g-exp">Vence el (opcional)</label><app-date-input id="g-exp" [value]="exp()" (dateChange)="exp.set($event)" /></div>
           @if (problem()) { <span class="error-text">{{ problem() }}</span> }
           @else { <p class="notice info" role="status">Tus facturas saldrán con <span class="mono">{{ preview() }}</span>… ({{ count() }} comprobantes).</p> }
           <app-error-notice [error]="error()" />

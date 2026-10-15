@@ -42,9 +42,9 @@ const entries = (m: Record<string, string>) => Object.entries(m).map(([value, la
               <select id="fp-lf" class="select" formControlName="legalForm"><option value="">Elige…</option>@for (o of LF; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
             <div class="field"><label for="fp-fw">Marco contable <app-field-help text="La mayoría usa NIIF para las PYMES. Las que cotizan en bolsa o están reguladas por la SIMV usan NIIF completas. Si no sabes, pregúntale a tu contadora." /></label>
               <select id="fp-fw" class="select" formControlName="accountingFramework"><option value="">Elige…</option>@for (o of FW; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>
-            <div class="field"><label for="fp-ad">Desde cuándo lo usas (opcional)</label><input id="fp-ad" class="input" type="date" formControlName="frameworkAdoptionDate" /></div>
+            <div class="field"><label for="fp-ad">Desde cuándo lo usas (opcional)</label><app-date-input id="fp-ad" formControlName="frameworkAdoptionDate" /></div>
             <div class="field"><label for="fp-ecf">Emites e-CF desde (opcional) <app-field-help text="La fecha en que la DGII te autorizó como emisor de facturas electrónicas. Déjala vacía si todavía usas comprobantes B." /></label>
-              <input id="fp-ecf" class="input" type="date" formControlName="ecfEmitterSince" /></div>
+              <app-date-input id="fp-ecf" formControlName="ecfEmitterSince" /></div>
             <div class="field"><label class="check" for="fp-wa"><input id="fp-wa" type="checkbox" formControlName="isWithholdingAgent" /> Soy agente de retención <app-field-help text="Márcalo si la DGII te designó para retener impuestos a tus proveedores (por ejemplo, el 30 % del ITBIS de servicios)." /></label></div>
           </div>
           <app-error-notice [error]="error()" />

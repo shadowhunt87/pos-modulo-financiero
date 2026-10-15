@@ -43,7 +43,7 @@ import { autoDistribute, loadOpenInvoices, OpenInvoice, toAllocations } from './
                 <a class="btn btn-ghost btn-sm" href="/partners" target="_blank" rel="noopener">Ir a clientes y proveedores</a>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="refreshPartners()">Actualizar lista</button>
               </div></div>
-            <div class="field"><label for="p-date">Fecha</label><input id="p-date" class="input" type="date" formControlName="date" />
+            <div class="field"><label for="p-date">Fecha</label><app-date-input id="p-date" formControlName="date" />
               @if (form.controls.date.touched && form.controls.date.invalid) { <span class="error-text">Indica la fecha.</span> }</div>
             <div class="field"><label for="p-method">Método</label>
               <select id="p-method" class="select" formControlName="method">@for (o of methodOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></div>

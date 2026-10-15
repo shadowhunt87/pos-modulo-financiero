@@ -74,8 +74,8 @@ interface Group { key: string; title: string; year: FiscalYear | null; periods: 
         <div class="form-grid">
           <div class="field span-all"><label for="p-name">Nombre</label><input id="p-name" class="input" formControlName="name" maxlength="100" placeholder="Enero 2027" />
             @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Escribe el nombre del período.</span> }</div>
-          <div class="field"><label for="p-from">Desde</label><input id="p-from" type="date" class="input" formControlName="startDate" /></div>
-          <div class="field"><label for="p-to">Hasta</label><input id="p-to" type="date" class="input" formControlName="endDate" /></div>
+          <div class="field"><label for="p-from">Desde</label><app-date-input id="p-from" formControlName="startDate" /></div>
+          <div class="field"><label for="p-to">Hasta</label><app-date-input id="p-to" formControlName="endDate" /></div>
         </div>
         <p class="hint" style="margin-top:10px">No puede solaparse con otro período. Si pertenece a un año fiscal, se enlaza solo al cerrar ese año.</p>
         @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }

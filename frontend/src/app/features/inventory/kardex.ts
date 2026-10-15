@@ -30,8 +30,8 @@ interface KardexResponse {
         <section class="panel" style="margin-bottom:16px">
           <div class="panel-pad" style="display:flex;gap:32px;flex-wrap:wrap">
             <div><div class="dim">Existencia</div><div style="font-size:22px;font-weight:600">{{ qty(r.product.stockQty) }} {{ r.product.unit }}</div></div>
-            <div><div class="dim">Costo promedio</div><div style="font-size:22px;font-weight:600">{{ r.product.avgCost | money }}</div></div>
-            <div><div class="dim">Valor</div><div style="font-size:22px;font-weight:600">{{ r.product.stockValue | money }}</div></div>
+            <div><div class="dim">Costo promedio</div><div style="font-size:22px;font-weight:600"><span class="cur">RD$</span>{{ r.product.avgCost | money }}</div></div>
+            <div><div class="dim">Valor</div><div style="font-size:22px;font-weight:600"><span class="cur">RD$</span>{{ r.product.stockValue | money }}</div></div>
           </div>
         </section>
       }

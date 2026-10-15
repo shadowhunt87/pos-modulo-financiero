@@ -21,8 +21,8 @@ import { splitRef, TransferEntry } from './types';
   imports: [ReactiveFormsModule, RouterLink, ...UI],
   template: `
     <div class="toolbar">
-      <div class="field"><label for="tr-from">Desde</label><input id="tr-from" class="input" type="date" [value]="from()" (change)="setRange('from', $any($event.target).value)" /></div>
-      <div class="field"><label for="tr-to">Hasta</label><input id="tr-to" class="input" type="date" [value]="to()" (change)="setRange('to', $any($event.target).value)" /></div>
+      <div class="field"><label for="tr-from">Desde</label><app-date-input id="tr-from" [value]="from()" (dateChange)="setRange('from', $event)" /></div>
+      <div class="field"><label for="tr-to">Hasta</label><app-date-input id="tr-to" [value]="to()" (dateChange)="setRange('to', $event)" /></div>
       <div class="grow"></div>
       @if (canWrite) { <button type="button" class="btn btn-primary" (click)="openNew()">Nueva transferencia</button> }
     </div>
@@ -61,7 +61,7 @@ import { splitRef, TransferEntry } from './types';
             @if (form.controls.to.touched && form.controls.to.invalid) { <span class="error-text">Elige quién recibe el dinero.</span> }</div>
           <div class="field"><label for="t-amount">Monto</label><input id="t-amount" class="input num" type="number" min="0.01" step="0.01" formControlName="amount" />
             @if (form.controls.amount.touched && form.controls.amount.invalid) { <span class="error-text">Escribe un monto mayor que cero.</span> }</div>
-          <div class="field"><label for="t-date">Fecha</label><input id="t-date" class="input" type="date" formControlName="date" />
+          <div class="field"><label for="t-date">Fecha</label><app-date-input id="t-date" formControlName="date" />
             @if (form.controls.date.touched && form.controls.date.invalid) { <span class="error-text">Indica la fecha.</span> }</div>
           <div class="field span-2"><label for="t-desc">Descripción</label><input id="t-desc" class="input" formControlName="description" maxlength="300" placeholder="Transferencia entre cuentas" /></div>
           <div class="field span-2"><label for="t-ref">Referencia</label><input id="t-ref" class="input" formControlName="reference" maxlength="100" /></div>

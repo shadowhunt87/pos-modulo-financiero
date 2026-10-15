@@ -104,7 +104,7 @@ import { Entry, balanceOf, send } from './ledger-shared';
           <p>Lo contabilizado no se borra: se registra un <strong>reverso</strong> (el mismo asiento con débitos y créditos invertidos). El original y el reverso quedan a la vista en los libros.</p>
           <div class="field"><label for="fx-reason">Motivo</label><textarea id="fx-reason" class="input" rows="2" maxlength="500" [value]="fixReason()" (input)="fixReason.set($any($event.target).value)"></textarea></div>
           <div class="field"><label for="fx-date">Fecha del reverso (opcional) <app-field-help text="Déjala vacía para usar la fecha del asiento. Si ese mes ya está cerrado, elige una fecha de un mes abierto." /></label>
-            <input id="fx-date" class="input" type="date" [value]="fixDate()" (input)="fixDate.set($any($event.target).value)" /></div>
+            <app-date-input id="fx-date" [value]="fixDate()" (dateChange)="fixDate.set($event)" /></div>
           <app-error-notice [error]="fixError()" />
           <div class="btn-row" style="margin-top:12px">
             <button type="button" class="btn" (click)="fixOpen.set(false)">Cancelar</button>

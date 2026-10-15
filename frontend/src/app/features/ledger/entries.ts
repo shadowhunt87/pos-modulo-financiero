@@ -38,8 +38,8 @@ import { Entry } from './ledger-shared';
           <select id="jr" class="select" (change)="setJournal($any($event.target).value)">
             <option value="">Todos</option>@for (j of lookups.journals(); track j.id) { <option [value]="j.id">{{ j.code }} · {{ j.name }}</option> }
           </select></div>
-        <div class="field"><label for="fr">Desde</label><input id="fr" type="date" class="input" (change)="setServer('from', $any($event.target).value)" /></div>
-        <div class="field"><label for="to">Hasta</label><input id="to" type="date" class="input" (change)="setServer('to', $any($event.target).value)" /></div>
+        <div class="field"><label for="fr">Desde</label><app-date-input id="fr" (dateChange)="setServer('from', $event)" /></div>
+        <div class="field"><label for="to">Hasta</label><app-date-input id="to" (dateChange)="setServer('to', $event)" /></div>
       </div>
 
       <app-error-notice [error]="error()" />

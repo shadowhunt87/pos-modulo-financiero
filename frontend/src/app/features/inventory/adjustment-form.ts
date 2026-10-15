@@ -34,7 +34,7 @@ import { qty } from './labels';
       <form [formGroup]="form" (ngSubmit)="save()" novalidate>
         <section class="panel" style="margin-bottom:16px">
           <div class="panel-pad form-grid">
-            <div class="field"><label for="a-date">Fecha</label><input id="a-date" class="input" type="date" formControlName="date" /></div>
+            <div class="field"><label for="a-date">Fecha</label><app-date-input id="a-date" formControlName="date" /></div>
             <div class="field span-2"><label for="a-reason">Motivo</label><input id="a-reason" class="input" formControlName="reason" placeholder="Existencia inicial, conteo de fin de mes, mercancía dañada…" />
               @if (form.controls.reason.touched && form.controls.reason.invalid) { <span class="error-text">Escribe el motivo.</span> }</div>
             <div class="field span-2"><label for="a-acc">Cuenta de contrapartida <app-field-help key="ajuste.contrapartida" text="La otra cuenta del asiento. Para un faltante o una merma suele ser un gasto; para la existencia inicial, una cuenta de patrimonio o de saldos iniciales. Si la dejas vacía se usa la de Configuración contable." /></label>

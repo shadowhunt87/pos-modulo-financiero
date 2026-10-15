@@ -14,51 +14,49 @@ const ICON: Record<FiscalAlert['level'], string> = { info: 'i', warn: '!', neg: 
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    @if (alerts().length) {
-      <div class="alerts" role="region" aria-label="Avisos fiscales">
-        @for (g of groups(); track g.key) {
-          @if (g.items.length > 1) {
-            <div class="notice" [class]="g.level" role="status">
-              <span class="ic" aria-hidden="true">{{ ICON[g.level] }}</span>
-              <div class="body">
-                <div class="row">
-                  <span><strong>{{ g.title }}</strong> {{ g.detail }}</span>
-                  <span class="acts">
-                    <button type="button" class="linkish" [attr.aria-expanded]="open() === g.key" (click)="open.set(open() === g.key ? null : g.key)">{{ open() === g.key ? 'Ocultar' : 'Ver cuáles' }}</button>
-                    <a [routerLink]="g.link">{{ g.linkText }} →</a>
-                  </span>
-                </div>
-                @if (open() === g.key) { <ul class="list">@for (a of g.items; track a.code) { <li>{{ a.text }}</li> }</ul> }
-              </div>
+    @for (g of groups(); track g.key) {
+      @if (g.items.length > 1) {
+        <div class="row" [class]="g.level" role="status">
+          <span class="ic" aria-hidden="true">{{ ICON[g.level] }}</span>
+          <div class="body">
+            <div class="line">
+              <span><strong>{{ g.title }}</strong>{{ ' ' }}<span class="dim">{{ g.detail }}</span></span>
+              <span class="acts">
+                <button type="button" class="linkbtn" [attr.aria-expanded]="open() === g.key" (click)="open.set(open() === g.key ? null : g.key)">{{ open() === g.key ? 'Ocultar' : 'Ver cuáles' }}</button>
+                <a [routerLink]="g.link">{{ g.linkText }} →</a>
+              </span>
             </div>
-          } @else {
-            @for (a of g.items; track a.code + a.text) {
-              <div class="notice" [class]="a.level" role="status">
-                <span class="ic" aria-hidden="true">{{ ICON[a.level] }}</span>
-                <div class="body"><div class="row"><span>{{ a.text }}</span>@if (a.link) { <a [routerLink]="a.link">{{ a.linkText || 'Ver' }} →</a> }</div></div>
-              </div>
-            }
-          }
+            @if (open() === g.key) { <ul class="list">@for (a of g.items; track a.code) { <li>{{ a.text }}</li> }</ul> }
+          </div>
+        </div>
+      } @else {
+        @for (a of g.items; track a.code + a.text) {
+          <div class="row" [class]="a.level" role="status">
+            <span class="ic" aria-hidden="true">{{ ICON[a.level] }}</span>
+            <div class="body"><div class="line"><span>{{ a.text }}</span>@if (a.link) { <span class="acts"><a [routerLink]="a.link">{{ a.linkText || 'Ver' }} →</a></span> }</div></div>
+          </div>
         }
-      </div>
+      }
     }
   `,
   styles: `
-    .alerts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
-    .notice { align-items: flex-start; }
-    .ic { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; border: 1.5px solid currentColor; margin-top: 1px; }
+    :host { display: contents; }
+    .row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 22px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+    .ic { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+    .neg .ic { background: var(--neg-soft); color: var(--neg); } .warn .ic { background: var(--warn-soft); color: var(--warn); } .info .ic { background: var(--info-soft); color: var(--info); }
     .body { flex: 1; min-width: 0; }
-    .row { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; }
-    .acts { display: inline-flex; gap: 14px; align-items: baseline; }
-    .notice a, .linkish { font-weight: 600; white-space: nowrap; }
-    .linkish { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
-    .list { margin: 8px 0 2px; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+    .line { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 16px; flex-wrap: wrap; }
+    .acts { display: inline-flex; gap: 14px; align-items: baseline; white-space: nowrap; font-size: 13px; }
+    .acts a, .acts .linkbtn { font-weight: 500; }
+    .list { margin: 8px 0 2px; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; color: var(--text-dim); }
   `,
 })
 export class FiscalAlerts {
   private readonly api = inject(Api);
   protected readonly ICON = ICON;
   protected readonly alerts = signal<FiscalAlert[]>([]);
+  /** Cuántos avisos hay (el Panel muestra «Todo al día» si no hay ninguno). */
+  readonly count = computed(() => this.alerts().length);
 
   /** Bloque de la DGII: varios vencidos (o por vencer) se juntan en un solo aviso para no llenar el Panel. */
   protected readonly open = signal<string | null>(null);

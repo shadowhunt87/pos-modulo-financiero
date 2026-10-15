@@ -32,7 +32,7 @@ import { ADJUSTMENT_STATUS } from './labels';
                   <td>{{ a.reason }}</td>
                   <td>{{ a.counterAccount.code }} · {{ a.counterAccount.name }}</td>
                   <td class="num">{{ a._count?.lines }}</td>
-                  <td><span class="badge" [class.pos]="a.status === 'POSTED'" [class.neg]="a.status === 'VOIDED'">{{ a.status | lbl: ADJUSTMENT_STATUS }}</span></td>
+                  <td><app-status [value]="a.status" [map]="ADJUSTMENT_STATUS" /></td>
                 </tr>
               } @empty {
                 @if (!loading() && !error()) {

@@ -63,7 +63,7 @@ interface OpeningResponse { entry: (Entry & { lines: (Entry['lines'][number] & {
       <form [formGroup]="form" (ngSubmit)="save()" novalidate style="margin-top:16px">
         <section class="panel panel-pad">
           <div class="form-grid">
-            <div class="field"><label for="o-date">Fecha de los saldos</label><input id="o-date" type="date" class="input" formControlName="date" />
+            <div class="field"><label for="o-date">Fecha de los saldos</label><app-date-input id="o-date" formControlName="date" />
               <span class="hint">Normalmente el primer día del primer período que llevas en el sistema.</span></div>
             <div class="field"><label for="o-ref">Referencia</label><input id="o-ref" class="input" formControlName="reference" maxlength="100" placeholder="Opcional" /></div>
             <div class="field span-all"><label for="o-desc">Descripción</label><input id="o-desc" class="input" formControlName="description" maxlength="500" placeholder="Asiento de apertura de saldos" /></div>
@@ -92,9 +92,9 @@ interface OpeningResponse { entry: (Entry & { lines: (Entry['lines'][number] & {
         </section>
 
         <section class="figures" aria-live="polite" style="margin-top:16px">
-          <div class="figure"><div class="f-label">Débitos</div><div class="f-value">{{ bal().debit.toString() | money }}</div></div>
-          <div class="figure"><div class="f-label">Créditos</div><div class="f-value">{{ bal().credit.toString() | money }}</div></div>
-          <div class="figure"><div class="f-label">Diferencia</div><div class="f-value" [class.neg]="!bal().diff.isZero()" [class.pos]="bal().balanced">{{ bal().diff.abs().toString() | money }}</div>
+          <div class="figure"><div class="f-label">Débitos</div><div class="f-value"><span class="cur">RD$</span>{{ bal().debit.toString() | money }}</div></div>
+          <div class="figure"><div class="f-label">Créditos</div><div class="f-value"><span class="cur">RD$</span>{{ bal().credit.toString() | money }}</div></div>
+          <div class="figure"><div class="f-label">Diferencia</div><div class="f-value" [class.neg]="!bal().diff.isZero()" [class.pos]="bal().balanced"><span class="cur">RD$</span>{{ bal().diff.abs().toString() | money }}</div>
             <div class="f-note">{{ bal().balanced ? 'Cuadrado' : bal().diff.isPositive() ? 'Sobran débitos' : bal().diff.isNegative() ? 'Sobran créditos' : 'Aún sin montos' }}</div></div>
         </section>
 

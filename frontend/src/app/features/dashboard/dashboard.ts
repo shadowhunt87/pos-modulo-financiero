@@ -24,9 +24,16 @@ interface Inv { id: string; number: string | null; type: string; status: string;
   imports: [RouterLink, KpiStrip, FiscalAlerts, SetupChecklist, ...UI],
   templateUrl: './dashboard.html',
   styles: `
-    .alerts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-    .alerts a.notice { text-decoration: none; color: inherit; }
-    .alerts a.notice:hover { filter: brightness(.97); }
+    .dash-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .dash-grid:has(> app-setup-checklist:empty) { grid-template-columns: minmax(0, 1fr); }
+    @media (max-width: 1100px) { .dash-grid { grid-template-columns: minmax(0, 1fr); } }
+    .attention { overflow: hidden; }
+    .attention > :last-child, .attention ::ng-deep app-fiscal-alerts > .row:last-child { border-bottom: 0; }
+    .row { display: flex; gap: 12px; align-items: center; padding: 12px 22px; border-bottom: 1px solid var(--line); font-size: 13.5px; color: var(--text); text-decoration: none; }
+    a.row:hover { background: var(--surface-2); text-decoration: none; }
+    .row .ic { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+    .row.warn .ic { background: var(--warn-soft); color: var(--warn); } .row.info .ic { background: var(--info-soft); color: var(--info); } .row.pos .ic { background: var(--pos-soft); color: var(--pos); }
+    .row .txt { flex: 1; } .row .go { color: var(--primary); font-weight: 500; font-size: 13px; }
     .bucket { display: grid; grid-template-columns: 120px 1fr 110px; gap: 10px; align-items: center; padding: 6px 0; }
     .bar { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
     .bar > i { display: block; height: 100%; background: var(--primary); border-radius: 5px; }

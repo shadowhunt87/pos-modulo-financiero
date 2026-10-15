@@ -45,8 +45,8 @@
       <select id="tx-status" class="select" (change)="setFilter('status', $any($event.target).value)">
         <option value="">Todos</option>@for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
       </select></div>
-    <div class="field"><label for="tx-from">Desde</label><input id="tx-from" class="input" type="date" (change)="setFilter('from', $any($event.target).value)" /></div>
-    <div class="field"><label for="tx-to">Hasta</label><input id="tx-to" class="input" type="date" (change)="setFilter('to', $any($event.target).value)" /></div>
+    <div class="field"><label for="tx-from">Desde</label><app-date-input id="tx-from" (dateChange)="setFilter('from', $event)" /></div>
+    <div class="field"><label for="tx-to">Hasta</label><app-date-input id="tx-to" (dateChange)="setFilter('to', $event)" /></div>
   </div>
 
   <app-error-notice [error]="error()" />
@@ -137,7 +137,7 @@
 <app-modal [open]="addOpen()" title="Agregar movimiento" width="620px" (closed)="addOpen.set(false)">
   <form id="add-form" [formGroup]="addForm" (ngSubmit)="saveAdd()" novalidate>
     <div class="form-grid">
-      <div class="field"><label for="a-date">Fecha</label><input id="a-date" class="input" type="date" formControlName="date" /></div>
+      <div class="field"><label for="a-date">Fecha</label><app-date-input id="a-date" formControlName="date" /></div>
       <div class="field"><label for="a-amount">Monto</label><input id="a-amount" class="input num" type="number" step="0.01" formControlName="amount" />
         <span class="hint">Positivo si entra dinero, negativo si sale.</span>
         @if (addForm.controls.amount.touched && addForm.controls.amount.invalid) { <span class="error-text">Escribe el monto.</span> }</div>

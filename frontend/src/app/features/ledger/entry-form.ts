@@ -37,7 +37,7 @@ import { Entry, balanceOf, send, tooManyDecimals } from './ledger-shared';
         <form [formGroup]="form" (ngSubmit)="save()" novalidate>
           <section class="panel panel-pad">
             <div class="form-grid">
-              <div class="field"><label for="f-date">Fecha</label><input id="f-date" type="date" class="input" formControlName="date" />
+              <div class="field"><label for="f-date">Fecha</label><app-date-input id="f-date" formControlName="date" />
                 @if (form.controls.date.touched && form.controls.date.invalid) { <span class="error-text">Elige la fecha del asiento.</span> }</div>
               <div class="field"><label for="f-ref">Referencia</label><input id="f-ref" class="input" formControlName="reference" maxlength="100" placeholder="Opcional" /></div>
               <div class="field span-all"><label for="f-desc">Descripción</label><input id="f-desc" class="input" formControlName="description" maxlength="500" />

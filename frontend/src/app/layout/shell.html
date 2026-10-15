@@ -39,6 +39,7 @@
     </nav>
 
     <div class="side-foot">
+      <app-release-notice />
       <span class="books" [class.ok]="balanced()" [class.bad]="gap() !== null && !balanced()"
         [title]="balanced() ? 'Débitos y créditos del año coinciden' : 'Hay una diferencia entre débitos y créditos del año'">
         <span class="dot" aria-hidden="true"></span>
@@ -54,6 +55,7 @@
     <header class="topbar">
       <button type="button" class="icon-btn burger" aria-label="Abrir menú" (click)="menuOpen.set(!menuOpen())"><app-nav-icon name="menu" [size]="20" /></button>
       <div class="guide"><app-breadcrumbs /></div>
+      <div class="next"><app-next-step /></div>
 
       <div class="spacer"></div>
       <button type="button" class="icon-btn labeled" aria-label="Ayuda de esta pantalla" title="Ayuda de esta pantalla" [attr.aria-expanded]="helpOpen()" (click)="helpOpen.set(!helpOpen())">
@@ -84,8 +86,7 @@
         }
       </div>
     </header>
-    <div class="next"><app-next-step /></div>
-    <main class="content"><app-release-notice /><app-sample-data-banner /><router-outlet /></main>
+    <main class="content"><app-sample-data-banner /><router-outlet /></main>
   </div>
   <app-feedback-dialog [open]="feedback.isOpen()" (closed)="feedback.close()" />
   <app-help-drawer [open]="helpOpen()" (closed)="helpOpen.set(false)" />

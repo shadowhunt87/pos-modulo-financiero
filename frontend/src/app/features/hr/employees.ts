@@ -48,7 +48,7 @@ import { Department, EMPLOYEE_STATUS, Employee, PAY_FREQUENCY, fmtDoc, fullName 
                   <td>{{ e.hireDate | fdate }}</td>
                   <td class="num">{{ e.baseSalary | money }}<div class="dim">{{ e.payFrequency | lbl: PAY_FREQUENCY }}</div></td>
                   <td>
-                    <span class="badge" [class.pos]="e.status === 'ACTIVE'" [class.warn]="e.status === 'SUSPENDED'">{{ e.status | lbl: EMPLOYEE_STATUS }}</span>
+                    <app-status [value]="e.status" [map]="EMPLOYEE_STATUS" />
                     @if (e.terminationDate) { <div class="dim">{{ e.terminationDate | fdate }}</div> }
                   </td>
                   <td class="actions">
@@ -83,7 +83,7 @@ import { Department, EMPLOYEE_STATUS, Employee, PAY_FREQUENCY, fmtDoc, fullName 
         <p>{{ fullName(t) }} dejará de entrar en las nóminas después de la fecha de salida. Su historial no cambia.</p>
         <form id="term-form" [formGroup]="termForm" (ngSubmit)="terminate()" novalidate>
           <div class="form-grid">
-            <div class="field"><label for="t-date">Fecha de salida</label><input id="t-date" class="input" type="date" formControlName="date" /></div>
+            <div class="field"><label for="t-date">Fecha de salida</label><app-date-input id="t-date" formControlName="date" /></div>
             <div class="field span-2"><label for="t-reason">Motivo</label><input id="t-reason" class="input" formControlName="reason" placeholder="Renuncia, desahucio, despido…" />
               @if (termForm.controls.reason.touched && termForm.controls.reason.invalid) { <span class="error-text">Escribe el motivo.</span> }</div>
           </div>

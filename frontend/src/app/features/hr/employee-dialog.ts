@@ -30,7 +30,7 @@ import { Department, Employee } from './types';
           <div class="field"><label for="e-nss">NSS <app-field-help key="empleado.nss" text="Número de Seguridad Social del empleado en la TSS. Lo necesitas para la autodeterminación mensual." /></label><input id="e-nss" class="input mono" formControlName="nss" /></div>
           <div class="field"><label for="e-sex">Sexo</label>
             <select id="e-sex" class="select" formControlName="sex"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option></select></div>
-          <div class="field"><label for="e-bd">Fecha de nacimiento</label><input id="e-bd" class="input" type="date" formControlName="birthDate" /></div>
+          <div class="field"><label for="e-bd">Fecha de nacimiento</label><app-date-input id="e-bd" formControlName="birthDate" /></div>
           <div class="field"><label for="e-mail">Correo</label><input id="e-mail" class="input" type="email" formControlName="email" /></div>
           <div class="field"><label for="e-ph">Teléfono</label><input id="e-ph" class="input" formControlName="phone" /></div>
           <div class="field span-2"><label for="e-addr">Dirección</label><input id="e-addr" class="input" formControlName="address" /></div>
@@ -38,7 +38,7 @@ import { Department, Employee } from './types';
 
         <h3 class="form-section">Trabajo y salario</h3>
         <div class="form-grid">
-          <div class="field"><label for="e-hire">Fecha de ingreso</label><input id="e-hire" class="input" type="date" formControlName="hireDate" /></div>
+          <div class="field"><label for="e-hire">Fecha de ingreso</label><app-date-input id="e-hire" formControlName="hireDate" /></div>
           <div class="field"><label for="e-dep">Departamento</label>
             <select id="e-dep" class="select" formControlName="departmentId"><option value="">—</option>
               @for (d of departments(); track d.id) { @if (d.active || d.id === form.controls.departmentId.value) { <option [value]="d.id">{{ d.name }}</option> } }</select></div>

@@ -16,6 +16,43 @@ Al cerrar una sesión, agregar una entrada con este formato:
 
 ---
 
+## 2026-10-15 (4) — Rediseño del frontend (v0.4, «calma»)
+
+**Rama:** `modulos-catalogo-inventario-rrhh`. **Sin push.**
+
+**Qué se hizo** (pedido: diseño profesional, moderno y limpio que no abrume a los testers contables):
+- **Sistema de diseño v3** (`frontend/src/styles.css`):
+  - lienzo claro, bordes en vez de sombras, un solo acento verde azulado;
+  - tablas con encabezados en minúscula y más aire;
+  - botón de peligro con borde, no relleno.
+
+  Los nombres de clase no cambiaron, así que las 69 pantallas heredan el diseño.
+- **Marco de la aplicación:**
+  - menú lateral **claro**;
+  - el «Siguiente paso» pasa a la barra superior, junto a las migas de pan;
+  - el aviso de novedades es una tarjeta en el pie del menú, no una franja en cada pantalla.
+- **Panel:**
+  - cifras arriba, con **RD$**;
+  - una sola lista **Requiere tu atención** (avisos fiscales, facturas vencidas y asientos por aprobar, o «Todo al día»);
+  - **Termina de configurar** muestra solo lo que falta.
+- **Fechas:** campo propio `app-date-input`, en **dd/mm/aaaa** con calendario, en los 55 campos de fecha. El nativo salía en
+  mm/dd/yyyy en los navegadores en inglés.
+- **Estados** con iconos SVG (P6: icono, color y texto). **RD$** en las cifras destacadas de reportes, DGII, años fiscales,
+  saldos iniciales, presupuestos, nómina e inventario.
+- **En celular** los montos destacados ya no se cortan con «…».
+- **Novedades v0.4** en el manual (la versión de `ayuda.json` sube a v0.4, así que aparece el aviso a los usuarios).
+
+**Quedó pendiente:**
+- Revisar con los testers pantalla por pantalla. El diseño cambió en todas, pero el contenido de cada pantalla sigue igual.
+- Los montos de las tablas siguen sin «RD$»: se usa la moneda en el encabezado o en el total.
+- Paleta de comandos Ctrl+K y atajos (P8).
+
+**Ojo con:**
+- Angular quita el espacio entre dos elementos en línea (`</strong> <span>`): usar `{{ ' ' }}`.
+- `.notice` es flexible: el texto con enlaces va dentro de un `<span>`, si no, cada pedazo queda separado.
+
+---
+
 ## 2026-10-15 (3) — Frontend de catálogo, inventario y RRHH
 
 **Rama / commit:** `modulos-catalogo-inventario-rrhh`, `1271206`. **Sin push.**

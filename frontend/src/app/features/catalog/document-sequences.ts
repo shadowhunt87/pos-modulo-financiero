@@ -54,7 +54,7 @@ interface DocSeq { docType: string; prefix: string; padding: number; nextNumber:
             @if (form.controls.padding.invalid) { <span class="error-text">Entre 1 y 12.</span> }</div>
           <div class="field span-2"><label for="f-next">Próximo número</label><input id="f-next" class="input num" type="number" min="1" formControlName="nextNumber" />
             <span class="hint">Solo puede subir: no se reutilizan números ya emitidos.</span></div>
-          <div class="field span-2"><span class="dim">Vista previa</span> <strong class="mono">{{ preview() }}</strong></div>
+          <div class="field span-2"><span class="dim">Vista previa</span>{{ ' ' }}<strong class="mono">{{ preview() }}</strong></div>
         </div>
         @if (formError()) { <div class="notice neg" style="margin-top:14px" role="alert">{{ formError() }}</div> }
       </form>

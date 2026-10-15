@@ -86,7 +86,7 @@ interface NcfCatalog { code: string; name: string }
             <div class="field"><label for="f-last">Último número ya usado</label><input id="f-last" class="input num" type="number" min="0" formControlName="lastUsedNumber" />
               <span class="hint">Déjalo vacío si el rango está sin estrenar.</span></div>
           }
-          <div class="field"><label for="f-exp">Fecha de vencimiento</label><input id="f-exp" class="input" type="date" formControlName="expirationDate" /></div>
+          <div class="field"><label for="f-exp">Fecha de vencimiento</label><app-date-input id="f-exp" formControlName="expirationDate" /></div>
           @if (mode() !== 'renew') {
             <div class="field"><label for="f-warn">Avisar cuando queden</label><input id="f-warn" class="input num" type="number" min="0" formControlName="warningThreshold" />
               <span class="hint">Comprobantes disponibles.</span></div>

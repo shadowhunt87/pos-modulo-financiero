@@ -50,8 +50,8 @@
     <div class="form-grid">
       <div class="field span-all"><label for="y-name">Nombre</label><input id="y-name" class="input" formControlName="name" maxlength="100" placeholder="2027" />
         @if (form.controls.name.touched && form.controls.name.invalid) { <span class="error-text">Escribe el nombre del año.</span> }</div>
-      <div class="field"><label for="y-from">Desde</label><input id="y-from" type="date" class="input" formControlName="startDate" /></div>
-      <div class="field"><label for="y-to">Hasta</label><input id="y-to" type="date" class="input" formControlName="endDate" /></div>
+      <div class="field"><label for="y-from">Desde</label><app-date-input id="y-from" formControlName="startDate" /></div>
+      <div class="field"><label for="y-to">Hasta</label><app-date-input id="y-to" formControlName="endDate" /></div>
       <label class="check span-all"><input type="checkbox" formControlName="generatePeriods" /> Generar los períodos mensuales</label>
     </div>
     <p class="hint" style="margin-top:10px">Si lo desmarcas no se crean períodos: se enlazan al año los que ya existan dentro de su rango. El año no puede solaparse con otro.</p>
@@ -83,8 +83,8 @@
     }
 
     <div class="figures" style="margin-top:16px">
-      <div class="figure"><div class="f-label">Ingresos del año</div><div class="f-value">{{ p.totalIncome | money }}</div></div>
-      <div class="figure"><div class="f-label">Gastos del año</div><div class="f-value">{{ p.totalExpenses | money }}</div></div>
+      <div class="figure"><div class="f-label">Ingresos del año</div><div class="f-value"><span class="cur">RD$</span>{{ p.totalIncome | money }}</div></div>
+      <div class="figure"><div class="f-label">Gastos del año</div><div class="f-value"><span class="cur">RD$</span>{{ p.totalExpenses | money }}</div></div>
       <div class="figure"><div class="f-label">{{ sign(p.netResult) < 0 ? 'Pérdida' : 'Ganancia' }}</div>
         <div class="f-value" [class.neg]="sign(p.netResult) < 0" [class.pos]="sign(p.netResult) > 0">{{ p.netResult | money }}</div>
         <div class="f-note">Va a {{ p.retainedEarningsAccount ? p.retainedEarningsAccount.code + ' · ' + p.retainedEarningsAccount.name : 'utilidades acumuladas (sin configurar)' }}</div></div>

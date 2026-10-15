@@ -75,10 +75,10 @@
 
     @if (r.totals; as t) {
       <div class="figures" style="margin-bottom:16px">
-        <div class="figure"><div class="f-label">Total facturado</div><div class="f-value">{{ t.totalInvoiced | money }}</div><div class="f-note">Las notas de crédito restan</div></div>
-        <div class="figure"><div class="f-label">ITBIS</div><div class="f-value">{{ t.itbis | money }}</div></div>
-        <div class="figure"><div class="f-label">ITBIS retenido</div><div class="f-value">{{ t.itbisWithheld | money }}</div></div>
-        <div class="figure"><div class="f-label">ISR retenido</div><div class="f-value">{{ t.isrWithheld | money }}</div></div>
+        <div class="figure"><div class="f-label">Total facturado</div><div class="f-value"><span class="cur">RD$</span>{{ t.totalInvoiced | money }}</div><div class="f-note">Las notas de crédito restan</div></div>
+        <div class="figure"><div class="f-label">ITBIS</div><div class="f-value"><span class="cur">RD$</span>{{ t.itbis | money }}</div></div>
+        <div class="figure"><div class="f-label">ITBIS retenido</div><div class="f-value"><span class="cur">RD$</span>{{ t.itbisWithheld | money }}</div></div>
+        <div class="figure"><div class="f-label">ISR retenido</div><div class="f-value"><span class="cur">RD$</span>{{ t.isrWithheld | money }}</div></div>
       </div>
     }
 

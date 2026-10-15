@@ -36,8 +36,8 @@ import { InvoiceRow } from './invoice-types';
           </select></div>
         <div class="field wide"><label for="partner">Cliente / proveedor</label>
           <app-combobox id="partner" [options]="partnerOptions()" placeholder="Todos los clientes y proveedores" [formControl]="partnerCtl" /></div>
-        <div class="field"><label for="from">Desde</label><input id="from" class="input" type="date" (change)="setFilter('from', $any($event.target).value)" /></div>
-        <div class="field"><label for="to">Hasta</label><input id="to" class="input" type="date" (change)="setFilter('to', $any($event.target).value)" /></div>
+        <div class="field"><label for="from">Desde</label><app-date-input id="from" (dateChange)="setFilter('from', $event)" /></div>
+        <div class="field"><label for="to">Hasta</label><app-date-input id="to" (dateChange)="setFilter('to', $event)" /></div>
         <label class="check" style="height:36px"><input type="checkbox" (change)="setOverdue($any($event.target).checked)" /> Solo vencidas</label>
       </div>
 

@@ -183,7 +183,7 @@
   <div class="field"><label for="rp-p">Plan de acción (opcional)</label><textarea id="rp-p" class="input" rows="2" maxlength="5000" [value]="resp().actionPlan" (input)="patchResp('actionPlan', $any($event.target).value)"></textarea></div>
   <div class="form-grid">
     <div class="field"><label for="rp-w">Responsable</label><input id="rp-w" class="input" maxlength="120" [value]="resp().responsible" (input)="patchResp('responsible', $any($event.target).value)" /></div>
-    <div class="field"><label for="rp-d">Fecha compromiso</label><input id="rp-d" class="input" type="date" [value]="resp().dueDate" (input)="patchResp('dueDate', $any($event.target).value)" /></div>
+    <div class="field"><label for="rp-d">Fecha compromiso</label><app-date-input id="rp-d" [value]="resp().dueDate" (dateChange)="patchResp('dueDate', $event)" /></div>
   </div>
   <ng-container modal-actions>
     <button type="button" class="btn" (click)="respondTo.set(null)">Cancelar</button>

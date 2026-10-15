@@ -12,25 +12,35 @@
     </div>
   </div>
 
-  <app-fiscal-alerts />
-  <app-setup-checklist />
   <app-error-notice [error]="error()" />
   @if (loading()) { <div class="loading"><span class="spinner"></span> Cargando cifras…</div> }
   @else {
-    @if (overdueCount() || pendingEntries()) {
-      <div class="alerts">
-        @if (overdueCount()) { <a class="notice warn" routerLink="/invoices" [queryParams]="{ overdue: true }">{{ overdueCount() }} {{ overdueCount() === 1 ? 'factura vencida' : 'facturas vencidas' }} sin cobrar o pagar</a> }
-        @if (pendingEntries()) { <a class="notice info" routerLink="/entries" [queryParams]="{ status: 'DRAFT' }">{{ pendingEntries() }} {{ pendingEntries() === 1 ? 'asiento espera' : 'asientos esperan' }} tu aprobación</a> }
-      </div>
-    }
-
     <div class="figures">
-      <div class="figure"><div class="f-label">Ingresos del año</div><div class="f-value">{{ ytd()?.totalIncome | money }}</div></div>
-      <div class="figure"><div class="f-label">Gastos del año</div><div class="f-value">{{ ytd()?.totalExpenses | money }}</div></div>
-      <div class="figure"><div class="f-label">Utilidad neta</div><div class="f-value" [class]="ytd()?.netIncome | signClass">{{ ytd()?.netIncome | money }}</div></div>
-      <div class="figure"><div class="f-label">Por cobrar</div><div class="f-value">{{ receivable()?.total | money }}</div></div>
-      <div class="figure"><div class="f-label">Por pagar</div><div class="f-value">{{ payable()?.total | money }}</div></div>
-      <div class="figure"><div class="f-label">En bancos</div><div class="f-value" [class]="banks() | signClass">{{ banks() | money }}</div><div class="f-note">según el mayor</div></div>
+      <div class="figure"><div class="f-label">Ingresos del año</div><div class="f-value"><span class="cur">RD$</span>{{ ytd()?.totalIncome | money }}</div></div>
+      <div class="figure"><div class="f-label">Gastos del año</div><div class="f-value"><span class="cur">RD$</span>{{ ytd()?.totalExpenses | money }}</div></div>
+      <div class="figure"><div class="f-label">Utilidad neta</div><div class="f-value" [class]="ytd()?.netIncome | signClass"><span class="cur">RD$</span>{{ ytd()?.netIncome | money }}</div></div>
+      <div class="figure"><div class="f-label">Por cobrar</div><div class="f-value"><span class="cur">RD$</span>{{ receivable()?.total | money }}</div></div>
+      <div class="figure"><div class="f-label">Por pagar</div><div class="f-value"><span class="cur">RD$</span>{{ payable()?.total | money }}</div></div>
+      <div class="figure"><div class="f-label">En bancos</div><div class="f-value" [class]="banks() | signClass"><span class="cur">RD$</span>{{ banks() | money }}</div><div class="f-note">según el mayor</div></div>
+    </div>
+
+    <div class="dash-grid section">
+      <section class="panel attention" aria-labelledby="att-title">
+        <div class="panel-head"><h2 id="att-title">Requiere tu atención</h2></div>
+        <app-fiscal-alerts #fa />
+        @if (overdueCount()) {
+          <a class="row warn" routerLink="/invoices" [queryParams]="{ overdue: true }"><span class="ic" aria-hidden="true">!</span>
+            <span class="txt">{{ overdueCount() }} {{ overdueCount() === 1 ? 'factura vencida' : 'facturas vencidas' }} sin cobrar o pagar</span><span class="go">Ver →</span></a>
+        }
+        @if (pendingEntries()) {
+          <a class="row info" routerLink="/entries" [queryParams]="{ status: 'DRAFT' }"><span class="ic" aria-hidden="true">i</span>
+            <span class="txt">{{ pendingEntries() }} {{ pendingEntries() === 1 ? 'asiento espera' : 'asientos esperan' }} tu aprobación</span><span class="go">Revisar →</span></a>
+        }
+        @if (!fa.count() && !overdueCount() && !pendingEntries()) {
+          <div class="row pos"><span class="ic" aria-hidden="true">✓</span><span class="txt">Todo al día. No hay plazos ni pendientes por ahora.</span></div>
+        }
+      </section>
+      <app-setup-checklist />
     </div>
 
     <app-kpi-strip />

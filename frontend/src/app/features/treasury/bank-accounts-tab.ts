@@ -84,7 +84,7 @@ import { BankAccountRow } from './types';
           @if (!editing()) {
             <div class="field"><label for="b-open">Saldo inicial (informativo)</label><input id="b-open" class="input num" type="number" step="0.01" formControlName="openingBalance" />
               <span class="hint">El saldo real entra por un asiento de apertura.</span></div>
-            <div class="field"><label for="b-opend">Fecha del saldo inicial</label><input id="b-opend" class="input" type="date" formControlName="openingBalanceDate" /></div>
+            <div class="field"><label for="b-opend">Fecha del saldo inicial</label><app-date-input id="b-opend" formControlName="openingBalanceDate" /></div>
           } @else {
             <label class="check span-all"><input type="checkbox" formControlName="active" /> Cuenta activa</label>
           }

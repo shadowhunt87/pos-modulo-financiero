@@ -52,7 +52,7 @@ type Tab = 'aging' | 'statement';
 
       @if (tab() === 'aging') {
         <form class="toolbar" [formGroup]="agingForm" (ngSubmit)="loadAging()">
-          <div class="field"><label for="r-asof">Al corte<app-field-help key="ventas.alCorte" /></label><input id="r-asof" class="input" type="date" formControlName="asOf" /></div>
+          <div class="field"><label for="r-asof">Al corte<app-field-help key="ventas.alCorte" /></label><app-date-input id="r-asof" formControlName="asOf" /></div>
           <button type="submit" class="btn" [disabled]="agingLoading()">Actualizar</button>
         </form>
         @if (agingError()) { <div class="notice neg" role="alert">{{ agingError() }}</div> }
@@ -105,8 +105,8 @@ type Tab = 'aging' | 'statement';
         <form class="toolbar" [formGroup]="stmtForm" (ngSubmit)="loadStatement()">
           <div class="field wide"><span class="label">{{ scope() === 'RECEIVABLE' ? 'Cliente' : 'Proveedor' }}</span>
             <app-combobox formControlName="partnerId" [options]="partnerOptions()" [clearable]="false" placeholder="Buscar por nombre o RNC" /></div>
-          <div class="field"><label for="s-from">Desde</label><input id="s-from" class="input" type="date" formControlName="from" /></div>
-          <div class="field"><label for="s-to">Hasta</label><input id="s-to" class="input" type="date" formControlName="to" /></div>
+          <div class="field"><label for="s-from">Desde</label><app-date-input id="s-from" formControlName="from" /></div>
+          <div class="field"><label for="s-to">Hasta</label><app-date-input id="s-to" formControlName="to" /></div>
           <button type="submit" class="btn btn-primary" [disabled]="stmtLoading() || stmtForm.invalid">Ver estado de cuenta</button>
         </form>
         @if (stmtError()) { <div class="notice neg" role="alert">{{ stmtError() }}</div> }

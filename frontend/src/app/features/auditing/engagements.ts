@@ -47,8 +47,8 @@ import type { AccountNotice, Engagement } from './auditing-types';
     <app-modal [open]="open()" title="Nuevo encargo de auditoría" width="620px" (closed)="open.set(false)">
       <div class="form-grid">
         <div class="field span-2"><label for="e-name">Nombre</label><input id="e-name" class="input" maxlength="120" [value]="name()" (input)="name.set($any($event.target).value)" placeholder="Revisión anual 2026" /></div>
-        <div class="field"><label for="e-from">Período: desde</label><input id="e-from" class="input" type="date" [value]="from()" (input)="from.set($any($event.target).value)" /></div>
-        <div class="field"><label for="e-to">Hasta</label><input id="e-to" class="input" type="date" [value]="to()" (input)="to.set($any($event.target).value)" /></div>
+        <div class="field"><label for="e-from">Período: desde</label><app-date-input id="e-from" [value]="from()" (dateChange)="from.set($event)" /></div>
+        <div class="field"><label for="e-to">Hasta</label><app-date-input id="e-to" [value]="to()" (dateChange)="to.set($event)" /></div>
         <div class="field span-2"><label for="e-firm">Firma auditora (opcional)</label><input id="e-firm" class="input" maxlength="200" [value]="firm()" (input)="firm.set($any($event.target).value)" /></div>
         <fieldset class="field span-all"><legend class="label">Áreas a revisar (se precargan con procedimientos sugeridos)</legend>
           <div class="areas">@for (a of AREAS; track a[0]) { <label class="check"><input type="checkbox" [checked]="areas().includes(a[0])" (change)="toggle(a[0], $any($event.target).checked)" /> {{ a[1] }}</label> }</div>

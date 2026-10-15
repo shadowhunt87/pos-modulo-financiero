@@ -37,9 +37,9 @@
               <app-combobox id="f-rel" formControlName="relatedInvoiceId" [options]="relatedOptions()" placeholder="Elige una factura emitida del mismo cliente / proveedor" [clearable]="false" />
               <span class="hint">{{ form.controls.partnerId.value ? 'Solo aparecen facturas emitidas y no anuladas de este cliente / proveedor.' : 'Primero elige el cliente / proveedor.' }}</span></div>
           }
-          <div class="field"><label for="f-issue">Fecha de emisión</label><input id="f-issue" class="input" type="date" formControlName="issueDate" />
+          <div class="field"><label for="f-issue">Fecha de emisión</label><app-date-input id="f-issue" formControlName="issueDate" />
             @if (form.controls.issueDate.touched && form.controls.issueDate.invalid) { <span class="error-text">Indica la fecha.</span> }</div>
-          <div class="field"><label for="f-due">Vencimiento <app-field-help key="factura.terminos" text="Fecha límite de pago. Si la dejas vacía se calcula sumando los días de crédito del cliente o proveedor a la fecha de emisión." /></label><input id="f-due" class="input" type="date" formControlName="dueDate" />
+          <div class="field"><label for="f-due">Vencimiento <app-field-help key="factura.terminos" text="Fecha límite de pago. Si la dejas vacía se calcula sumando los días de crédito del cliente o proveedor a la fecha de emisión." /></label><app-date-input id="f-due" formControlName="dueDate" />
             <span class="hint">Si lo dejas vacío se calcula con los días de crédito del cliente / proveedor.</span></div>
           <div class="field"><label for="f-cur">Moneda</label>
             <select id="f-cur" class="select" formControlName="currency">@for (c of currencyOptions(); track c) { <option [value]="c">{{ c }}</option> }</select></div>

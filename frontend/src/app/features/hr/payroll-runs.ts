@@ -40,7 +40,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.ge
                   <td class="num">{{ r._count?.lines }}</td>
                   <td class="num">{{ r.grossTotal | money }}</td>
                   <td class="num"><strong>{{ r.netTotal | money }}</strong></td>
-                  <td><span class="badge" [class]="tone(r.status)">{{ r.status | lbl: RUN_STATUS }}</span></td>
+                  <td><app-status [value]="r.status" [map]="RUN_STATUS" /></td>
                 </tr>
               } @empty {
                 @if (!loading() && !error()) {
@@ -65,10 +65,10 @@ const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.ge
           @if (regular()) {
             <div class="field"><label for="r-freq">Frecuencia</label>
               <select id="r-freq" class="select" formControlName="frequency"><option value="MONTHLY">Mensual</option><option value="BIWEEKLY">Quincenal</option><option value="WEEKLY">Semanal</option></select></div>
-            <div class="field"><label for="r-from">Desde</label><input id="r-from" class="input" type="date" formControlName="periodStart" /></div>
-            <div class="field"><label for="r-to">Hasta</label><input id="r-to" class="input" type="date" formControlName="periodEnd" /></div>
+            <div class="field"><label for="r-from">Desde</label><app-date-input id="r-from" formControlName="periodStart" /></div>
+            <div class="field"><label for="r-to">Hasta</label><app-date-input id="r-to" formControlName="periodEnd" /></div>
           }
-          <div class="field"><label for="r-pay">Fecha de pago</label><input id="r-pay" class="input" type="date" formControlName="payDate" /></div>
+          <div class="field"><label for="r-pay">Fecha de pago</label><app-date-input id="r-pay" formControlName="payDate" /></div>
           <div class="field span-all"><label for="r-notes">Nota (opcional)</label><input id="r-notes" class="input" formControlName="notes" /></div>
         </div>
         <p class="hint" style="margin-top:10px">
@@ -119,7 +119,6 @@ export class PayrollRuns {
     });
   }
 
-  protected tone(s: string): string { return s === 'PAID' ? 'pos' : s === 'POSTED' ? 'info' : s === 'VOIDED' ? 'neg' : 'warn'; }
   protected goTo(p: number): void { this.page.set(p); void this.load(); }
 
   private async load(): Promise<void> {

@@ -24,8 +24,8 @@ import { qty } from './labels';
 
       <section class="panel" style="margin-bottom:16px">
         <div class="panel-pad" style="display:flex;gap:32px;flex-wrap:wrap">
-          <div><div class="dim">Valor total del inventario</div><div style="font-size:24px;font-weight:600">{{ totalValue() | money }}</div></div>
-          <div><div class="dim">Productos que controlan inventario</div><div style="font-size:24px;font-weight:600">{{ total() }}</div></div>
+          <div><div class="dim">Valor total del inventario</div><div style="font-size:22px;font-weight:600"><span class="cur">RD$</span>{{ totalValue() | money }}</div></div>
+          <div><div class="dim">Productos que controlan inventario</div><div style="font-size:22px;font-weight:600">{{ total() }}</div></div>
         </div>
       </section>
 

@@ -31,7 +31,7 @@ import { type FiscalParameter, type ParameterVersion, showValue } from './fiscal
 
       <form class="toolbar" (ngSubmit)="load()" novalidate>
         <div class="field"><label for="fp-date">Vigentes al <app-field-help text="Cambia la fecha para ver qué valor regía ese día (por ejemplo, antes de un cambio de ley)." /></label>
-          <input id="fp-date" name="date" class="input" type="date" [(ngModel)]="date" /></div>
+          <app-date-input id="fp-date" name="date" [(ngModel)]="date" /></div>
         <div class="field wide"><label for="fp-q">Buscar</label><input id="fp-q" name="q" class="input" placeholder="ITBIS, retención, 607…" (input)="q.set($any($event.target).value)" /></div>
         <button type="submit" class="btn btn-primary" [disabled]="loading()">{{ loading() ? 'Cargando…' : 'Ver' }}</button>
       </form>

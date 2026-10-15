@@ -2,6 +2,19 @@
 
 *Notas de versión dentro del sistema. Lo más nuevo, arriba.*
 
+## v0.4 · octubre 2026
+
+### Para todos
+- **Diseño renovado**: más limpio y tranquilo. Menú claro, cifras destacadas con **RD$** y estados con icono.
+- **Panel**: arriba tus cifras del año. Debajo, una sola lista **Requiere tu atención** con plazos, facturas vencidas y asientos por aprobar, y **Termina de configurar** solo con lo que falta.
+- **Fechas en formato dominicano** (dd/mm/aaaa) en todos los campos, con calendario. Puedes escribir «15102026» y se completa solo.
+- El **siguiente paso** sugerido está arriba, junto a dónde estás, y no ocupa espacio en la pantalla.
+
+### Módulos nuevos
+- **Productos y servicios**: tu catálogo con precio, impuesto y cuentas. Al facturar, elige el producto y se llena la línea.
+- **Inventario**: existencias con costo promedio, kárdex y ajustes. Las compras suman, las ventas restan y registran su costo.
+- **Recursos humanos**: empleados, nómina con TSS, ISR e INFOTEP, regalía pascual, pago desde el banco y reportes de la TSS y del IR-3.
+
 ## v0.3 · octubre 2026
 
 ### Para todos

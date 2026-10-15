@@ -72,7 +72,7 @@ import { Reconciliation } from './types';
           <div class="field span-2"><label for="n-bank">Cuenta bancaria</label>
             <app-combobox id="n-bank" formControlName="bankAccountId" [options]="activeBanks()" placeholder="Elige la cuenta" [clearable]="false" />
             @if (form.controls.bankAccountId.touched && form.controls.bankAccountId.invalid) { <span class="error-text">Elige la cuenta bancaria a conciliar.</span> }</div>
-          <div class="field"><label for="n-date">Fecha de corte</label><input id="n-date" class="input" type="date" formControlName="statementDate" />
+          <div class="field"><label for="n-date">Fecha de corte</label><app-date-input id="n-date" formControlName="statementDate" />
             @if (form.controls.statementDate.touched && form.controls.statementDate.invalid) { <span class="error-text">Indica la fecha del extracto.</span> }</div>
           <div class="field"><label for="n-bal">Saldo final del extracto</label><input id="n-bal" class="input num" type="number" step="0.01" formControlName="statementBalance" />
             @if (form.controls.statementBalance.touched && form.controls.statementBalance.invalid) { <span class="error-text">Escribe el saldo que muestra el banco.</span> }</div>

@@ -59,7 +59,7 @@ interface PaymentFull {
               <dt>Referencia</dt><dd class="mono">{{ p.reference || '—' }}</dd>
               <dt>Notas</dt><dd>{{ p.notes || '—' }}</dd>
               <dt>Asiento</dt>
-              <dd>@if (p.journalEntry; as j) { <a class="mono" [routerLink]="['/entries', j.id]">{{ j.number }}</a> <span class="dim">({{ j.status | lbl: ENTRY_STATUS }})</span> } @else { — }</dd>
+              <dd>@if (p.journalEntry; as j) { <a class="mono" [routerLink]="['/entries', j.id]">{{ j.number }}</a>{{ ' ' }}<span class="dim">({{ j.status | lbl: ENTRY_STATUS }})</span> } @else { — }</dd>
             </dl>
           </section>
           <section class="panel">
@@ -99,7 +99,7 @@ interface PaymentFull {
                 <tfoot><tr><td colspan="3">Total a aplicar</td><td class="num">{{ allocTotal() | money }}</td></tr></tfoot>
               </table>
             </div>
-            <div class="field" style="margin-top:12px;max-width:220px"><label for="a-date">Fecha de aplicación</label><input id="a-date" class="input" type="date" [value]="allocDate()" (input)="allocDate.set($any($event.target).value)" /></div>
+            <div class="field" style="margin-top:12px;max-width:220px"><label for="a-date">Fecha de aplicación</label><app-date-input id="a-date" [value]="allocDate()" (dateChange)="allocDate.set($event)" /></div>
             @if (allocTotal().gt(dec(p.unapplied))) { <div class="notice neg" style="margin-top:12px" role="alert">Lo que aplicas supera el anticipo disponible. Reduce los montos.</div> }
             <app-error-notice style="display:block;margin-top:12px" [error]="allocError()" />
           }

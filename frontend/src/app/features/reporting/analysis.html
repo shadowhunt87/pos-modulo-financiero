@@ -16,8 +16,8 @@
     <!-- ---------- Semáforo ---------- -->
     @case ('health') {
       <form class="filters" (ngSubmit)="loadHealth()" novalidate>
-        <div class="field"><label for="a-from">Desde</label><input id="a-from" name="from" class="input" type="date" [(ngModel)]="from" required /></div>
-        <div class="field"><label for="a-to">Hasta</label><input id="a-to" name="to" class="input" type="date" [(ngModel)]="to" required /></div>
+        <div class="field"><label for="a-from">Desde</label><app-date-input id="a-from" name="from" [(ngModel)]="from" required /></div>
+        <div class="field"><label for="a-to">Hasta</label><app-date-input id="a-to" name="to" [(ngModel)]="to" required /></div>
         <button type="submit" class="btn btn-primary" [disabled]="loading()">{{ loading() ? 'Cargando…' : 'Actualizar' }}</button>
       </form>
 
@@ -109,10 +109,10 @@
     <!-- ---------- Comparar ---------- -->
     @case ('compare') {
       <form class="filters" (ngSubmit)="loadCompare()" novalidate>
-        <div class="field"><label for="c-from">Período actual: desde</label><input id="c-from" name="cfrom" class="input" type="date" [(ngModel)]="from" /></div>
-        <div class="field"><label for="c-to">Hasta</label><input id="c-to" name="cto" class="input" type="date" [(ngModel)]="to" /></div>
-        <div class="field"><label for="c-pfrom">Comparar con: desde <app-field-help text="Si lo dejas vacío se compara con el mismo tramo del año anterior." /></label><input id="c-pfrom" name="pfrom" class="input" type="date" [(ngModel)]="compareFrom" /></div>
-        <div class="field"><label for="c-pto">Hasta</label><input id="c-pto" name="pto" class="input" type="date" [(ngModel)]="compareTo" /></div>
+        <div class="field"><label for="c-from">Período actual: desde</label><app-date-input id="c-from" name="cfrom" [(ngModel)]="from" /></div>
+        <div class="field"><label for="c-to">Hasta</label><app-date-input id="c-to" name="cto" [(ngModel)]="to" /></div>
+        <div class="field"><label for="c-pfrom">Comparar con: desde <app-field-help text="Si lo dejas vacío se compara con el mismo tramo del año anterior." /></label><app-date-input id="c-pfrom" name="pfrom" [(ngModel)]="compareFrom" /></div>
+        <div class="field"><label for="c-pto">Hasta</label><app-date-input id="c-pto" name="pto" [(ngModel)]="compareTo" /></div>
         <button type="submit" class="btn btn-primary" [disabled]="compareLoading()">{{ compareLoading() ? 'Cargando…' : 'Comparar' }}</button>
       </form>
 

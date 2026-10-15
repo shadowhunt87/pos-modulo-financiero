@@ -12,11 +12,11 @@
 
   <form class="toolbar" [formGroup]="form" (ngSubmit)="apply()" novalidate>
     @if (tab() === 'balance') {
-      <div class="field"><label for="r-asof">Corte al</label><input id="r-asof" class="input" type="date" formControlName="asOf" /></div>
-      <div class="field"><label for="r-ps">Inicio del ejercicio</label><input id="r-ps" class="input" type="date" formControlName="periodStart" /><span class="hint">Opcional; por defecto el año fiscal.</span></div>
+      <div class="field"><label for="r-asof">Corte al</label><app-date-input id="r-asof" formControlName="asOf" /></div>
+      <div class="field"><label for="r-ps">Inicio del ejercicio</label><app-date-input id="r-ps" formControlName="periodStart" /><span class="hint">Opcional; por defecto el año fiscal.</span></div>
     } @else {
-      <div class="field"><label for="r-from">Desde</label><input id="r-from" class="input" type="date" formControlName="from" /></div>
-      <div class="field"><label for="r-to">Hasta</label><input id="r-to" class="input" type="date" formControlName="to" /></div>
+      <div class="field"><label for="r-from">Desde</label><app-date-input id="r-from" formControlName="from" /></div>
+      <div class="field"><label for="r-to">Hasta</label><app-date-input id="r-to" formControlName="to" /></div>
     }
     @if (tab() === 'account') {
       <div class="field wide" role="group" aria-labelledby="lb-acc"><span id="lb-acc" class="label">Cuenta</span>
@@ -72,9 +72,9 @@
       @case ('income') {
         @if (income(); as r) {
           <div class="figures" style="margin-bottom:16px">
-            <div class="figure"><div class="f-label">Ingresos</div><div class="f-value">{{ r.totalIncome | money }}</div></div>
-            <div class="figure"><div class="f-label">Gastos</div><div class="f-value">{{ r.totalExpenses | money }}</div></div>
-            <div class="figure"><div class="f-label">{{ r.netIncome.startsWith('-') ? 'Pérdida neta' : 'Utilidad neta' }}</div><div class="f-value" [class.neg]="r.netIncome.startsWith('-')">{{ r.netIncome | money }}</div><div class="f-note">Del {{ r.from | fdate }} al {{ r.to | fdate }}</div></div>
+            <div class="figure"><div class="f-label">Ingresos</div><div class="f-value"><span class="cur">RD$</span>{{ r.totalIncome | money }}</div></div>
+            <div class="figure"><div class="f-label">Gastos</div><div class="f-value"><span class="cur">RD$</span>{{ r.totalExpenses | money }}</div></div>
+            <div class="figure"><div class="f-label">{{ r.netIncome.startsWith('-') ? 'Pérdida neta' : 'Utilidad neta' }}</div><div class="f-value" [class.neg]="r.netIncome.startsWith('-')"><span class="cur">RD$</span>{{ r.netIncome | money }}</div><div class="f-note">Del {{ r.from | fdate }} al {{ r.to | fdate }}</div></div>
           </div>
           @if (incomeChart(); as cfg) {
             <section class="panel panel-pad" style="margin-bottom:16px"><h2 style="margin-bottom:8px">Ingresos contra gastos</h2><app-chart [config]="cfg" height="220px" /></section>
@@ -99,9 +99,9 @@
         @if (balance(); as b) {
           @if (!b.balanced) { <div class="notice warn" role="alert" style="margin-bottom:12px">El balance no cuadra: el activo difiere del pasivo más el patrimonio en {{ balanceDiff() | money }}. Revisa los asientos y la clasificación de cuentas.</div> }
           <div class="figures" style="margin-bottom:16px">
-            <div class="figure"><div class="f-label">Total activo</div><div class="f-value">{{ b.totalAssets | money }}</div><div class="f-note">Al {{ b.asOf | fdate }}</div></div>
-            <div class="figure"><div class="f-label">Total pasivo</div><div class="f-value">{{ b.totalLiabilities | money }}</div></div>
-            <div class="figure"><div class="f-label">Total patrimonio</div><div class="f-value">{{ b.totalEquity | money }}</div></div>
+            <div class="figure"><div class="f-label">Total activo</div><div class="f-value"><span class="cur">RD$</span>{{ b.totalAssets | money }}</div><div class="f-note">Al {{ b.asOf | fdate }}</div></div>
+            <div class="figure"><div class="f-label">Total pasivo</div><div class="f-value"><span class="cur">RD$</span>{{ b.totalLiabilities | money }}</div></div>
+            <div class="figure"><div class="f-label">Total patrimonio</div><div class="f-value"><span class="cur">RD$</span>{{ b.totalEquity | money }}</div></div>
             <div class="figure"><div class="f-label">Estado</div><div class="f-value" style="font-size:18px"><span class="badge" [class.pos]="b.balanced" [class.neg]="!b.balanced">{{ b.balanced ? 'Cuadrado' : 'Descuadrado' }}</span></div></div>
           </div>
           <div class="cols-2">
@@ -135,9 +135,9 @@
         @if (cash(); as c) {
           @for (w of c.warnings; track $index) { <div class="notice warn" role="alert" style="margin-bottom:8px">{{ w }}</div> }
           <div class="figures" style="margin-bottom:16px">
-            <div class="figure"><div class="f-label">Efectivo al inicio</div><div class="f-value">{{ c.cashAtBeginning | money }}</div></div>
-            <div class="figure"><div class="f-label">Variación del efectivo</div><div class="f-value" [class.neg]="c.netChangeInCash.startsWith('-')">{{ c.netChangeInCash | money }}</div></div>
-            <div class="figure"><div class="f-label">Efectivo al final</div><div class="f-value">{{ c.cashAtEnd | money }}</div><div class="f-note">Del {{ c.from | fdate }} al {{ c.to | fdate }}</div></div>
+            <div class="figure"><div class="f-label">Efectivo al inicio</div><div class="f-value"><span class="cur">RD$</span>{{ c.cashAtBeginning | money }}</div></div>
+            <div class="figure"><div class="f-label">Variación del efectivo</div><div class="f-value" [class.neg]="c.netChangeInCash.startsWith('-')"><span class="cur">RD$</span>{{ c.netChangeInCash | money }}</div></div>
+            <div class="figure"><div class="f-label">Efectivo al final</div><div class="f-value"><span class="cur">RD$</span>{{ c.cashAtEnd | money }}</div><div class="f-note">Del {{ c.from | fdate }} al {{ c.to | fdate }}</div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
             <thead><tr><th>Código</th><th>Concepto (método indirecto)</th><th class="num">Monto</th></tr></thead>
@@ -165,8 +165,8 @@
       @case ('trial') {
         @if (trial(); as t) {
           <div class="figures" style="margin-bottom:16px">
-            <div class="figure"><div class="f-label">Total débitos</div><div class="f-value">{{ t.totalDebit | money }}</div></div>
-            <div class="figure"><div class="f-label">Total créditos</div><div class="f-value">{{ t.totalCredit | money }}</div></div>
+            <div class="figure"><div class="f-label">Total débitos</div><div class="f-value"><span class="cur">RD$</span>{{ t.totalDebit | money }}</div></div>
+            <div class="figure"><div class="f-label">Total créditos</div><div class="f-value"><span class="cur">RD$</span>{{ t.totalCredit | money }}</div></div>
             <div class="figure"><div class="f-label">Estado</div><div class="f-value" style="font-size:18px"><span class="badge" [class.pos]="t.balanced" [class.neg]="!t.balanced">{{ t.balanced ? 'Cuadrada' : 'Descuadrada' }}</span></div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
@@ -192,8 +192,8 @@
         @if (journal(); as j) {
           <div class="figures" style="margin-bottom:16px">
             <div class="figure"><div class="f-label">Asientos</div><div class="f-value">{{ j.total }}</div></div>
-            <div class="figure"><div class="f-label">Total débitos</div><div class="f-value">{{ j.totalDebit | money }}</div></div>
-            <div class="figure"><div class="f-label">Total créditos</div><div class="f-value">{{ j.totalCredit | money }}</div></div>
+            <div class="figure"><div class="f-label">Total débitos</div><div class="f-value"><span class="cur">RD$</span>{{ j.totalDebit | money }}</div></div>
+            <div class="figure"><div class="f-label">Total créditos</div><div class="f-value"><span class="cur">RD$</span>{{ j.totalCredit | money }}</div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
             <thead><tr><th>Fecha</th><th>Cuenta</th><th>Detalle</th><th class="num">Débito</th><th class="num">Crédito</th></tr></thead>
@@ -223,9 +223,9 @@
         @if (detail(); as d) {
           <div class="figures" style="margin-bottom:16px">
             <div class="figure"><div class="f-label">{{ d.account.code }} · {{ d.account.name }}</div><div class="f-value" style="font-size:16px">{{ d.account.type | lbl: ACCOUNT_TYPE }}</div><div class="f-note">Naturaleza {{ d.account.nature === 'DEBIT' ? 'deudora' : 'acreedora' }}</div></div>
-            <div class="figure"><div class="f-label">Saldo inicial</div><div class="f-value">{{ d.openingBalance | money }}</div></div>
-            <div class="figure"><div class="f-label">Débitos / créditos</div><div class="f-value" style="font-size:18px">{{ d.totalDebit | money }} / {{ d.totalCredit | money }}</div></div>
-            <div class="figure"><div class="f-label">Saldo final</div><div class="f-value">{{ d.closingBalance | money }}</div></div>
+            <div class="figure"><div class="f-label">Saldo inicial</div><div class="f-value"><span class="cur">RD$</span>{{ d.openingBalance | money }}</div></div>
+            <div class="figure"><div class="f-label">Débitos / créditos</div><div class="f-value" style="font-size:18px"><span class="cur">RD$</span>{{ d.totalDebit | money }} / {{ d.totalCredit | money }}</div></div>
+            <div class="figure"><div class="f-label">Saldo final</div><div class="f-value"><span class="cur">RD$</span>{{ d.closingBalance | money }}</div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
             <thead><tr><th>Fecha</th><th>Asiento</th><th>Descripción</th><th>Cliente / proveedor</th><th>Documento origen</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo</th></tr></thead>
@@ -255,8 +255,8 @@
           @for (w of s.warnings; track $index) { <div class="notice warn" role="alert" style="margin-bottom:8px">{{ w }}</div> }
           <div class="figures" style="margin-bottom:16px">
             <div class="figure"><div class="f-label">{{ s.account.code }} · {{ s.account.name }}</div><div class="f-value" style="font-size:16px">{{ s.partners.length }} terceros</div></div>
-            <div class="figure"><div class="f-label">Saldo inicial</div><div class="f-value">{{ s.totals.openingBalance | money }}</div></div>
-            <div class="figure"><div class="f-label">Saldo final</div><div class="f-value">{{ s.totals.closingBalance | money }}</div></div>
+            <div class="figure"><div class="f-label">Saldo inicial</div><div class="f-value"><span class="cur">RD$</span>{{ s.totals.openingBalance | money }}</div></div>
+            <div class="figure"><div class="f-label">Saldo final</div><div class="f-value"><span class="cur">RD$</span>{{ s.totals.closingBalance | money }}</div></div>
           </div>
           <section class="panel"><div class="table-wrap"><table class="table">
             <thead><tr><th>Cliente / proveedor</th><th>RNC / cédula</th><th class="num">Saldo inicial</th><th class="num">Débito</th><th class="num">Crédito</th><th class="num">Saldo final</th></tr></thead>
@@ -280,7 +280,7 @@
           @for (w of r.warnings; track $index) { <div class="notice warn" role="alert" style="margin-bottom:8px">{{ w }}</div> }
           @if (statementFigures().length) {
             <div class="figures" style="margin-bottom:16px">
-              @for (f of statementFigures(); track f.label) { <div class="figure"><div class="f-label">{{ f.label }}</div><div class="f-value" style="font-size:20px" [class.neg]="f.value.startsWith('-')">{{ f.value | money }}</div></div> }
+              @for (f of statementFigures(); track f.label) { <div class="figure"><div class="f-label">{{ f.label }}</div><div class="f-value" style="font-size:20px" [class.neg]="f.value.startsWith('-')"><span class="cur">RD$</span>{{ f.value | money }}</div></div> }
             </div>
           }
           <div class="cols-2">

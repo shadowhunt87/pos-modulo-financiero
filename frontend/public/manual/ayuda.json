@@ -1,5 +1,5 @@
 {
-  "version": "v0.3 · 2026-10-14",
+  "version": "v0.4 · 2026-10-15",
   "secciones": [
     { "slug": "primeros-pasos", "archivo": "01-primeros-pasos.md", "titulo": "Primeros pasos" },
     { "slug": "configuracion", "archivo": "02-configuracion.md", "titulo": "Configuración de la empresa" },
