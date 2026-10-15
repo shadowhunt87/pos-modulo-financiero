@@ -38,6 +38,7 @@ const NOTE_TYPES = ['CREDIT_NOTE', 'DEBIT_NOTE'];
   styles: `
     .line { display: grid; gap: 10px 12px; grid-template-columns: minmax(180px, 3fr) 90px 120px 110px minmax(150px, 1.4fr) minmax(190px, 1.8fr) 120px 36px; align-items: end; padding: 12px 16px; border-bottom: 1px solid var(--line); }
     .line:last-child { border-bottom: 0; }
+    .line .sub-label { margin-top: 8px; }
     .line .amount { text-align: right; padding-bottom: 8px; font-variant-numeric: tabular-nums; font-weight: 600; }
     .wh { display: grid; gap: 10px 12px; grid-template-columns: minmax(200px, 2fr) minmax(140px, 1fr) 120px 36px; align-items: end; padding: 12px 16px; border-bottom: 1px solid var(--line); }
     .wh:last-child { border-bottom: 0; }
@@ -124,6 +125,8 @@ export class InvoiceForm {
     const types = side === 'PURCHASES' ? ['EXPENSE', 'ASSET'] : side === 'SALES' ? ['INCOME'] : ['INCOME', 'EXPENSE', 'ASSET'];
     return this.lookups.accounts().filter((a) => a.active && a.isPostable && types.includes(a.type)).map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }));
   });
+  protected readonly productOptions = computed<ComboOption[]>(() =>
+    this.lookups.products().filter((p) => p.active).map((p) => ({ value: p.id, label: `${p.code} · ${p.name}`, hint: p.kind === 'GOODS' ? 'Bien' : 'Servicio' })));
   protected readonly lineTaxes = computed(() => {
     const side = this.side();
     return this.lookups.taxRates().filter((t) => t.active && !t.isWithholding && (t.appliesTo === 'BOTH' || !side || t.appliesTo === side));
@@ -197,14 +200,33 @@ export class InvoiceForm {
     });
   }
 
-  private newLine() {
-    return this.fb.nonNullable.group({
-      description: ['', [Validators.required, Validators.maxLength(300)]],
-      quantity: [1, [Validators.required, Validators.min(0.0001)]],
-      unitPrice: [0, [Validators.required, Validators.min(0)]],
-      discount: [0, [Validators.min(0)]],
-      taxRateId: [''],
-      accountId: [''],
+  private newLine(v: Partial<{ description: string; quantity: number; unitPrice: number; discount: number; taxRateId: string; accountId: string; productId: string }> = {}) {
+    const g = this.fb.nonNullable.group({
+      productId: [v.productId ?? ''],
+      description: [v.description ?? '', [Validators.required, Validators.maxLength(300)]],
+      quantity: [v.quantity ?? 1, [Validators.required, Validators.min(0.0001)]],
+      unitPrice: [v.unitPrice ?? 0, [Validators.required, Validators.min(0)]],
+      discount: [v.discount ?? 0, [Validators.min(0)]],
+      taxRateId: [v.taxRateId ?? ''],
+      accountId: [v.accountId ?? ''],
+    });
+    // P1: al elegir un producto del catálogo se llenan descripción, precio e impuesto (se pueden cambiar)
+    g.controls.productId.valueChanges.subscribe((id) => this.applyProduct(g, id));
+    return g;
+  }
+
+  private applyProduct(g: ReturnType<InvoiceForm['newLine']>, id: string): void {
+    const p = this.lookups.products().find((x) => x.id === id);
+    if (!p) return;
+    const sales = this.side() !== 'PURCHASES';
+    const price = sales ? p.salePrice : p.purchasePrice;
+    const tax = sales ? p.saleTaxRateId : p.purchaseTaxRateId;
+    g.patchValue({
+      description: p.name,
+      ...(price !== null ? { unitPrice: Number(price) } : {}),
+      taxRateId: tax && this.lineTaxes().some((t) => t.id === tax) ? tax : '',
+      // La cuenta la pone el servidor desde el producto (en compras con inventario, siempre la de inventario)
+      accountId: '',
     });
   }
   private newWithholding() {
@@ -221,7 +243,7 @@ export class InvoiceForm {
     try {
       const [company, ncf] = await Promise.all([
         this.api.getP<Company>('/company'), this.api.getP<NcfType[]>('/ncf/types'),
-        this.lookups.ensureAccounts(), this.lookups.ensurePartners(), this.lookups.ensureTaxRates(),
+        this.lookups.ensureAccounts(), this.lookups.ensurePartners(), this.lookups.ensureTaxRates(), this.lookups.ensureProducts(),
       ]);
       this.baseCurrency.set(company.baseCurrency);
       this.ncfTypes.set(ncf);
@@ -251,10 +273,9 @@ export class InvoiceForm {
     const rel = await this.api.getP<InvoiceFull>(`/invoices/${relatedId}`);
     this.relatedInvoices.set([rel as unknown as InvoiceRow]);
     this.lines.clear();
-    if (type === 'CREDIT_NOTE') for (const l of rel.lines) this.lines.push(this.fb.nonNullable.group({
-      description: [l.description, [Validators.required, Validators.maxLength(300)]], quantity: [Number(l.quantity), [Validators.required, Validators.min(0.0001)]],
-      unitPrice: [Number(l.unitPrice), [Validators.required, Validators.min(0)]], discount: [Number(l.discount), [Validators.min(0)]],
-      taxRateId: [l.taxRateId ?? ''], accountId: [l.accountId ?? ''],
+    if (type === 'CREDIT_NOTE') for (const l of rel.lines) this.lines.push(this.newLine({
+      description: l.description, quantity: Number(l.quantity), unitPrice: Number(l.unitPrice), discount: Number(l.discount),
+      taxRateId: l.taxRateId ?? '', accountId: l.accountId ?? '', productId: l.productId ?? '',
     }));
     if (!this.lines.length) this.addLine();
     this.form.patchValue({
@@ -265,10 +286,9 @@ export class InvoiceForm {
 
   private fill(inv: InvoiceFull): void {
     this.lines.clear(); this.withholdings.clear();
-    for (const l of inv.lines) this.lines.push(this.fb.nonNullable.group({
-      description: [l.description, [Validators.required, Validators.maxLength(300)]], quantity: [Number(l.quantity), [Validators.required, Validators.min(0.0001)]],
-      unitPrice: [Number(l.unitPrice), [Validators.required, Validators.min(0)]], discount: [Number(l.discount), [Validators.min(0)]],
-      taxRateId: [l.taxRateId ?? ''], accountId: [l.accountId ?? ''],
+    for (const l of inv.lines) this.lines.push(this.newLine({
+      description: l.description, quantity: Number(l.quantity), unitPrice: Number(l.unitPrice), discount: Number(l.discount),
+      taxRateId: l.taxRateId ?? '', accountId: l.accountId ?? '', productId: l.productId ?? '',
     }));
     if (!this.lines.length) this.addLine();
     const rates = new Map(this.lookups.taxRates().map((t) => [t.id, t]));
@@ -358,7 +378,7 @@ export class InvoiceForm {
       notes: v.notes.trim(),
       lines: v.lines.map((l) => clean({
         description: l.description.trim(), quantity: dec(l.quantity).toNumber(), unitPrice: dec(l.unitPrice).toNumber(),
-        discount: dec(l.discount).toNumber(), taxRateId: l.taxRateId, accountId: l.accountId,
+        discount: dec(l.discount).toNumber(), taxRateId: l.taxRateId, accountId: l.accountId, productId: l.productId,
       })),
       withholdings: v.withholdings.map((w) => clean({ taxRateId: w.taxRateId, base: w.base === null || String(w.base) === '' ? '' : dec(w.base).toNumber() })),
     });

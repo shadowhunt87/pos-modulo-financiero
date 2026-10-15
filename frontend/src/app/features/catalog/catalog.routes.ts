@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  { path: 'products', loadComponent: () => import('./products').then((m) => m.Products), title: 'Productos y servicios' },
   { path: 'partners', loadComponent: () => import('./partners').then((m) => m.Partners), title: 'Clientes y proveedores' },
   { path: 'accounts', loadComponent: () => import('./accounts').then((m) => m.Accounts), title: 'Plan de cuentas' },
   { path: 'tax-rates', loadComponent: () => import('./tax-rates').then((m) => m.TaxRates), title: 'Impuestos' },

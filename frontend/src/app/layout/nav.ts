@@ -2,7 +2,7 @@ import { Role } from '../core/auth';
 
 export interface NavItem { label: string; path: string; roles?: Role[] }
 export interface NavGroup { title: string; icon: NavIcon; items: NavItem[] }
-export type NavIcon = 'home' | 'sales' | 'ecf' | 'bank' | 'ledger' | 'tax' | 'chart' | 'audit' | 'gear' | 'help';
+export type NavIcon = 'home' | 'sales' | 'ecf' | 'bank' | 'ledger' | 'tax' | 'chart' | 'audit' | 'gear' | 'help' | 'box' | 'people';
 
 /**
  * Menú lateral por secciones (acordeón: se abre una a la vez y la de la pantalla actual se abre sola).
@@ -13,9 +13,20 @@ export const NAV: NavGroup[] = [
   { title: '', icon: 'home', items: [{ label: 'Panel', path: '/' }] },
   { title: 'Ventas y compras', icon: 'sales', items: [
     { label: 'Clientes y proveedores', path: '/partners' },
+    { label: 'Productos y servicios', path: '/products' },
     { label: 'Facturas', path: '/invoices' },
     { label: 'Cobros y pagos', path: '/payments' },
     { label: 'Lo que me deben y lo que debo', path: '/receivables' },
+  ] },
+  { title: 'Inventario', icon: 'box', items: [
+    { label: 'Existencias', path: '/inventory' },
+    { label: 'Ajustes de inventario', path: '/inventory/adjustments' },
+  ] },
+  { title: 'Recursos humanos', icon: 'people', items: [
+    { label: 'Empleados', path: '/hr/employees', roles: ['ADMIN', 'ACCOUNTANT'] },
+    { label: 'Nóminas', path: '/hr/payroll', roles: ['ADMIN', 'ACCOUNTANT'] },
+    { label: 'Reportes de nómina', path: '/hr/reports', roles: ['ADMIN', 'ACCOUNTANT'] },
+    { label: 'Configuración de nómina', path: '/hr/settings', roles: ['ADMIN', 'ACCOUNTANT'] },
   ] },
   { title: 'Factura electrónica', icon: 'ecf', items: [
     { label: 'Facturas electrónicas (e-CF)', path: '/ecf/inbox' },
@@ -84,6 +95,8 @@ export const NAV_ICONS: Record<NavIcon | 'chevron' | 'sun' | 'moon' | 'menu' | '
   audit: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20.5 20.5 16 16M8 11l2 2 4-4',
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
   help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4M12 17.5h.01',
+  box: 'M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',
+  people: 'M9 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 6.5M18 14a6 6 0 0 1 3.5 6',
   'help-circle': 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4M12 17.5h.01',
   chevron: 'm9 6 6 6-6 6',
   sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',

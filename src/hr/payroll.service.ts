@@ -178,19 +178,27 @@ export class PayrollService {
   }
 
   /**
-   * Regalía = la doceava parte del salario ordinario pagado en el año (Código de Trabajo art. 219). Con nóminas del año
-   * contabilizadas se usa su salario; si no hay, salario mensual × días contratado en el año ÷ días del año.
+   * Regalía = la doceava parte del salario ordinario del año (Código de Trabajo art. 219): el salario de las nóminas
+   * regulares contabilizadas del año, más los días contratado que ninguna nómina del sistema cubre (p. ej. los meses de
+   * antes de usar el sistema), estimados con el salario mensual. Todo ÷ 12.
    */
-  private async christmasBonus(tx: Tx, companyId: string, e: { id: string; baseSalary: Dec }, yearStart: Date, yearEnd: Date, days: number, yearDays: number) {
-    const paid = await tx.payrollLine.aggregate({
+  private async christmasBonus(
+    tx: Tx, companyId: string, e: { id: string; baseSalary: Dec; hireDate: Date; terminationDate: Date | null },
+    yearStart: Date, yearEnd: Date, days: number, yearDays: number,
+  ) {
+    const lines = await tx.payrollLine.findMany({
       where: {
         employeeId: e.id,
         run: { companyId, type: PayrollRunType.REGULAR, status: { in: [PayrollRunStatus.POSTED, PayrollRunStatus.PAID] }, periodStart: { gte: yearStart, lte: yearEnd } },
       },
-      _sum: { salary: true },
+      select: { salary: true, run: { select: { periodStart: true, periodEnd: true } } },
     });
-    const ordinary = D(paid._sum.salary);
-    return ordinary.gt(0) ? ordinary.div(12) : e.baseSalary.times(12).times(days).div(yearDays).div(12);
+    const paid = lines.reduce((s, l) => s.plus(l.salary), ZERO);
+    // Días ya cubiertos por esas nóminas (no se solapan: create() lo impide), dentro del año y del contrato
+    const covered = lines.reduce((s, l) => s + activeDays(l.run.periodStart, l.run.periodEnd < yearEnd ? l.run.periodEnd : yearEnd, e.hireDate, e.terminationDate), 0);
+    const uncovered = Math.max(0, days - covered);
+    const estimated = e.baseSalary.times(12).times(uncovered).div(yearDays);
+    return paid.plus(estimated).div(12);
   }
 
   private pick(r: LineResult) {

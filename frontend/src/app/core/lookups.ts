@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Api } from './api';
-import { Account, BankAccount, CashRegister, Journal, Partner, TaxRate } from './models';
+import { Account, BankAccount, CashRegister, Journal, Partner, Product, TaxRate } from './models';
 
 /**
  * Listas de apoyo para los selectores (cuentas, terceros, impuestos, bancos…).
@@ -16,6 +16,7 @@ export class Lookups {
   readonly bankAccounts = signal<BankAccount[]>([]);
   readonly cashRegisters = signal<CashRegister[]>([]);
   readonly journals = signal<Journal[]>([]);
+  readonly products = signal<Product[]>([]);
 
   private pending = new Map<string, Promise<void>>();
   private done = new Set<string>();
@@ -36,6 +37,7 @@ export class Lookups {
   ensureTaxRates(force = false) { return this.once('taxRates', async () => this.taxRates.set(await this.listOrPage<TaxRate>('/tax-rates')), force); }
   ensureBankAccounts(force = false) { return this.once('bankAccounts', async () => this.bankAccounts.set(await this.api.getP<BankAccount[]>('/bank-accounts')), force); }
   ensureCashRegisters(force = false) { return this.once('cashRegisters', async () => this.cashRegisters.set(await this.api.getP<CashRegister[]>('/cash-registers')), force); }
+  ensureProducts(force = false) { return this.once('products', async () => this.products.set(await this.api.getAll<Product>('/products')), force); }
   ensureJournals(force = false) { return this.once('journals', async () => this.journals.set(await this.listOrPage<Journal>('/journals')), force); }
 
   /** Carga todo lo que usan los formularios de documentos. */
@@ -50,7 +52,7 @@ export class Lookups {
   reset(): void {
     this.done.clear(); this.pending.clear();
     this.accounts.set([]); this.partners.set([]); this.taxRates.set([]);
-    this.bankAccounts.set([]); this.cashRegisters.set([]); this.journals.set([]);
+    this.bankAccounts.set([]); this.cashRegisters.set([]); this.journals.set([]); this.products.set([]);
   }
 
   accountName(id: string | null | undefined): string {

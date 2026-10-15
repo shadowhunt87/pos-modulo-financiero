@@ -83,7 +83,11 @@
         <div formArrayName="lines">
           @for (l of lines.controls; track l; let i = $index) {
             <div class="line" [formGroupName]="i">
-              <div class="field desc"><label [for]="'l-d' + i">Descripción</label><input [id]="'l-d' + i" class="input" formControlName="description" /></div>
+              <div class="field desc">
+                <label [for]="'l-pr' + i">Producto o servicio</label>
+                <app-combobox [id]="'l-pr' + i" formControlName="productId" [options]="productOptions()" placeholder="Del catálogo (opcional)" />
+                <label [for]="'l-d' + i" class="sub-label">Descripción</label><input [id]="'l-d' + i" class="input" formControlName="description" />
+              </div>
               <div class="field"><label [for]="'l-q' + i">Cantidad</label><input [id]="'l-q' + i" class="input num" type="number" min="0.0001" step="any" formControlName="quantity" /></div>
               <div class="field"><label [for]="'l-p' + i">Precio unitario</label><input [id]="'l-p' + i" class="input num" type="number" min="0" step="any" formControlName="unitPrice" /></div>
               <div class="field"><label [for]="'l-x' + i">Descuento</label><input [id]="'l-x' + i" class="input num" type="number" min="0" step="any" formControlName="discount" /></div>
@@ -97,7 +101,7 @@
             </div>
           }
         </div>
-        <p class="hint" style="padding:0 16px 12px">El descuento es un monto, no un porcentaje. Sin cuenta se usa la de Configuración contable.</p>
+        <p class="hint" style="padding:0 16px 12px">El descuento es un monto, no un porcentaje. Sin cuenta se usa la del producto o, si no tiene, la de Configuración contable.</p>
       </section>
 
       <section class="panel" style="margin-top:16px">

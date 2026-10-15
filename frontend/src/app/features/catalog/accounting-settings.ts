@@ -11,7 +11,8 @@ import { ComboOption, UI } from '../../shared/ui';
 type Key =
   | 'receivableAccountId' | 'payableAccountId' | 'salesIncomeAccountId' | 'purchaseExpenseAccountId' | 'salesDiscountAccountId'
   | 'customerAdvanceAccountId' | 'supplierAdvanceAccountId' | 'retainedEarningsAccountId' | 'currentYearResultAccountId'
-  | 'fxGainAccountId' | 'fxLossAccountId' | 'roundingAccountId';
+  | 'fxGainAccountId' | 'fxLossAccountId' | 'roundingAccountId'
+  | 'inventoryAccountId' | 'cogsAccountId' | 'inventoryAdjustmentAccountId';
 
 interface Field { key: Key; label: string; hint: string; types: string[] }
 interface Group { title: string; fields: Field[] }
@@ -28,6 +29,11 @@ const GROUPS: Group[] = [
     { key: 'payableAccountId', label: 'Cuentas por pagar', hint: 'Pasivo. Se acredita al emitir facturas de compra.', types: ['LIABILITY'] },
     { key: 'purchaseExpenseAccountId', label: 'Gastos de compras', hint: 'Gasto o activo. Se usa cuando la línea no trae cuenta.', types: ['EXPENSE', 'ASSET'] },
     { key: 'supplierAdvanceAccountId', label: 'Anticipos a proveedores', hint: 'Activo. Pagos hechos sin factura.', types: ['ASSET'] },
+  ] },
+  { title: 'Inventario', fields: [
+    { key: 'inventoryAccountId', label: 'Inventario de mercancías', hint: 'Activo. Las compras de productos con inventario entran aquí (si el producto no tiene la suya).', types: ['ASSET'] },
+    { key: 'cogsAccountId', label: 'Costo de ventas', hint: 'Gasto. Recibe el costo de lo vendido al emitir la factura.', types: ['EXPENSE'] },
+    { key: 'inventoryAdjustmentAccountId', label: 'Contrapartida de ajustes', hint: 'Gasto, ingreso o patrimonio. Para faltantes, mermas y existencias iniciales.', types: ['EXPENSE', 'INCOME', 'EQUITY'] },
   ] },
   { title: 'Patrimonio y cierre de año', fields: [
     { key: 'retainedEarningsAccountId', label: 'Utilidades retenidas', hint: 'Patrimonio. Recibe el resultado al cerrar el año.', types: ['EQUITY'] },
@@ -105,6 +111,7 @@ export class AccountingSettings {
     purchaseExpenseAccountId: [null as string | null], salesDiscountAccountId: [null as string | null], customerAdvanceAccountId: [null as string | null],
     supplierAdvanceAccountId: [null as string | null], retainedEarningsAccountId: [null as string | null], currentYearResultAccountId: [null as string | null],
     fxGainAccountId: [null as string | null], fxLossAccountId: [null as string | null], roundingAccountId: [null as string | null],
+    inventoryAccountId: [null as string | null], cogsAccountId: [null as string | null], inventoryAdjustmentAccountId: [null as string | null],
     requireEntryApproval: [false],
   });
 

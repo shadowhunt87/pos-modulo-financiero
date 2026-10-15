@@ -12,6 +12,8 @@ export interface InvoiceLineRow {
   appliedRate?: string | null;
   id: string; description: string; quantity: string; unitPrice: string; discount: string; taxRateId: string | null;
   taxAmount: string; total: string; accountId: string | null; costCenterId: string | null;
+  /** P1: producto del catálogo (si la línea salió de él). */
+  productId?: string | null;
   taxRate: { name: string; rate: string } | null;
 }
 export interface InvoiceWithholdingRow {

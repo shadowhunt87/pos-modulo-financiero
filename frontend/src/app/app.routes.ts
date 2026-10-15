@@ -38,6 +38,8 @@ export const routes: Routes = [
       { path: '', loadChildren: () => import('./features/fiscal/fiscal.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/setup/setup.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/auditing/auditing.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/inventory/inventory.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/hr/hr.routes').then((m) => m.routes) },
       { path: '**', loadComponent: () => import('./features/not-found').then((m) => m.NotFound), title: 'No encontrado' },
     ],
   },

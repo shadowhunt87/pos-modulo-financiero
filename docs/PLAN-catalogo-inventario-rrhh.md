@@ -80,8 +80,8 @@ costo para las entradas). Sirve para existencias iniciales, conteos físicos, me
 - **Topes de la TSS:** AFP 20, SFS 10 y SRL 4 salarios mínimos cotizables, llevados al período **(D)**.
 - **ISR:** se proyecta al año la base del período (ingresos que pagan ISR − AFP − SFS del empleado), se aplica la escala anual y
   se divide entre los períodos del año (método DGII).
-- **Regalía pascual:** nómina aparte = salario ordinario pagado en el año ÷ 12 (si no hay nóminas, salario × meses trabajados ÷
-  12). **(D)** Exenta de TSS e ISR (Código de Trabajo art. 219-222). **Por validar** con la contadora el tope de exención del ISR.
+- **Regalía pascual:** nómina aparte = (salario de las nóminas regulares contabilizadas del año + los días contratado sin
+  nómina en el sistema, estimados con el salario mensual) ÷ 12. **(D)** Exenta de TSS e ISR (Código de Trabajo art. 219-222). **Por validar** con la contadora el tope de exención del ISR.
 - **Neto** = bruto − TSS del empleado − ISR − otros descuentos. Si da negativo, la nómina no se puede calcular.
 
 **Ciclo de una nómina:** borrador (se calcula sola al crear) → novedades por empleado y recálculo → **contabilizar** (asiento) →

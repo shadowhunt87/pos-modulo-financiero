@@ -15,10 +15,56 @@
     { "slug": "seguridad-y-exportacion", "archivo": "12-seguridad-y-exportacion.md", "titulo": "Seguridad de la cuenta y exportación de datos" },
     { "slug": "arranque", "archivo": "13-arranque.md", "titulo": "Arranque: tu primera factura en 15 minutos" },
     { "slug": "auditoria", "archivo": "14-auditoria.md", "titulo": "Auditoría" },
+    { "slug": "productos-e-inventario", "archivo": "16-productos-e-inventario.md", "titulo": "Productos e inventario" },
+    { "slug": "nomina", "archivo": "17-nomina.md", "titulo": "Recursos humanos y nómina" },
     { "slug": "novedades", "archivo": "15-novedades.md", "titulo": "Novedades" }
   ],
 
   "pantallas": {
+    "/products": {
+      "seccion": "productos-e-inventario", "ancla": "crear-un-producto-o-servicio",
+      "siguiente": { "texto": "Úsalo en una factura", "ruta": "/invoices/new" }
+    },
+    "/inventory": {
+      "seccion": "productos-e-inventario", "ancla": "ver-las-existencias-y-el-kardex",
+      "siguiente": { "texto": "Registra la existencia inicial con un ajuste", "ruta": "/inventory/adjustments/new" }
+    },
+    "/inventory/products/:id": {
+      "seccion": "productos-e-inventario", "ancla": "ver-las-existencias-y-el-kardex",
+      "siguiente": { "texto": "Vuelve a las existencias", "ruta": "/inventory" }
+    },
+    "/inventory/adjustments": {
+      "seccion": "productos-e-inventario", "ancla": "registrar-la-existencia-inicial-y-otros-ajustes",
+      "siguiente": { "texto": "Registra un ajuste", "ruta": "/inventory/adjustments/new" }
+    },
+    "/inventory/adjustments/new": {
+      "seccion": "productos-e-inventario", "ancla": "registrar-la-existencia-inicial-y-otros-ajustes",
+      "siguiente": { "texto": "Revisa las existencias", "ruta": "/inventory" }
+    },
+    "/inventory/adjustments/:id": {
+      "seccion": "productos-e-inventario", "ancla": "anular-un-ajuste",
+      "siguiente": { "texto": "Revisa las existencias", "ruta": "/inventory" }
+    },
+    "/hr/employees": {
+      "seccion": "nomina", "ancla": "registrar-un-empleado",
+      "siguiente": { "texto": "Haz la nómina", "ruta": "/hr/payroll" }
+    },
+    "/hr/payroll": {
+      "seccion": "nomina", "ancla": "hacer-una-nomina",
+      "siguiente": { "texto": "Revisa los reportes del mes", "ruta": "/hr/reports" }
+    },
+    "/hr/payroll/:id": {
+      "seccion": "nomina", "ancla": "contabilizar-y-pagar",
+      "siguiente": { "texto": "Revisa los reportes del mes", "ruta": "/hr/reports" }
+    },
+    "/hr/reports": {
+      "seccion": "nomina", "ancla": "reportes-de-la-tss-y-del-ir-3",
+      "siguiente": { "texto": "Vuelve a las nóminas", "ruta": "/hr/payroll" }
+    },
+    "/hr/settings": {
+      "seccion": "nomina", "ancla": "antes-de-la-primera-nomina",
+      "siguiente": { "texto": "Registra tus empleados", "ruta": "/hr/employees" }
+    },
     "/login": {
       "seccion": "primeros-pasos", "ancla": "entrar-al-sistema",
       "siguiente": { "texto": "Entra con tu correo y tu clave", "ruta": "/" }
