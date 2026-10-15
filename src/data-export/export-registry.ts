@@ -56,6 +56,7 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   company('FiscalFiling', { jsonColumns: ['snapshot'] }), company('BContingency'),
   company('EcfConnection', { jsonColumns: ['settings'], excludedColumns: [{ column: 'credentialsEnc', reason: 'Credenciales del proveedor de e-CF cifradas: nunca salen (R12)' }] }),
   company('EcfEvent'),
+  company('Product'),
 
   child('JournalEntryLine', (c): Prisma.JournalEntryLineWhereInput => ({ journalEntry: { companyId: c } })),
   child('InvoiceLine', (c): Prisma.InvoiceLineWhereInput => ({ invoice: { companyId: c } })),

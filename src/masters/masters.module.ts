@@ -13,6 +13,8 @@ import { DocumentSequencesController } from './sequences/document-sequences.cont
 import { DocumentSequencesService } from './sequences/document-sequences.service.js';
 import { AccountClassificationController } from './account-classification/account-classification.controller.js';
 import { AccountClassificationService } from './account-classification/account-classification.service.js';
+import { ProductsController } from './products/products.controller.js';
+import { ProductsService } from './products/products.service.js';
 
 // PrismaModule es @Global. Facturación, pagos y tesorería importarán este módulo
 // para consumir NCF, numeración, diarios y cuentas por defecto.
@@ -20,10 +22,12 @@ import { AccountClassificationService } from './account-classification/account-c
   controllers: [
     PartnersController, TaxRatesController, NcfController,
     AccountingSettingsController, JournalsController, DocumentSequencesController, AccountClassificationController,
+    ProductsController,
   ],
   providers: [
     PartnersService, TaxRatesService, NcfService,
     AccountingSettingsService, JournalsService, DocumentSequencesService, AccountClassificationService,
+    ProductsService,
   ],
   exports: [NcfService, AccountingSettingsService, JournalsService, DocumentSequencesService, PartnersService],
 })

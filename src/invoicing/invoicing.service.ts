@@ -70,6 +70,7 @@ interface DocLine {
   taxRateId?: string;
   accountId?: string;
   costCenterId?: string;
+  productId?: string;
 }
 interface DocWithholding {
   taxRateId: string;
@@ -164,9 +165,22 @@ export class InvoicingService {
     if (input.ncf && !isValidNcfFormat(input.ncf)) throw new UnprocessableEntityException('Formato de NCF inválido');
     if (input.ncfType && !NCF_TYPE_REGEX.test(input.ncfType)) throw new UnprocessableEntityException(`Tipo de comprobante inválido: ${input.ncfType}`);
 
+    // P1: productos del catálogo de las líneas (de esta empresa y activos). Una línea sin cuenta toma la del producto.
+    const productIds = [...new Set(input.lines.map((l) => l.productId).filter((x): x is string => !!x))];
+    const products = productIds.length ? await tx.product.findMany({ where: { companyId, id: { in: productIds } } }) : [];
+    if (products.length !== productIds.length) throw new NotFoundException('Algún producto de las líneas no existe');
+    const inactive = products.filter((p) => !p.active);
+    if (inactive.length) throw new UnprocessableEntityException(`Productos inactivos: ${inactive.map((p) => p.code).join(', ')}`);
+    const productById = new Map(products.map((p) => [p.id, p]));
+    const lineAccount = (l: DocLine) => {
+      if (l.accountId) return l.accountId;
+      const p = l.productId ? productById.get(l.productId) : undefined;
+      return (side === 'SALES' ? p?.incomeAccountId : p?.expenseAccountId) ?? undefined;
+    };
+
     // Cuentas y centros de costo de las líneas: de esta empresa y utilizables. Antes solo se
     // revisaban al emitir (las cuentas) o nunca (los centros de costo, que podían ser de otra empresa).
-    const accountIds = [...new Set(input.lines.map((l) => l.accountId).filter((x): x is string => !!x))];
+    const accountIds = [...new Set(input.lines.map(lineAccount).filter((x): x is string => !!x))];
     if (accountIds.length) {
       const accounts = await tx.account.findMany({ where: { companyId, id: { in: accountIds } } });
       if (accounts.length !== accountIds.length) throw new NotFoundException('Alguna cuenta contable de las líneas no existe');
@@ -217,7 +231,7 @@ export class InvoicingService {
         description: l.description, quantity: D(l.quantity), unitPrice: D(l.unitPrice), discount: r2(discount),
         taxRateId: l.taxRateId ?? null, taxAmount, total: net, // total = neto sin impuesto
         appliedRate: l.taxRateId ? rateOf(taxById.get(l.taxRateId)!) : null, fiscalParameterId: l.taxRateId ? (linked.get(l.taxRateId)?.parameterId ?? null) : null,
-        accountId: l.accountId ?? null, costCenterId: l.costCenterId ?? null,
+        accountId: lineAccount(l) ?? null, costCenterId: l.costCenterId ?? null, productId: l.productId ?? null,
       };
     });
 
@@ -334,7 +348,7 @@ export class InvoicingService {
         notes: dto.notes ?? cur.notes,
         lines: dto.lines ?? cur.lines.map((l) => ({
           description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount,
-          taxRateId: l.taxRateId ?? undefined, accountId: l.accountId ?? undefined, costCenterId: l.costCenterId ?? undefined,
+          taxRateId: l.taxRateId ?? undefined, accountId: l.accountId ?? undefined, costCenterId: l.costCenterId ?? undefined, productId: l.productId ?? undefined,
         })),
         withholdings: dto.withholdings ?? cur.withholdings.map((w) => ({ taxRateId: w.taxRateId, base: w.base })),
       });
@@ -388,7 +402,7 @@ export class InvoicingService {
       relatedInvoiceId: inv.relatedInvoiceId, dgiiExpenseType: inv.dgiiExpenseType, dgiiIncomeType: inv.dgiiIncomeType, notes: inv.notes,
       lines: inv.lines.map((l) => ({
         description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount,
-        taxRateId: l.taxRateId ?? undefined, accountId: l.accountId ?? undefined, costCenterId: l.costCenterId ?? undefined,
+        taxRateId: l.taxRateId ?? undefined, accountId: l.accountId ?? undefined, costCenterId: l.costCenterId ?? undefined, productId: l.productId ?? undefined,
       })),
       withholdings: inv.withholdings.map((w) => ({ taxRateId: w.taxRateId, base: w.base })),
     });

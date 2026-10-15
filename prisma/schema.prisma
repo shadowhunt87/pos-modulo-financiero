@@ -59,6 +59,7 @@ model Company {
   auditEngagements    AuditEngagement[]
   fiscalFilings       FiscalFiling[]
   bContingencies      BContingency[]
+  products            Product[]
   ecfConnection       EcfConnection?
 
   createdAt DateTime @default(now())
@@ -209,6 +210,8 @@ model Account {
   settingsFxGain            AccountingSettings[] @relation("SettingsFxGain")
   settingsFxLoss            AccountingSettings[] @relation("SettingsFxLoss")
   settingsRounding          AccountingSettings[] @relation("SettingsRounding")
+  productIncome             Product[]            @relation("ProductIncome")
+  productExpense            Product[]            @relation("ProductExpense")
 
   active Boolean @default(true)
 
@@ -559,9 +562,11 @@ model TaxRate {
   purchaseAccountId String? // ej: ITBIS adelantado
   purchaseAccount   Account?   @relation("TaxPurchaseAccount", fields: [purchaseAccountId], references: [id])
 
-  invoiceLines        InvoiceLine[]
-  invoiceWithholdings InvoiceWithholding[]
-  active              Boolean              @default(true)
+  invoiceLines         InvoiceLine[]
+  invoiceWithholdings  InvoiceWithholding[]
+  productSaleTaxes     Product[]            @relation("ProductSaleTax")
+  productPurchaseTaxes Product[]            @relation("ProductPurchaseTax")
+  active               Boolean              @default(true)
 
   @@index([companyId])
 }
@@ -710,8 +715,12 @@ model InvoiceLine {
   account           Account?    @relation(fields: [accountId], references: [id])
   costCenterId      String?
   costCenter        CostCenter? @relation(fields: [costCenterId], references: [id])
+  // P1: producto o servicio del catálogo (opcional; la línea guarda su propia descripción y precio)
+  productId         String?
+  product           Product?    @relation(fields: [productId], references: [id])
 
   @@index([invoiceId])
+  @@index([productId])
 }
 
 // Retenciones aplicadas a una factura (ISR, ITBIS retenido)
@@ -1803,4 +1812,44 @@ model EcfEvent {
 
   @@index([ecfDocumentId])
   @@index([companyId])
+}
+
+// ============================================================
+// CATÁLOGO DE PRODUCTOS Y SERVICIOS (P1)
+// ============================================================
+
+model Product {
+  id                String      @id @default(uuid())
+  companyId         String
+  company           Company     @relation(fields: [companyId], references: [id])
+  code              String      @db.VarChar(40)
+  name              String      @db.VarChar(200)
+  description       String?     @db.VarChar(1000)
+  kind              ProductKind @default(SERVICE)
+  unit              String      @default("UND") @db.VarChar(20)
+  // Precios de referencia (la factura puede cambiarlos)
+  salePrice         Decimal?    @db.Decimal(19, 4)
+  purchasePrice     Decimal?    @db.Decimal(19, 4)
+  saleTaxRateId     String?
+  saleTaxRate       TaxRate?    @relation("ProductSaleTax", fields: [saleTaxRateId], references: [id])
+  purchaseTaxRateId String?
+  purchaseTaxRate   TaxRate?    @relation("ProductPurchaseTax", fields: [purchaseTaxRateId], references: [id])
+  // Cuentas por defecto de la línea (si no, las de Configuración contable)
+  incomeAccountId   String?
+  incomeAccount     Account?    @relation("ProductIncome", fields: [incomeAccountId], references: [id])
+  expenseAccountId  String?
+  expenseAccount    Account?    @relation("ProductExpense", fields: [expenseAccountId], references: [id])
+  active            Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  invoiceLines InvoiceLine[]
+
+  @@unique([companyId, code])
+  @@index([companyId, name])
+}
+
+enum ProductKind {
+  GOODS // bien (mercancía)
+  SERVICE
 }

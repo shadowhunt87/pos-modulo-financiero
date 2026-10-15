@@ -20,6 +20,8 @@ export class InvoiceLineDto {
   // Cuenta de ingreso/gasto; si no, se usa la de Configuración contable
   @IsOptional() @IsUUID() accountId?: string;
   @IsOptional() @IsUUID() costCenterId?: string;
+  // P1: producto del catálogo. La línea igual lleva su descripción y precio; si no trae cuenta, se usa la del producto
+  @IsOptional() @IsUUID() productId?: string;
 }
 
 export class InvoiceWithholdingDto {
