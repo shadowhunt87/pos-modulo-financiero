@@ -21,7 +21,7 @@
             <h2>Avance</h2>
             <p>Áreas: {{ (en.summary?.workpapers?.['DONE'] ?? 0) }} terminadas de {{ (en.summary?.workpapers?.['DONE'] ?? 0) + (en.summary?.workpapers?.['IN_PROGRESS'] ?? 0) + (en.summary?.workpapers?.['PENDING'] ?? 0) }}</p>
             <p>Partidas revisadas: {{ (en.summary?.marks?.['JOURNAL_ENTRY'] ?? 0) + (en.summary?.marks?.['INVOICE'] ?? 0) + (en.summary?.marks?.['PAYMENT'] ?? 0) + (en.summary?.marks?.['BANK_RECONCILIATION'] ?? 0) }}</p>
-            <p>Hallazgos: @for (s of ['DRAFT', 'COMMUNICATED', 'RESPONDED', 'RESOLVED', 'RISK_ACCEPTED']; track s) { @if (en.summary?.findings?.[s]) { {{ L.FINDING_STATUS[s] }} {{ en.summary?.findings?.[s] }} · } }</p>
+            <p>Hallazgos: @for (s of ['DRAFT', 'COMMUNICATED', 'RESPONDED', 'RESOLVED', 'RISK_ACCEPTED']; track s) { @if (en.summary?.findings[s]) { {{ L.FINDING_STATUS[s] }} {{ en.summary.findings[s] }} · } }</p>
             @if (en.reopenReason) { <p class="hint">Reabierto: {{ en.reopenReason }}</p> }
             @if (isAuditor) {
               <div class="btn-row">
