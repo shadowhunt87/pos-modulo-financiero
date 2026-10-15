@@ -13,6 +13,8 @@ const { ASSET, INCOME, EXPENSE } = AccountType;
 const ACCOUNT_RULES = {
   incomeAccountId: { types: [INCOME], label: 'de ingreso' },
   expenseAccountId: { types: [EXPENSE, ASSET], label: 'de gasto o costo' },
+  inventoryAccountId: { types: [ASSET], label: 'de activo (inventario)' },
+  cogsAccountId: { types: [EXPENSE], label: 'de costo de ventas' },
 } as const;
 type AccountField = keyof typeof ACCOUNT_RULES;
 
@@ -21,6 +23,8 @@ const INCLUDE = {
   purchaseTaxRate: { select: { id: true, name: true, rate: true } },
   incomeAccount: { select: { id: true, code: true, name: true } },
   expenseAccount: { select: { id: true, code: true, name: true } },
+  inventoryAccount: { select: { id: true, code: true, name: true } },
+  cogsAccount: { select: { id: true, code: true, name: true } },
 } satisfies Prisma.ProductInclude;
 
 /** Catálogo de productos y servicios (P1). La factura copia descripción, precio e impuesto; aquí solo hay valores de referencia. */
@@ -70,12 +74,27 @@ export class ProductsService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         await this.validate(tx, user.companyId, dto);
+        await this.assertInventoryRules(tx, user.companyId, null, dto);
         const p = await tx.product.create({ data: { ...dto, companyId: user.companyId }, include: INCLUDE });
         await writeAudit(tx, user, 'Product', p.id, AuditAction.CREATE, { code: p.code, name: p.name, kind: p.kind });
         return p;
       });
     } catch (e) {
       this.duplicated(e, dto.code);
+    }
+  }
+
+  /**
+   * P2: solo un bien controla inventario. Con existencia o kárdex no se apaga el control ni pasa a servicio:
+   * los saldos de inventario y el mayor quedarían sin explicación.
+   */
+  private async assertInventoryRules(tx: Tx, companyId: string, cur: { id: string; kind: string; tracksInventory: boolean } | null, dto: CreateProductDto | UpdateProductDto) {
+    const kind = dto.kind ?? cur?.kind ?? 'SERVICE';
+    const tracks = dto.tracksInventory ?? cur?.tracksInventory ?? false;
+    if (tracks && kind !== 'GOODS') throw new UnprocessableEntityException('Solo un bien (no un servicio) puede controlar inventario');
+    if (cur?.tracksInventory && (!tracks || kind !== 'GOODS')) {
+      const moves = await tx.inventoryMovement.count({ where: { companyId, productId: cur.id } });
+      if (moves) throw new UnprocessableEntityException('Este producto ya tiene movimientos de inventario: no se puede quitar el control de inventario ni pasarlo a servicio');
     }
   }
 
@@ -86,6 +105,7 @@ export class ProductsService {
       companyId: user.companyId,
       active: q.active,
       kind: q.kind,
+      tracksInventory: q.tracksInventory,
       ...(q.q ? { OR: [{ code: { contains: q.q, mode: 'insensitive' } }, { name: { contains: q.q, mode: 'insensitive' } }] } : {}),
     };
     const [data, total] = await this.prisma.$transaction([
@@ -102,10 +122,11 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto, user: AuthUser) {
-    await this.get(id, user);
+    const cur = await this.get(id, user);
     try {
       return await this.prisma.$transaction(async (tx) => {
         await this.validate(tx, user.companyId, dto);
+        await this.assertInventoryRules(tx, user.companyId, cur, dto);
         const p = await tx.product.update({ where: { id, companyId: user.companyId }, data: dto, include: INCLUDE });
         await writeAudit(tx, user, 'Product', id, AuditAction.UPDATE, JSON.parse(JSON.stringify(dto)) as Prisma.InputJsonValue);
         return p;

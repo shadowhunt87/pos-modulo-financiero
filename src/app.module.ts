@@ -26,6 +26,7 @@ import { DataExportModule } from './data-export/data-export.module.js';
 import { AuditingModule } from './auditing/auditing.module.js';
 import { DgiiReturnsModule } from './dgii-returns/dgii-returns.module.js';
 import { GuidanceModule } from './guidance/guidance.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -58,6 +59,7 @@ import { validate } from './config/env.validation.js';
     DataExportModule,
     AuditingModule,
     DgiiReturnsModule,
+    InventoryModule,
   ],
 })
 export class AppModule {}

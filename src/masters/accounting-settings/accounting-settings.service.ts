@@ -21,6 +21,10 @@ export const SETTINGS_RULES = {
   fxGainAccountId: [INCOME],
   fxLossAccountId: [EXPENSE],
   roundingAccountId: [INCOME, EXPENSE],
+  // P2: inventario
+  inventoryAccountId: [ASSET],
+  cogsAccountId: [EXPENSE],
+  inventoryAdjustmentAccountId: [EXPENSE, INCOME, EQUITY],
 } as const satisfies Record<string, readonly AccountType[]>;
 
 export type SettingsKey = keyof typeof SETTINGS_RULES;

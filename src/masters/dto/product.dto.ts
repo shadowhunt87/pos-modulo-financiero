@@ -24,6 +24,10 @@ export class CreateProductDto {
   // Cuentas por defecto de la línea de factura; si no, las de Configuración contable
   @IsOptional() @IsUUID() incomeAccountId?: string;
   @IsOptional() @IsUUID() expenseAccountId?: string;
+  // P2: solo bienes. Controla existencias con costo promedio; cuentas propias o las de Configuración contable
+  @IsOptional() @IsBoolean() tracksInventory?: boolean;
+  @IsOptional() @IsUUID() inventoryAccountId?: string;
+  @IsOptional() @IsUUID() cogsAccountId?: string;
 }
 
 // undefined = no tocar; null = quitar (precios, impuestos y cuentas)
@@ -39,6 +43,9 @@ export class UpdateProductDto {
   @IsOptional() @IsUUID() purchaseTaxRateId?: string | null;
   @IsOptional() @IsUUID() incomeAccountId?: string | null;
   @IsOptional() @IsUUID() expenseAccountId?: string | null;
+  @IsOptional() @IsBoolean() tracksInventory?: boolean;
+  @IsOptional() @IsUUID() inventoryAccountId?: string | null;
+  @IsOptional() @IsUUID() cogsAccountId?: string | null;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 
@@ -47,6 +54,7 @@ export class ListProductsQuery {
   @IsOptional() @IsString() @MaxLength(100) q?: string;
   @IsOptional() @IsEnum(ProductKind) kind?: ProductKind;
   @IsOptional() @Transform(toBool) @IsBoolean() active?: boolean;
+  @IsOptional() @Transform(toBool) @IsBoolean() tracksInventory?: boolean;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number;
 }

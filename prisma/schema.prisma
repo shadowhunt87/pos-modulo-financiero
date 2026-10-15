@@ -25,42 +25,44 @@ model Company {
   logoUrl              String?
   active               Boolean @default(true)
 
-  users               User[]
-  accounts            Account[]
-  partners            Partner[]
-  invoices            Invoice[]
-  bankAccounts        BankAccount[]
-  bankConnections     BankConnection[]
-  bankReconciliations BankReconciliation[]
-  bankRules           BankRule[]
-  cashRegisters       CashRegister[]
-  budgets             Budget[]
-  fiscalYears         FiscalYear[]
-  fiscalPeriods       FiscalPeriod[]
-  ncfSequences        NcfSequence[]
-  documentSequences   DocumentSequence[]
-  taxRates            TaxRate[]
-  costCenters         CostCenter[]
-  auditLogs           AuditLog[]
-  journals            Journal[]
-  journalEntries      JournalEntry[]
-  exchangeRates       ExchangeRate[]
-  payments            Payment[]
-  attachments         Attachment[]
-  financialSnapshots  FinancialRatioSnapshot[]
-  accountingSettings  AccountingSettings?
-  feedbacks           Feedback[]
-  ecfDocuments        EcfDocument[]
-  ecfImports          EcfImport[]
-  serviceKeys         ServiceKey[]
-  ratioThresholds     RatioThreshold[]
-  fiscalProfile       CompanyFiscalProfile?
-  sampleRecords       SampleRecord[]
-  auditEngagements    AuditEngagement[]
-  fiscalFilings       FiscalFiling[]
-  bContingencies      BContingency[]
-  products            Product[]
-  ecfConnection       EcfConnection?
+  users                User[]
+  accounts             Account[]
+  partners             Partner[]
+  invoices             Invoice[]
+  bankAccounts         BankAccount[]
+  bankConnections      BankConnection[]
+  bankReconciliations  BankReconciliation[]
+  bankRules            BankRule[]
+  cashRegisters        CashRegister[]
+  budgets              Budget[]
+  fiscalYears          FiscalYear[]
+  fiscalPeriods        FiscalPeriod[]
+  ncfSequences         NcfSequence[]
+  documentSequences    DocumentSequence[]
+  taxRates             TaxRate[]
+  costCenters          CostCenter[]
+  auditLogs            AuditLog[]
+  journals             Journal[]
+  journalEntries       JournalEntry[]
+  exchangeRates        ExchangeRate[]
+  payments             Payment[]
+  attachments          Attachment[]
+  financialSnapshots   FinancialRatioSnapshot[]
+  accountingSettings   AccountingSettings?
+  feedbacks            Feedback[]
+  ecfDocuments         EcfDocument[]
+  ecfImports           EcfImport[]
+  serviceKeys          ServiceKey[]
+  ratioThresholds      RatioThreshold[]
+  fiscalProfile        CompanyFiscalProfile?
+  sampleRecords        SampleRecord[]
+  auditEngagements     AuditEngagement[]
+  fiscalFilings        FiscalFiling[]
+  bContingencies       BContingency[]
+  products             Product[]
+  inventoryMovements   InventoryMovement[]
+  inventoryAdjustments InventoryAdjustment[]
+  ecfConnection        EcfConnection?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,34 +76,41 @@ model AccountingSettings {
   companyId String  @unique
   company   Company @relation(fields: [companyId], references: [id])
 
-  receivableAccountId        String? // Cuentas por cobrar clientes
-  payableAccountId           String? // Cuentas por pagar proveedores
-  salesIncomeAccountId       String? // Ingresos por ventas
-  purchaseExpenseAccountId   String? // Compras / gastos por defecto
-  salesDiscountAccountId     String?
-  customerAdvanceAccountId   String? // Anticipos de clientes
-  supplierAdvanceAccountId   String? // Anticipos a proveedores
-  retainedEarningsAccountId  String? // Utilidades acumuladas
-  currentYearResultAccountId String? // Resultado del ejercicio (cierre)
-  fxGainAccountId            String? // Ganancia cambiaria
-  fxLossAccountId            String? // Pérdida cambiaria
-  roundingAccountId          String?
+  receivableAccountId          String? // Cuentas por cobrar clientes
+  payableAccountId             String? // Cuentas por pagar proveedores
+  salesIncomeAccountId         String? // Ingresos por ventas
+  purchaseExpenseAccountId     String? // Compras / gastos por defecto
+  salesDiscountAccountId       String?
+  customerAdvanceAccountId     String? // Anticipos de clientes
+  supplierAdvanceAccountId     String? // Anticipos a proveedores
+  retainedEarningsAccountId    String? // Utilidades acumuladas
+  currentYearResultAccountId   String? // Resultado del ejercicio (cierre)
+  fxGainAccountId              String? // Ganancia cambiaria
+  fxLossAccountId              String? // Pérdida cambiaria
+  roundingAccountId            String?
+  // P2: inventario (el producto puede tener las suyas)
+  inventoryAccountId           String? // Inventario de mercancías (activo)
+  cogsAccountId                String? // Costo de ventas
+  inventoryAdjustmentAccountId String? // Contrapartida por defecto de los ajustes de inventario
 
   // Si está activo, los asientos manuales quedan en borrador hasta que un aprobador los apruebe
   requireEntryApproval Boolean @default(false)
 
-  receivableAccount        Account? @relation("SettingsReceivable", fields: [receivableAccountId], references: [id])
-  payableAccount           Account? @relation("SettingsPayable", fields: [payableAccountId], references: [id])
-  salesIncomeAccount       Account? @relation("SettingsSalesIncome", fields: [salesIncomeAccountId], references: [id])
-  purchaseExpenseAccount   Account? @relation("SettingsPurchaseExpense", fields: [purchaseExpenseAccountId], references: [id])
-  salesDiscountAccount     Account? @relation("SettingsSalesDiscount", fields: [salesDiscountAccountId], references: [id])
-  customerAdvanceAccount   Account? @relation("SettingsCustomerAdvance", fields: [customerAdvanceAccountId], references: [id])
-  supplierAdvanceAccount   Account? @relation("SettingsSupplierAdvance", fields: [supplierAdvanceAccountId], references: [id])
-  retainedEarningsAccount  Account? @relation("SettingsRetainedEarnings", fields: [retainedEarningsAccountId], references: [id])
-  currentYearResultAccount Account? @relation("SettingsCurrentYearResult", fields: [currentYearResultAccountId], references: [id])
-  fxGainAccount            Account? @relation("SettingsFxGain", fields: [fxGainAccountId], references: [id])
-  fxLossAccount            Account? @relation("SettingsFxLoss", fields: [fxLossAccountId], references: [id])
-  roundingAccount          Account? @relation("SettingsRounding", fields: [roundingAccountId], references: [id])
+  receivableAccount          Account? @relation("SettingsReceivable", fields: [receivableAccountId], references: [id])
+  payableAccount             Account? @relation("SettingsPayable", fields: [payableAccountId], references: [id])
+  salesIncomeAccount         Account? @relation("SettingsSalesIncome", fields: [salesIncomeAccountId], references: [id])
+  purchaseExpenseAccount     Account? @relation("SettingsPurchaseExpense", fields: [purchaseExpenseAccountId], references: [id])
+  salesDiscountAccount       Account? @relation("SettingsSalesDiscount", fields: [salesDiscountAccountId], references: [id])
+  customerAdvanceAccount     Account? @relation("SettingsCustomerAdvance", fields: [customerAdvanceAccountId], references: [id])
+  supplierAdvanceAccount     Account? @relation("SettingsSupplierAdvance", fields: [supplierAdvanceAccountId], references: [id])
+  retainedEarningsAccount    Account? @relation("SettingsRetainedEarnings", fields: [retainedEarningsAccountId], references: [id])
+  currentYearResultAccount   Account? @relation("SettingsCurrentYearResult", fields: [currentYearResultAccountId], references: [id])
+  fxGainAccount              Account? @relation("SettingsFxGain", fields: [fxGainAccountId], references: [id])
+  fxLossAccount              Account? @relation("SettingsFxLoss", fields: [fxLossAccountId], references: [id])
+  roundingAccount            Account? @relation("SettingsRounding", fields: [roundingAccountId], references: [id])
+  inventoryAccount           Account? @relation("SettingsInventory", fields: [inventoryAccountId], references: [id])
+  cogsAccount                Account? @relation("SettingsCogs", fields: [cogsAccountId], references: [id])
+  inventoryAdjustmentAccount Account? @relation("SettingsInventoryAdjustment", fields: [inventoryAdjustmentAccountId], references: [id])
 
   updatedAt DateTime @updatedAt
 }
@@ -198,20 +207,26 @@ model Account {
   taxSalesAccounts    TaxRate[]          @relation("TaxSalesAccount")
   taxPurchaseAccounts TaxRate[]          @relation("TaxPurchaseAccount")
 
-  settingsReceivable        AccountingSettings[] @relation("SettingsReceivable")
-  settingsPayable           AccountingSettings[] @relation("SettingsPayable")
-  settingsSalesIncome       AccountingSettings[] @relation("SettingsSalesIncome")
-  settingsPurchaseExpense   AccountingSettings[] @relation("SettingsPurchaseExpense")
-  settingsSalesDiscount     AccountingSettings[] @relation("SettingsSalesDiscount")
-  settingsCustomerAdvance   AccountingSettings[] @relation("SettingsCustomerAdvance")
-  settingsSupplierAdvance   AccountingSettings[] @relation("SettingsSupplierAdvance")
-  settingsRetainedEarnings  AccountingSettings[] @relation("SettingsRetainedEarnings")
-  settingsCurrentYearResult AccountingSettings[] @relation("SettingsCurrentYearResult")
-  settingsFxGain            AccountingSettings[] @relation("SettingsFxGain")
-  settingsFxLoss            AccountingSettings[] @relation("SettingsFxLoss")
-  settingsRounding          AccountingSettings[] @relation("SettingsRounding")
-  productIncome             Product[]            @relation("ProductIncome")
-  productExpense            Product[]            @relation("ProductExpense")
+  settingsReceivable        AccountingSettings[]  @relation("SettingsReceivable")
+  settingsPayable           AccountingSettings[]  @relation("SettingsPayable")
+  settingsSalesIncome       AccountingSettings[]  @relation("SettingsSalesIncome")
+  settingsPurchaseExpense   AccountingSettings[]  @relation("SettingsPurchaseExpense")
+  settingsSalesDiscount     AccountingSettings[]  @relation("SettingsSalesDiscount")
+  settingsCustomerAdvance   AccountingSettings[]  @relation("SettingsCustomerAdvance")
+  settingsSupplierAdvance   AccountingSettings[]  @relation("SettingsSupplierAdvance")
+  settingsRetainedEarnings  AccountingSettings[]  @relation("SettingsRetainedEarnings")
+  settingsCurrentYearResult AccountingSettings[]  @relation("SettingsCurrentYearResult")
+  settingsFxGain            AccountingSettings[]  @relation("SettingsFxGain")
+  settingsFxLoss            AccountingSettings[]  @relation("SettingsFxLoss")
+  settingsRounding          AccountingSettings[]  @relation("SettingsRounding")
+  productIncome             Product[]             @relation("ProductIncome")
+  productExpense            Product[]             @relation("ProductExpense")
+  productInventory          Product[]             @relation("ProductInventory")
+  productCogs               Product[]             @relation("ProductCogs")
+  settingsInventory         AccountingSettings[]  @relation("SettingsInventory")
+  settingsCogs              AccountingSettings[]  @relation("SettingsCogs")
+  settingsInventoryAdjust   AccountingSettings[]  @relation("SettingsInventoryAdjustment")
+  inventoryAdjustments      InventoryAdjustment[]
 
   active Boolean @default(true)
 
@@ -393,10 +408,12 @@ model JournalEntry {
   reversalOf   JournalEntry? @relation("EntryReversal", fields: [reversalOfId], references: [id])
   reversedBy   JournalEntry? @relation("EntryReversal")
 
-  closedFiscalYear FiscalYear?  @relation("FiscalYearClosingEntry")
-  invoices         Invoice[]
-  payments         Payment[]
-  attachments      Attachment[]
+  closedFiscalYear     FiscalYear?           @relation("FiscalYearClosingEntry")
+  inventoryMovements   InventoryMovement[]
+  inventoryAdjustments InventoryAdjustment[]
+  invoices             Invoice[]
+  payments             Payment[]
+  attachments          Attachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -431,6 +448,7 @@ enum SourceDocumentType {
   BANK_TRANSACTION
   CASH_EXPENSE
   YEAR_END_CLOSING
+  INVENTORY // P2: costo de ventas y ajustes de inventario
   OTHER
 }
 
@@ -637,6 +655,7 @@ model Invoice {
   lines              InvoiceLine[]
   withholdings       InvoiceWithholding[]
   paymentAllocations PaymentAllocation[]
+  inventoryMovements InventoryMovement[]
   attachments        Attachment[]
 
   subtotal         Decimal @db.Decimal(19, 4)
@@ -1819,31 +1838,43 @@ model EcfEvent {
 // ============================================================
 
 model Product {
-  id                String      @id @default(uuid())
-  companyId         String
-  company           Company     @relation(fields: [companyId], references: [id])
-  code              String      @db.VarChar(40)
-  name              String      @db.VarChar(200)
-  description       String?     @db.VarChar(1000)
-  kind              ProductKind @default(SERVICE)
-  unit              String      @default("UND") @db.VarChar(20)
+  id                 String      @id @default(uuid())
+  companyId          String
+  company            Company     @relation(fields: [companyId], references: [id])
+  code               String      @db.VarChar(40)
+  name               String      @db.VarChar(200)
+  description        String?     @db.VarChar(1000)
+  kind               ProductKind @default(SERVICE)
+  unit               String      @default("UND") @db.VarChar(20)
   // Precios de referencia (la factura puede cambiarlos)
-  salePrice         Decimal?    @db.Decimal(19, 4)
-  purchasePrice     Decimal?    @db.Decimal(19, 4)
-  saleTaxRateId     String?
-  saleTaxRate       TaxRate?    @relation("ProductSaleTax", fields: [saleTaxRateId], references: [id])
-  purchaseTaxRateId String?
-  purchaseTaxRate   TaxRate?    @relation("ProductPurchaseTax", fields: [purchaseTaxRateId], references: [id])
+  salePrice          Decimal?    @db.Decimal(19, 4)
+  purchasePrice      Decimal?    @db.Decimal(19, 4)
+  saleTaxRateId      String?
+  saleTaxRate        TaxRate?    @relation("ProductSaleTax", fields: [saleTaxRateId], references: [id])
+  purchaseTaxRateId  String?
+  purchaseTaxRate    TaxRate?    @relation("ProductPurchaseTax", fields: [purchaseTaxRateId], references: [id])
   // Cuentas por defecto de la línea (si no, las de Configuración contable)
-  incomeAccountId   String?
-  incomeAccount     Account?    @relation("ProductIncome", fields: [incomeAccountId], references: [id])
-  expenseAccountId  String?
-  expenseAccount    Account?    @relation("ProductExpense", fields: [expenseAccountId], references: [id])
-  active            Boolean     @default(true)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  incomeAccountId    String?
+  incomeAccount      Account?    @relation("ProductIncome", fields: [incomeAccountId], references: [id])
+  expenseAccountId   String?
+  expenseAccount     Account?    @relation("ProductExpense", fields: [expenseAccountId], references: [id])
+  // P2: inventario perpetuo con costo promedio (solo bienes con tracksInventory)
+  tracksInventory    Boolean     @default(false)
+  inventoryAccountId String?
+  inventoryAccount   Account?    @relation("ProductInventory", fields: [inventoryAccountId], references: [id])
+  cogsAccountId      String?
+  cogsAccount        Account?    @relation("ProductCogs", fields: [cogsAccountId], references: [id])
+  // Saldos vivos: los cambia SOLO InventoryService, con la fila bloqueada, y cada cambio deja un movimiento
+  stockQty           Decimal     @default(0) @db.Decimal(19, 4)
+  stockValue         Decimal     @default(0) @db.Decimal(19, 4)
+  avgCost            Decimal     @default(0) @db.Decimal(19, 6)
+  active             Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
-  invoiceLines InvoiceLine[]
+  invoiceLines    InvoiceLine[]
+  movements       InventoryMovement[]
+  adjustmentLines InventoryAdjustmentLine[]
 
   @@unique([companyId, code])
   @@index([companyId, name])
@@ -1852,4 +1883,93 @@ model Product {
 enum ProductKind {
   GOODS // bien (mercancía)
   SERVICE
+}
+
+// ============================================================
+// INVENTARIO (P2): costo promedio ponderado, un almacén
+// ============================================================
+
+// Kárdex: cada entrada o salida de un producto. Solo inserción; una anulación agrega el movimiento contrario.
+model InventoryMovement {
+  id             String                @id @default(uuid())
+  // Orden de registro: el costo promedio se calcula en este orden (no por fecha)
+  seq            Int                   @default(autoincrement())
+  companyId      String
+  company        Company               @relation(fields: [companyId], references: [id])
+  productId      String
+  product        Product               @relation(fields: [productId], references: [id])
+  date           DateTime              @db.Date
+  type           InventoryMovementType
+  quantity       Decimal               @db.Decimal(19, 4) // + entra, − sale
+  unitCost       Decimal               @db.Decimal(19, 6) // moneda base
+  totalCost      Decimal               @db.Decimal(19, 4) // con el signo de quantity
+  qtyAfter       Decimal               @db.Decimal(19, 4)
+  valueAfter     Decimal               @db.Decimal(19, 4)
+  invoiceId      String?
+  invoice        Invoice?              @relation(fields: [invoiceId], references: [id])
+  adjustmentId   String?
+  adjustment     InventoryAdjustment?  @relation(fields: [adjustmentId], references: [id])
+  journalEntryId String?
+  journalEntry   JournalEntry?         @relation(fields: [journalEntryId], references: [id])
+  reversalOfId   String?               @unique
+  reversalOf     InventoryMovement?    @relation("InventoryReversal", fields: [reversalOfId], references: [id])
+  reversedBy     InventoryMovement?    @relation("InventoryReversal")
+  createdById    String
+  createdAt      DateTime              @default(now())
+
+  @@index([companyId, productId, seq])
+  @@index([invoiceId])
+  @@index([adjustmentId])
+}
+
+enum InventoryMovementType {
+  PURCHASE // compra
+  SALE // venta
+  SALE_RETURN // nota de crédito de venta
+  PURCHASE_RETURN // nota de crédito de compra
+  ADJUSTMENT_IN // ajuste: existencia inicial, sobrante de conteo
+  ADJUSTMENT_OUT // ajuste: faltante, merma, daño
+  REVERSAL // anulación de otro movimiento
+}
+
+model InventoryAdjustment {
+  id               String                    @id @default(uuid())
+  companyId        String
+  company          Company                   @relation(fields: [companyId], references: [id])
+  number           String
+  date             DateTime                  @db.Date
+  reason           String                    @db.VarChar(500)
+  counterAccountId String
+  counterAccount   Account                   @relation(fields: [counterAccountId], references: [id])
+  status           InventoryAdjustmentStatus @default(POSTED)
+  journalEntryId   String?
+  journalEntry     JournalEntry?             @relation(fields: [journalEntryId], references: [id])
+  voidedAt         DateTime?
+  voidReason       String?                   @db.VarChar(500)
+  createdById      String
+  createdAt        DateTime                  @default(now())
+
+  lines     InventoryAdjustmentLine[]
+  movements InventoryMovement[]
+
+  @@unique([companyId, number])
+  @@index([companyId, date])
+}
+
+enum InventoryAdjustmentStatus {
+  POSTED
+  VOIDED
+}
+
+model InventoryAdjustmentLine {
+  id           String              @id @default(uuid())
+  adjustmentId String
+  adjustment   InventoryAdjustment @relation(fields: [adjustmentId], references: [id])
+  productId    String
+  product      Product             @relation(fields: [productId], references: [id])
+  quantity     Decimal             @db.Decimal(19, 4) // + entra, − sale
+  unitCost     Decimal             @db.Decimal(19, 6) // el de la entrada, o el promedio con que salió
+  totalCost    Decimal             @db.Decimal(19, 4)
+
+  @@index([adjustmentId])
 }

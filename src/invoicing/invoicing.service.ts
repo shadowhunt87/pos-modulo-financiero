@@ -18,6 +18,7 @@ import { PostingService, type PostLine } from '../posting/posting.service.js';
 import { FiscalParametersService } from '../fiscal/fiscal-parameters.service.js';
 import { FiscalCalendarService } from '../fiscal/fiscal-calendar.service.js';
 import { TaxLinksService } from '../fiscal/tax-links.service.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 import { CreateInvoiceDto, IssueInvoiceDto, ListInvoicesQuery, UpdateInvoiceDto, VoidInvoiceDto } from './dto/invoice.dto.js';
 
 type Tx = Prisma.TransactionClient;
@@ -105,6 +106,7 @@ export class InvoicingService {
     private readonly posting: PostingService,
     private readonly fiscal: FiscalParametersService,
     private readonly calendar: FiscalCalendarService,
+    private readonly inventory: InventoryService,
   ) {}
 
   // ------------------------------------------------------------------
@@ -172,7 +174,13 @@ export class InvoicingService {
     const inactive = products.filter((p) => !p.active);
     if (inactive.length) throw new UnprocessableEntityException(`Productos inactivos: ${inactive.map((p) => p.code).join(', ')}`);
     const productById = new Map(products.map((p) => [p.id, p]));
+    // P2: en una compra (o su nota de crédito) un producto con inventario va SIEMPRE a su cuenta de inventario
+    const inventoryAccount = new Map<string, string>();
+    if (side === 'PURCHASES' && input.type !== InvoiceType.DEBIT_NOTE) {
+      for (const p of products.filter((x) => x.tracksInventory)) inventoryAccount.set(p.id, await this.inventory.purchaseInventoryAccount(companyId, p));
+    }
     const lineAccount = (l: DocLine) => {
+      if (l.productId && inventoryAccount.has(l.productId)) return inventoryAccount.get(l.productId);
       if (l.accountId) return l.accountId;
       const p = l.productId ? productById.get(l.productId) : undefined;
       return (side === 'SALES' ? p?.incomeAccountId : p?.expenseAccountId) ?? undefined;
@@ -496,6 +504,8 @@ export class InvoicingService {
     await tx.invoiceLine.deleteMany({ where: { invoiceId: id } });
     await tx.invoiceWithholding.deleteMany({ where: { invoiceId: id } });
     await this.persistChildren(tx, id, built);
+    // P2: existencias y costo de ventas, en la misma transacción
+    await this.inventory.onInvoiceIssued(tx, user, id);
     // N7 (A9): e-CF emitido desde el sistema → documento PENDING_SEND en la MISMA transacción; lo envía la cola
     if (emitted.here) {
       const company = await tx.company.findUniqueOrThrow({ where: { id: companyId }, select: { taxId: true } });
@@ -646,6 +656,7 @@ export class InvoicingService {
       });
       if (res.count === 0) throw new ConflictException('El estado de la factura cambió; reintenta');
       if (inv.journalEntryId) await this.posting.voidEntry(tx, user, inv.journalEntryId, `Anulación ${inv.number}: ${dto.reason}`);
+      await this.inventory.onInvoiceVoided(tx, user, id, `Anulación ${inv.number}: ${dto.reason}`);
       await writeAudit(tx, user, 'Invoice', id, AuditAction.VOID, { reason: dto.reason, reasonCode: dto.reasonCode ?? null, ncf: inv.ncf });
     });
     return this.get(id, user);
