@@ -75,7 +75,7 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 | **D4** | notas de versión dentro del sistema («Novedades») |
 | **S1b** | `dist/cli/password-reset.js` (rescate de contraseña) y el seed declarado en `prisma.config.ts` (Prisma 7) |
 | **UI v2** | menú por secciones en acordeón (`frontend/src/app/layout/nav.ts`; al mover una opción, actualizar las rutas «Sección › Opción» de `public/manual`), diseño renovado con Inter (`@fontsource-variable/inter`), avisos fiscales agrupados |
-| **P1, P2, P3** (rama `modulos-catalogo-inventario-rrhh`) | Catálogo de productos (`/products`), inventario con costo promedio (`/inventory`) y RRHH y nómina dominicana (`/hr`). Solo backend; plan en `docs/PLAN-catalogo-inventario-rrhh.md` y aviso en `AVISO-SOCIO-V04.md` |
+| **P1, P2, P3** (rama `modulos-catalogo-inventario-rrhh`) | Catálogo de productos (`/products`), inventario con costo promedio (`/inventory`) y RRHH y nómina dominicana (`/hr`). Backend y frontend; plan en `docs/PLAN-catalogo-inventario-rrhh.md` y aviso en `AVISO-SOCIO-V04.md` |
 | docs | `AVISO-SOCIO-N1.md` y `AVISO-SOCIO-V03.md` (archivos del socio que cambiaron), `scripts/reparar-borrador-ecf.sql` |
 
 ### Dónde está cada cosa
@@ -105,8 +105,8 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 
 ## 7. Qué falta y por dónde seguir (en este orden)
 
-1. **Frontend de catálogo, inventario y RRHH** (el backend ya está; ver la bitácora del 15-oct (2)). Antes, la base local
-   necesita `migrate deploy` y la carga de `2026-10-15_nomina.json`.
+1. **Probar catálogo, inventario y RRHH** (backend y frontend listos en la rama `modulos-catalogo-inventario-rrhh`). Antes,
+   la base local necesita `migrate deploy` y la carga de `2026-10-15_nomina.json` (bitácora del 15-oct (2)).
 2. **Revisar la aplicación a mano** y anotar lo que haya que corregir en `docs/BITACORA.md` (moneda RD$, fechas, textos
    técnicos visibles y avisos apilados; detalle en la bitácora).
 2. **QA y revisión de seguridad formal** de todo lo de esta etapa: agentes `qa` y `seguridad` según `CLAUDE.md`. Carlos lo dejó

@@ -16,6 +16,49 @@ Al cerrar una sesión, agregar una entrada con este formato:
 
 ---
 
+## 2026-10-15 (3) — Frontend de catálogo, inventario y RRHH
+
+**Rama / commit:** `modulos-catalogo-inventario-rrhh`, `1271206`. **Sin push.**
+
+**Qué se hizo:**
+- **Pantallas nuevas:**
+  - Productos y servicios, y selector de producto en «Nueva factura»;
+  - Existencias, kárdex y Ajustes de inventario (lista, alta y detalle con anulación);
+  - Empleados;
+  - Nóminas, con su detalle: novedades, contabilizar, pagar y anular;
+  - Reportes de nómina (TSS e IR-3);
+  - Configuración de nómina;
+  - cuentas de inventario en Cuentas automáticas.
+- **Menú:** grupos nuevos «Inventario» y «Recursos humanos» (este último, solo ADMIN y ACCOUNTANT).
+- **Manual:** secciones 16 y 17 y la ayuda de las 11 pantallas.
+- **Arreglo en la regalía:** contaba solo lo registrado en el sistema. Ahora suma también, con el salario mensual, los días
+  sin nómina en el sistema.
+- **Verificación:**
+  - backend: 45 pruebas unitarias y 504 e2e;
+  - frontend: 23 pruebas, compilación y verificar-ayuda;
+  - capturas con datos de demostración en una copia aparte (backend en el 3001 y frontend en el 4201, contra la base de
+    pruebas 5434);
+  - clics reales: alta de empleado, ajuste, contabilizar y pagar nómina, y crear la regalía.
+
+**Quedó pendiente:**
+- La base local del dueño necesita `npx prisma migrate deploy` y la carga de `2026-10-15_nomina.json` (comandos en la
+  entrada (2)). Sin eso, las pantallas nuevas dan error.
+- Los detalles de interfaz que ya venían de antes siguen igual:
+  - montos sin «RD$»;
+  - campos de fecha nativos en formato de EE. UU.;
+  - el aviso «Novedades v0.3» en todas las pantallas.
+- Archivos oficiales TSS e IR-3, vacaciones, prestaciones e importación del catálogo desde Excel (ver el plan).
+
+**Siguiente paso:** que el dueño pruebe las pantallas. Después, QA formal de los tres módulos y validación de los valores de
+nómina con la contadora.
+
+**Ojo con:**
+- `void` no se puede usar como nombre de método en las plantillas de Angular (se usó `voidIt`).
+- Para probar sin tocar la base del dueño: `PORT=3001 node --env-file=.env.test dist/main.js`, y `ng serve --port 4201` con un
+  proxy hacia el 3001.
+
+---
+
 ## 2026-10-15 (2) — Backend de catálogo, inventario y RRHH
 
 **Rama / commit:** `modulos-catalogo-inventario-rrhh` (sale de `main`): `8052252` P1, `9c3bc9b` P2 y `ecab5ce` P3. **Sin push.**
