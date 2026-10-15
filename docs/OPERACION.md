@@ -75,7 +75,7 @@ JSON fechado en `docs/normativa-dgii/parametros/AAAA-MM-DD_<tema>.json`. El carg
 4. Si la simulación está bien, carga de verdad (todo o nada, en una sola transacción):
    `docker exec <contenedor-api> node dist/fiscal/load-parameters.js /tmp/<archivo>.json --commit <hash> --by "Nombre de quien carga"`
 5. Si el informe lista **documentos emitidos con un valor que se corrige**, pásaselo a la contadora: ella decide si hacen falta notas de crédito o débito.
-6. Revisa en **Configuración › Valores fiscales** que se vea el valor nuevo.
+6. Revisa en **Impuestos y DGII › Valores fiscales** que se vea el valor nuevo.
 
 Cargar dos veces el mismo archivo no duplica nada. Un archivo con un campo desconocido, una tasa sin valor desde el 01/01/2025
 o una fila que ya existe con otros datos se rechaza completo.
@@ -90,7 +90,7 @@ Todo está programado; lo que falta es **configuración** cuando se elija el pro
 1. Genera la llave de las credenciales (no la imprimas en pantallas compartidas) y ponla en `.env.production`:
    `ECF_ENCRYPTION_KEY=$(openssl rand -hex 32)`. Guarda una copia junto con la frase de los respaldos (como la del 2FA).
 2. Reinicia el `api`. El trabajador que envía los e-CF arranca solo (`ECF_WORKER_ENABLED=true`, cada 30 s).
-3. En la aplicación, el ADMIN de cada empresa va a **Configuración › Facturación electrónica: conexión**:
+3. En la aplicación, el ADMIN de cada empresa va a **Factura electrónica › Conexión con el proveedor**:
    - primero con **Pruebas** (proveedor `sandbox`) para practicar el flujo completo sin enviar nada a la DGII;
    - luego con **Proveedor certificado** (`http`), pegando la configuración técnica del proveedor (URL `https`, rutas de envío y de
      estado, formato `json` o `xml`, y si hace falta los nombres de sus campos en `fields` y sus estados en `statusMap`) y sus

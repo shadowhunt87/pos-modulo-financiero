@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, debounceTime } from 'rxjs';
 import { Api } from '../core/api';
 import { Auth } from '../core/auth';
@@ -14,6 +14,8 @@ import { Breadcrumbs, NextStep } from '../shared/ui';
 import { FeedbackDialog } from '../features/feedback/feedback-dialog';
 import { HelpDrawer } from '../features/help/help-drawer';
 import { NAV } from './nav';
+import { NavIcon } from './nav-icon';
+import { RouteInfo } from '../core/route-info';
 import { SampleDataBanner } from '../features/setup/sample-data-banner';
 import { ReleaseNotice } from './release-notice';
 
@@ -22,7 +24,7 @@ interface Ledger { totalDebit: string; totalCredit: string }
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog, SampleDataBanner, ReleaseNotice],
+  imports: [RouterOutlet, RouterLink, NavIcon, Breadcrumbs, NextStep, HelpDrawer, FeedbackDialog, SampleDataBanner, ReleaseNotice],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })
@@ -34,6 +36,7 @@ export class Shell {
   protected readonly helpPrefs = inject(HelpPrefs);
   protected readonly feedback = inject(FeedbackLauncher);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly routeInfo = inject(RouteInfo);
 
   protected readonly ROLE = ROLE;
   protected readonly menuOpen = signal(false);
@@ -51,7 +54,23 @@ export class Shell {
     NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || this.auth.has(...i.roles)) })).filter((g) => g.items.length),
   );
 
+  /** Opción del menú de la pantalla actual: la ruta más larga que coincide (así /dgii/review no marca también /dgii). */
+  protected readonly activePath = computed(() => {
+    const url = this.routeInfo.state().url;
+    let best: string | null = null;
+    for (const g of this.nav()) for (const i of g.items) {
+      const hit = i.path === '/' ? url === '/' : url === i.path || url.startsWith(i.path + '/');
+      if (hit && (!best || i.path.length > best.length)) best = i.path;
+    }
+    return best;
+  });
+  /** Sección de la pantalla actual. */
+  protected readonly currentGroup = computed(() => this.nav().find((g) => g.items.some((i) => i.path === this.activePath()))?.title ?? null);
+  /** Sección abierta del acordeón (una a la vez). Al cambiar de pantalla se abre la sección de esa pantalla. */
+  protected readonly openGroup = signal<string | null>(null);
+
   constructor() {
+    effect(() => { const g = this.currentGroup(); if (g) untracked(() => this.openGroup.set(g)); });
     void this.api.getP<Company>('/company').then((c) => this.company.set(c)).catch(() => undefined);
     void this.lookups.ensureAll().catch(() => undefined);
     void this.checkBooks();
@@ -73,5 +92,6 @@ export class Shell {
     try { localStorage.setItem('fm.theme', next); } catch { /* ignore */ }
     this.dark.set(next === 'dark');
   }
+  protected toggleGroup(title: string): void { this.openGroup.update((g) => (g === title ? null : title)); }
   protected logout(): void { this.lookups.reset(); this.auth.logout(); }
 }

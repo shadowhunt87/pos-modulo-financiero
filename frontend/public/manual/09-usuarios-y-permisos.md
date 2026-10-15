@@ -47,7 +47,7 @@ Menú **Configuración › Usuarios**. Esta pantalla solo la ve el Administrador
 ## Conectar otro sistema
 
 Si otro programa (por ejemplo, el del taller) va a registrar aquí sus facturas y cobros, necesita una **llave**.
-Solo el Administrador la crea, en **Configuración → Conexiones con otros sistemas**:
+Solo el Administrador la crea, en **Configuración → Conexiones con sistemas**:
 
 1. Pulsa **Nueva conexión**.
 2. Escribe un **Nombre** para reconocerla (ej: Taller Sirtech) y el **Origen de sus facturas** que te indique

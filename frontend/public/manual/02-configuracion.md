@@ -37,7 +37,7 @@ Si el año fiscal no cierra en marzo, junio, septiembre o diciembre, verás un a
 
 ## Valores fiscales
 
-Menú **Configuración › Valores fiscales**. Son las tasas, montos y fechas de la DGII que usa el sistema (ITBIS, retenciones, umbral del 607, fin de los comprobantes B…). Cada uno dice **desde cuándo rige**, **de dónde sale** y su estado:
+Menú **Impuestos y DGII › Valores fiscales**. Son las tasas, montos y fechas de la DGII que usa el sistema (ITBIS, retenciones, umbral del 607, fin de los comprobantes B…). Cada uno dice **desde cuándo rige**, **de dónde sale** y su estado:
 
 - **✓ Oficial**: tu contadora lo confirmó con su nombre.
 - **? Por validar**: viene de la ley o de fuentes confiables, pero falta esa confirmación.
@@ -48,7 +48,7 @@ Nada se cambia a mano: cuando la ley cambia, se carga un valor nuevo con su fech
 
 ## Impuestos
 
-Menú **Configuración › Impuestos**. Aquí viven el ITBIS (el impuesto sobre las ventas), las retenciones y otros impuestos que se eligen en las líneas de las facturas.
+Menú **Impuestos y DGII › Impuestos**. Aquí viven el ITBIS (el impuesto sobre las ventas), las retenciones y otros impuestos que se eligen en las líneas de las facturas.
 
 1. Pulsa **Nuevo impuesto**.
 2. Escribe el **Nombre** y la **Tasa (%)**.
@@ -71,7 +71,7 @@ Las notas de crédito y débito usan la tasa de la factura que modifican, aunque
 
 ## Comprobantes fiscales (NCF)
 
-Menú **Configuración › Comprobantes fiscales (NCF)**. La DGII te autoriza un rango de números por cada tipo de comprobante (B01, B02, etc.). Aquí lo registras.
+Menú **Impuestos y DGII › Comprobantes fiscales (NCF)**. La DGII te autoriza un rango de números por cada tipo de comprobante (B01, B02, etc.). Aquí lo registras.
 
 1. Pulsa **Nueva secuencia**.
 2. Elige el **Tipo de comprobante**.
@@ -102,17 +102,17 @@ Menú **Configuración › Libros diarios**. Son los libros donde se agrupan los
 1. Si es una empresa nueva, pulsa **Crear diarios estándar**.
 2. Para uno propio, pulsa **Nuevo diario** y llena **Código**, **Tipo** y **Nombre**.
 
-## Numeración de facturas y pagos
+## Numeración de documentos
 
-Menú **Configuración › Numeración de facturas y pagos**. Define el prefijo y el contador del número interno de cada documento. No es el NCF.
+Menú **Configuración › Numeración de documentos**. Define el prefijo y el contador del número interno de cada documento. No es el NCF.
 
 1. Pulsa **Editar** en el documento que quieras cambiar.
 2. Ajusta el **Prefijo**, los **Dígitos** y el **Próximo número**.
 3. Guarda. El próximo número solo puede subir: no se reutilizan números.
 
-## Clasificación de cuentas para reportes
+## Clasificación de cuentas
 
-Menú **Configuración › Clasificación de cuentas para reportes**. Define dónde aparece cada cuenta en el balance, el estado de resultados y el flujo de efectivo.
+Menú **Configuración › Clasificación de cuentas**. Define dónde aparece cada cuenta en el balance, el estado de resultados y el flujo de efectivo.
 
 1. Pulsa **Clasificar automáticamente** para que el sistema proponga una clasificación.
 2. Revisa la propuesta y pulsa **Aplicar clasificación**.

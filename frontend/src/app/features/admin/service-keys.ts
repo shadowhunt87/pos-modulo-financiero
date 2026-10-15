@@ -13,7 +13,7 @@ interface ServiceKey {
 interface CreatedKey extends ServiceKey { key: string; warning: string }
 
 /**
- * Conexiones con otros sistemas (llaves de servicio, INTEGRACION-TALLER §4.7). Solo ADMIN.
+ * Conexiones con sistemas (llaves de servicio, INTEGRACION-TALLER §4.7). Solo ADMIN.
  * GET/POST /service-keys, POST /service-keys/:id/revoke.
  */
 @Component({
@@ -23,7 +23,7 @@ interface CreatedKey extends ServiceKey { key: string; warning: string }
   template: `
     <div class="page">
       <div class="page-head">
-        <div><h1>Conexiones con otros sistemas</h1>
+        <div><h1>Conexiones con sistemas</h1>
           <p class="sub">Llaves para que otro sistema (por ejemplo, el del taller) registre aquí sus facturas y cobros. Cada llave solo puede crear clientes, facturas de venta y cobros, y leer lo que ella misma creó.</p></div>
         <button type="button" class="btn btn-primary" (click)="openNew()">Nueva conexión</button>
       </div>

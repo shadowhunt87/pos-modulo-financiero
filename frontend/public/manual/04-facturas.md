@@ -153,7 +153,7 @@ proveedor e impórtala aquí. El sistema la enlaza con la factura que corrige y 
 
 ## Facturas electrónicas (e-CF)
 
-Menú **Ventas y compras › Facturas electrónicas (e-CF)**: la bandeja con el estado de cada comprobante electrónico:
+Menú **Factura electrónica › Facturas electrónicas (e-CF)**: la bandeja con el estado de cada comprobante electrónico:
 **○ Por enviar**, **… Enviando**, **✓ Aceptado**, **✓ Aceptado condicional**, **✕ Rechazado** (con el motivo) o **! Contingencia**.
 
 - Con la conexión activa, al emitir una factura E31, E32, E34… el sistema la envía solo a tu proveedor certificado.
@@ -163,7 +163,7 @@ Menú **Ventas y compras › Facturas electrónicas (e-CF)**: la bandeja con el 
 
 ## Conectar tu proveedor de e-CF
 
-Menú **Configuración › Facturación electrónica: conexión** (solo administradores).
+Menú **Factura electrónica › Conexión con el proveedor** (solo administradores).
 
 1. Elige el **Proveedor**. **Pruebas** sirve para practicar sin enviar nada a la DGII. Para el real elige **Proveedor certificado** y pega la **configuración técnica** que te da tu proveedor (dirección, rutas y formato).
 2. Escribe el **token** que te da el proveedor: se guarda cifrado y nunca se vuelve a mostrar.

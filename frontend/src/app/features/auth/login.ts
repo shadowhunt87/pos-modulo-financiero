@@ -14,9 +14,15 @@ type Step = 'password' | 'code' | 'enroll' | 'codes';
   template: `
     <div class="wrap">
       <section class="intro" aria-hidden="true">
-        <svg viewBox="0 0 120 120" width="76" height="76"><rect x="10" y="14" width="100" height="92" rx="10" fill="none" stroke="currentColor" stroke-width="5"/><path d="M60 14v92M10 48h100M10 78h100" stroke="currentColor" stroke-width="5"/><circle cx="35" cy="31" r="5" fill="currentColor"/><circle cx="85" cy="31" r="5" fill="currentColor"/></svg>
+        <div class="logo"><svg viewBox="0 0 32 32" width="44" height="44"><rect width="32" height="32" rx="9" fill="currentColor"/><path d="M9 21.5V14M14 21.5V10.5M19 21.5v-5M24 21.5V12.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg><span>Contabilidad y finanzas</span></div>
         <h1>Libros al día,<br>impuestos en orden.</h1>
         <p>Contabilidad, facturación con NCF, bancos y reportes para la DGII, en un solo lugar.</p>
+        <ul class="feats">
+          <li>Facturas con NCF y e-CF</li>
+          <li>Bancos y conciliación</li>
+          <li>606 · 607 · 608 e IT-1 listos</li>
+          <li>Estados financieros al momento</li>
+        </ul>
       </section>
       <section class="card">
         @switch (step()) {
@@ -102,19 +108,33 @@ type Step = 'password' | 'code' | 'enroll' | 'codes';
   `,
   styles: `
     .wrap { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
-    .intro { background: var(--ink); color: var(--on-ink); padding: 8vh 7vw; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
-    .intro svg { color: var(--marker); }
-    .intro h1 { color: #fff; font-size: clamp(30px, 3.6vw, 46px); line-height: 1.12; }
-    .intro p { max-width: 38ch; color: var(--on-ink-dim); font-size: 16px; }
-    .card { align-self: center; justify-self: center; width: min(400px, calc(100% - 40px)); padding: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
-    .card h2 { font-family: var(--font-display); font-size: 22px; margin-bottom: 18px; }
+    .intro {
+      position: relative; overflow: hidden; color: var(--on-ink); padding: 8vh 7vw; display: flex; flex-direction: column; justify-content: center; gap: 22px;
+      background: radial-gradient(1200px 600px at -10% -20%, rgba(45, 212, 191, .22), transparent 60%),
+                  radial-gradient(900px 500px at 120% 120%, rgba(79, 70, 229, .25), transparent 60%), var(--ink);
+    }
+    .intro::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+      background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 44px 44px; mask-image: radial-gradient(circle at 30% 40%, #000, transparent 75%);
+    }
+    .intro > * { position: relative; z-index: 1; }
+    .logo { display: flex; align-items: center; gap: 12px; color: var(--primary-side); font-weight: 600; font-size: 15px; }
+    .logo span { color: #fff; }
+    .intro h1 { color: #fff; font-size: clamp(32px, 3.8vw, 50px); line-height: 1.08; letter-spacing: -.035em; font-weight: 750; }
+    .intro p { max-width: 40ch; color: var(--on-ink-dim); font-size: 16.5px; }
+    .feats { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, max-content); gap: 10px 26px; color: var(--on-ink); font-size: 14px; }
+    .feats li { display: flex; align-items: center; gap: 9px; }
+    .feats li::before { content: ''; width: 18px; height: 18px; border-radius: 6px; flex: none; background: rgba(45, 212, 191, .16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232dd4bf' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E") center / 12px no-repeat; }
+    .card { align-self: center; justify-self: center; width: min(420px, calc(100% - 40px)); padding: 34px 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-pop); }
+    .card h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 20px; }
     form { display: flex; flex-direction: column; gap: 14px; }
     .code { font-size: 20px; letter-spacing: .2em; text-align: center; }
     .linkbtn { align-self: flex-start; }
     .qr { display: block; margin: 8px auto; background: #fff; padding: 6px; border-radius: 8px; }
     .apps { padding-left: 18px; margin: 8px 0 14px; line-height: 1.8; }
-    .btn-primary { height: 38px; }
-    @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } .intro { padding: 28px 24px; } .intro p, .intro svg { display: none; } .card { margin: 24px 0; } }
+    .btn-primary { height: 42px; font-size: 14.5px; }
+    @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } .intro { padding: 28px 24px; } .intro p, .feats { display: none; } .card { margin: 24px 0; } }
   `,
 })
 export class Login {

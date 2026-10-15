@@ -18,7 +18,7 @@ const read = () => { try { return localStorage.getItem(KEY); } catch { return nu
       </div>
     }
   `,
-  styles: `.banner { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }`,
+  styles: `.banner { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 16px 28px 0; } @media (max-width: 900px) { .banner { margin: 12px 16px 0; } }`,
 })
 export class ReleaseNotice {
   private readonly guidance = inject(Guidance);

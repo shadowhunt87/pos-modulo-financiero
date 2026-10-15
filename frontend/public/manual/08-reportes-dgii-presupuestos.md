@@ -21,11 +21,11 @@ Menú **Reportes › Estados financieros**.
 
 [CAPTURA: Estado de resultados del mes]
 
-Las **Razones financieras** agrupan indicadores de **Liquidez**, **Endeudamiento**, **Rentabilidad** y **Actividad**. Si ves **Cuentas sin categoría**, pídele a tu contadora que complete la [Clasificación de cuentas para reportes](/help/configuracion#clasificacion-de-cuentas-para-reportes).
+Las **Razones financieras** agrupan indicadores de **Liquidez**, **Endeudamiento**, **Rentabilidad** y **Actividad**. Si ves **Cuentas sin categoría**, pídele a tu contadora que complete la [Clasificación de cuentas](/help/configuracion#clasificacion-de-cuentas).
 
 ## Calendario fiscal
 
-Menú **Reportes › Calendario fiscal**. Muestra lo que tienes que presentar (606, 607, 608, 609, IT-1, IR-17, IR-3, anticipos, IR-2 e ISA), cuándo vence y su estado: **○ Pendiente**, **! Vencida** o **✓ Presentada**. Si el día cae en fin de semana o feriado, el vencimiento pasa al siguiente día laborable (lo verás indicado).
+Menú **Impuestos y DGII › Calendario fiscal**. Muestra lo que tienes que presentar (606, 607, 608, 609, IT-1, IR-17, IR-3, anticipos, IR-2 e ISA), cuándo vence y su estado: **○ Pendiente**, **! Vencida** o **✓ Presentada**. Si el día cae en fin de semana o feriado, el vencimiento pasa al siguiente día laborable (lo verás indicado).
 
 - **Prepararla** te lleva a la pantalla donde se arma la declaración.
 - **Ya lo presenté**: márcala cuando la envíes (puedes anotar el número de confirmación). Desde ese momento no se pueden anular facturas de ese mes: se corrigen con nota de crédito. Solo un administrador puede **Deshacer**.
@@ -37,7 +37,7 @@ Menú **Reportes › Calendario fiscal**. Muestra lo que tienes que presentar (6
 
 ## Declaraciones IT-1, IR-17 y 609
 
-Menú **Reportes › Declaraciones DGII**. Elige el mes y la pestaña:
+Menú **Impuestos y DGII › Declaraciones**. Elige el mes y la pestaña:
 
 - **IT-1 (ITBIS):** una hoja casilla por casilla con el valor de cada una y **de dónde sale**. Arriba dice si las ventas **cuadran con el 607**. Abajo verás el ITBIS a pagar o el saldo a favor, que incluye el saldo a favor del mes anterior si marcaste ese IT-1 como presentado. El sistema no calcula la proporcionalidad del ITBIS: si tienes ventas exentas, revísala con tu contadora.
 - **IR-17 (retenciones):** las retenciones de ISR a proveedores, en su casilla. Si una retención no está enlazada a un valor oficial, verás un aviso para enlazarla.
@@ -47,7 +47,7 @@ El IT-1 y el IR-17 **no generan archivo**: copia los valores en la Oficina Virtu
 
 ## Revisión del mes
 
-Menú **Reportes › Revisión del mes**. Antes de presentar a la DGII, elige el mes y pulsa **Revisar**. El sistema dice:
+Menú **Impuestos y DGII › Revisión del mes**. Antes de presentar a la DGII, elige el mes y pulsa **Revisar**. El sistema dice:
 
 - Si los formatos **606, 607 y 608** tienen errores o avisos.
 - Si el **ITBIS del 607** cuadra con lo que dice tu contabilidad (la cuenta de ITBIS por pagar), y lo mismo con el **ITBIS del 606** (ITBIS por adelantar) y las **retenciones** que hiciste a proveedores. Las notas de crédito se restan, así que no causan diferencias falsas.
@@ -61,7 +61,7 @@ Si usas la **misma cuenta** de ITBIS para ventas y compras, el cuadre se hace so
 
 ## DGII 606, 607 y 608
 
-Menú **Reportes › DGII 606 · 607 · 608**. Son los formatos mensuales que se envían a la DGII: 606 de compras, 607 de ventas y 608 de comprobantes anulados.
+Menú **Impuestos y DGII › DGII 606 · 607 · 608**. Son los formatos mensuales que se envían a la DGII: 606 de compras, 607 de ventas y 608 de comprobantes anulados.
 
 1. Elige el **Período** (el mes). Puedes moverte con las flechas.
 2. Elige la pestaña **606 · Compras**, **607 · Ventas** o **608 · Anulados**. Un número verde indica registros; uno rojo indica errores.

@@ -4,7 +4,7 @@
 
 ## En pocas palabras
 
-Menú **Configuración inicial**. Son cinco pasos; cada uno dice qué falta y te lleva a la pantalla donde se arregla. Puedes saltar cualquiera y volver después. En el **Panel**, la tarjeta **Pendientes** te recuerda lo que falta (puedes ocultarla).
+Menú **Configuración › Configuración inicial** (también desde la tarjeta **Pendientes** del Panel). Son cinco pasos; cada uno dice qué falta y te lleva a la pantalla donde se arregla. Puedes saltar cualquiera y volver después. En el **Panel**, la tarjeta **Pendientes** te recuerda lo que falta (puedes ocultarla).
 
 ## Los cinco pasos
 

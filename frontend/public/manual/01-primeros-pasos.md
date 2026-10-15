@@ -117,7 +117,7 @@ Tus comentarios se revisan cada semana. La respuesta aparece en **Ayuda › Mis 
 
 - Entras con el mismo usuario; con rol **Contador** puedes crear y editar facturas, cobros, asientos y catálogos. Anular facturas y cobros o pagos requiere rol **Aprobador** o **Administrador**.
 - El indicador **Libros cuadrados** compara los débitos y créditos del año. Si dice descuadrados, revisa los asientos del año.
-- El menú **Contabilidad** reúne Asientos, Plan de cuentas, Períodos fiscales, Años fiscales y cierre, y Saldos iniciales. **Configuración** reúne Impuestos, Comprobantes fiscales (NCF), Clasificación de cuentas para reportes, Cuentas automáticas, Libros diarios y Numeración de facturas y pagos.
+- El menú **Contabilidad** reúne Asientos, Plan de cuentas, Períodos fiscales, Años fiscales y cierre, y Saldos iniciales. **Configuración** reúne Impuestos, Comprobantes fiscales (NCF), Clasificación de cuentas, Cuentas automáticas, Libros diarios y Numeración de documentos.
 - El cambio de clave invalida las sesiones anteriores del usuario; la pantalla guarda el token nuevo y no pide volver a entrar.
 - El intento de login y el cambio de clave tienen límite de intentos fallidos.
 - **Ocultar ayudas** es una preferencia del navegador, no del servidor.

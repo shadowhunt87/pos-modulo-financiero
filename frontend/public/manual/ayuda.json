@@ -253,11 +253,11 @@
       "siguiente": { "texto": "Revisa los asientos", "ruta": "/entries" }
     },
     "/document-sequences": {
-      "seccion": "configuracion", "ancla": "numeracion-de-facturas-y-pagos",
+      "seccion": "configuracion", "ancla": "numeracion-de-documentos",
       "siguiente": { "texto": "Crea una factura para ver la numeración en uso", "ruta": "/invoices/new" }
     },
     "/account-classification": {
-      "seccion": "configuracion", "ancla": "clasificacion-de-cuentas-para-reportes",
+      "seccion": "configuracion", "ancla": "clasificacion-de-cuentas",
       "siguiente": { "texto": "Revisa tus estados financieros", "ruta": "/reports" }
     },
     "/accounting-settings": {

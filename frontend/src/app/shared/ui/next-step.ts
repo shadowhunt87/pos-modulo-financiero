@@ -22,7 +22,8 @@ import { RouteInfo } from '../../core/route-info';
   `,
   styles: `
     .next { margin: 0; font-size: 13px; color: var(--text-dim); }
-    .lbl { font-weight: 600; color: var(--text); }
+    .next { padding: 10px 0 0; }
+    .lbl { font-weight: 600; color: var(--text); margin-right: 6px; }
   `,
 })
 export class NextStep {

@@ -15,7 +15,7 @@ Menú **Reportes › Semáforo financiero**. Te dice en verde, amarillo o rojo c
 1. Elige **Desde** y **Hasta** y pulsa **Actualizar**.
 2. Los indicadores se agrupan en liquidez, endeudamiento, rentabilidad y actividad.
 3. Los que dicen **Anualizado** se llevaron a un año completo para poder compararlos con el límite.
-4. Si aparece el aviso de **cuentas sin categoría**, completa la [Clasificación de cuentas para reportes](/help/configuracion#clasificacion-de-cuentas-para-reportes).
+4. Si aparece el aviso de **cuentas sin categoría**, completa la [Clasificación de cuentas](/help/configuracion#clasificacion-de-cuentas).
 5. Para guardarlo, usa **Excel** o **PDF**.
 
 [CAPTURA: Semáforo financiero con sus cuatro grupos]

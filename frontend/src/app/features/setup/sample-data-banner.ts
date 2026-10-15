@@ -8,7 +8,7 @@ import { SetupState } from '../../core/setup-status';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `@if (setup.samples()) { <div class="notice warn banner" role="status">Estás viendo <strong>datos de ejemplo</strong>. <a routerLink="/setup">Borrarlos</a> antes de empezar con tus datos reales.</div> }`,
-  styles: `.banner { margin: 0 0 8px; }`,
+  styles: `.banner { margin: 16px 28px 0; } @media (max-width: 900px) { .banner { margin: 12px 16px 0; } }`,
 })
 export class SampleDataBanner {
   protected readonly setup = inject(SetupState);
