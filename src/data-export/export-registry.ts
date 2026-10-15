@@ -57,6 +57,8 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   company('EcfConnection', { jsonColumns: ['settings'], excludedColumns: [{ column: 'credentialsEnc', reason: 'Credenciales del proveedor de e-CF cifradas: nunca salen (R12)' }] }),
   company('EcfEvent'),
   company('Product'), company('InventoryMovement'), company('InventoryAdjustment'),
+  company('Department'), company('Employee'), company('PayrollConcept'), company('PayrollSettings'),
+  company('PayrollRun', { jsonColumns: ['parameters'] }),
 
   child('JournalEntryLine', (c): Prisma.JournalEntryLineWhereInput => ({ journalEntry: { companyId: c } })),
   child('InvoiceLine', (c): Prisma.InvoiceLineWhereInput => ({ invoice: { companyId: c } })),
@@ -66,6 +68,8 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   child('BankMatch', (c): Prisma.BankMatchWhereInput => ({ bankTransaction: { bankAccount: { companyId: c } } })),
   child('BudgetLine', (c): Prisma.BudgetLineWhereInput => ({ budget: { companyId: c } })),
   child('InventoryAdjustmentLine', (c): Prisma.InventoryAdjustmentLineWhereInput => ({ adjustment: { companyId: c } })),
+  child('PayrollLine', (c): Prisma.PayrollLineWhereInput => ({ run: { companyId: c } })),
+  child('PayrollItem', (c): Prisma.PayrollItemWhereInput => ({ line: { run: { companyId: c } } })),
 
   // Auditoría (D47): el dueño recibe el encargo, los hallazgos comunicados y sus archivos; nunca los papeles de la auditora
   { model: 'AuditEngagement', cls: 'ROW_FILTERED', where: byCompany, reason: 'Encargo completo: lo crea y lo ve el ADMIN' },

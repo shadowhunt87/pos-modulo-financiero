@@ -14,6 +14,7 @@ export const DOC_TYPES = {
   PAYMENT_RECEIVED: 'RC',
   PAYMENT_MADE: 'PG',
   INVENTORY_ADJUSTMENT: 'AJ',
+  PAYROLL: 'NOM',
 } as const;
 export type DocType = keyof typeof DOC_TYPES;
 

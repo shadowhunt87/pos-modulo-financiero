@@ -382,7 +382,12 @@ describe('Seguridad (e2e)', () => {
         '/auditing/account-notices -> ADMIN,AUDITOR', '/auditing/engagements -> ADMIN,AUDITOR', '/auditing/engagements/:id -> ADMIN,AUDITOR',
         '/auditing/engagements/:id/findings -> ADMIN,AUDITOR', '/auditing/engagements/:id/items -> AUDITOR', '/auditing/engagements/:id/report -> ADMIN,AUDITOR',
         '/auditing/engagements/:id/workpapers -> AUDITOR', '/auditing/files -> ADMIN,AUDITOR', '/auditing/files/:id/download -> ADMIN,AUDITOR',
-        '/auditing/history -> AUDITOR', '/data-export/summary -> ADMIN', '/ecf/connection -> ADMIN', '/feedback/ -> ADMIN', '/service-keys/ -> ADMIN',
+        '/auditing/history -> AUDITOR', '/data-export/summary -> ADMIN', '/ecf/connection -> ADMIN', '/feedback/ -> ADMIN',
+        // P3: RRHH y nómina (salarios y documentos) solo para ADMIN y ACCOUNTANT, también la lectura
+        '/hr/departments -> ADMIN,ACCOUNTANT', '/hr/employees -> ADMIN,ACCOUNTANT', '/hr/employees/:id -> ADMIN,ACCOUNTANT',
+        '/hr/payroll-concepts -> ADMIN,ACCOUNTANT', '/hr/payroll-runs -> ADMIN,ACCOUNTANT', '/hr/payroll-runs/:id -> ADMIN,ACCOUNTANT',
+        '/hr/payroll-settings -> ADMIN,ACCOUNTANT', '/hr/reports/ir3 -> ADMIN,ACCOUNTANT', '/hr/reports/tss -> ADMIN,ACCOUNTANT',
+        '/service-keys/ -> ADMIN',
         '/users/ -> ADMIN', '/users/:id -> ADMIN', '/users/security-events -> ADMIN',
       ]);
     });

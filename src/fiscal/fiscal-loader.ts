@@ -151,9 +151,16 @@ export function parseCatalog(text: string): { file: CatalogFile | null; errors: 
 
 const d = (s: string) => new Date(`${s}T00:00:00.000Z`);
 const numEq = (a: string | undefined, b: Prisma.Decimal | null) => (a === undefined ? b === null : b !== null && new Prisma.Decimal(a).eq(b));
+/** JSON con las claves ordenadas: la base (JSONB) reordena las claves al guardar, así que el orden no cuenta al comparar. */
+const canonicalJson = (v: unknown): string =>
+  Array.isArray(v) ? `[${v.map(canonicalJson).join(',')}]`
+    : v !== null && typeof v === 'object'
+      ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonicalJson((v as Record<string, unknown>)[k])}`).join(',')}}`
+      : JSON.stringify(v ?? null);
+
 const sameRow = (a: ParamRow, b: { kind: string; value: Prisma.Decimal | null; valueDate: Date | null; valueJson: Prisma.JsonValue | null; unit: string | null; base: string | null; source: string }) =>
   a.kind === b.kind && numEq(a.value, b.value) && (a.valueDate ?? null) === (b.valueDate ? ymd(b.valueDate) : null)
-  && JSON.stringify(a.valueJson ?? null) === JSON.stringify(b.valueJson ?? null)
+  && canonicalJson(a.valueJson ?? null) === canonicalJson(b.valueJson ?? null)
   && (a.unit ?? null) === b.unit && (a.base ?? null) === b.base && a.source === b.source;
 
 /** Calcula qué haría la carga, sin escribir nada. */

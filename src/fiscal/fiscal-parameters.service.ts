@@ -17,6 +17,9 @@ const KEY_LABEL: Record<string, string> = {
   ITBIS_TASA_GENERAL: 'ITBIS tasa general', ITBIS_TASA_REDUCIDA: 'ITBIS tasa reducida', ITBIS_TASA_EXPORTACION: 'ITBIS exportaciones',
   RET_ISR_HONORARIOS_PF: 'Retención ISR honorarios', RET_ISR_ALQUILER_PF: 'Retención ISR alquileres',
   F607_UMBRAL_DETALLE_CONSUMO: 'Umbral del 607 para facturas de consumo',
+  TSS_AFP_EMPLEADO: 'AFP del empleado', TSS_AFP_EMPLEADOR: 'AFP del empleador', TSS_SFS_EMPLEADO: 'SFS del empleado',
+  TSS_SFS_EMPLEADOR: 'SFS del empleador', TSS_SRL_EMPLEADOR: 'Riesgos laborales', INFOTEP_EMPLEADOR: 'INFOTEP',
+  TSS_SALARIO_MINIMO_COTIZABLE: 'Salario mínimo cotizable de la TSS', ISR_ASALARIADOS_ESCALA: 'Escala del ISR de asalariados',
 };
 export const keyLabel = (key: string) => KEY_LABEL[key] ?? key;
 

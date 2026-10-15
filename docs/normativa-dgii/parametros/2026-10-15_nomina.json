@@ -1,0 +1,32 @@
+{
+  "description": "Valores legales de la nómina dominicana (P3, docs/PLAN-catalogo-inventario-rrhh.md). Todo entra «Por validar» hasta la validación con nombre de la contadora (D33). Fuentes consultadas el 15-oct-2026: leyes citadas y publicaciones de la TSS y la DGII recogidas por terceros; verificar contra la fuente oficial antes de la primera nómina real.",
+  "parameters": [
+    { "key": "TSS_AFP_EMPLEADO", "kind": "RATE", "validFrom": "2025-01-01", "source": "Ley 87-01 art. 16 (Seguro de Vejez, Discapacidad y Sobrevivencia): aporte del trabajador", "value": "2.87", "unit": "%" },
+    { "key": "TSS_AFP_EMPLEADOR", "kind": "RATE", "validFrom": "2025-01-01", "source": "Ley 87-01 art. 16: aporte del empleador al SVDS", "value": "7.10", "unit": "%" },
+    { "key": "TSS_SFS_EMPLEADO", "kind": "RATE", "validFrom": "2025-01-01", "source": "Ley 87-01 art. 140 (Seguro Familiar de Salud): aporte del trabajador", "value": "3.04", "unit": "%" },
+    { "key": "TSS_SFS_EMPLEADOR", "kind": "RATE", "validFrom": "2025-01-01", "source": "Ley 87-01 art. 140: aporte del empleador al SFS", "value": "7.09", "unit": "%" },
+    { "key": "TSS_SRL_EMPLEADOR", "kind": "RATE", "validFrom": "2025-01-01", "source": "Ley 87-01 art. 196 (Seguro de Riesgos Laborales): tasa base; la TSS asigna a cada empresa entre 1.10 % y 1.30 % según su riesgo", "value": "1.10", "unit": "%", "notes": "Se usa solo si la empresa no tiene su tasa en Configuración de nómina." },
+    { "key": "INFOTEP_EMPLEADOR", "kind": "RATE", "validFrom": "2025-01-01", "source": "Ley 116-80 art. 18: 1 % de la nómina a cargo del empleador", "value": "1", "unit": "%", "notes": "No incluye el 0.5 % de las bonificaciones (utilidades), que no se calcula todavía." },
+    { "key": "TSS_SALARIO_MINIMO_COTIZABLE", "kind": "AMOUNT", "validFrom": "2025-01-01", "source": "TSS, Resolución 01-2024: salario mínimo nacional para los topes de cotización, vigente desde el 01-02-2024 (se carga desde la fecha mínima del sistema)", "sourceUrl": "https://tss.gob.do/tss-fija-nuevos-topes-de-cotizacion-del-regimen-contributivo/", "value": "19352.50", "unit": "DOP" },
+    { "key": "TSS_SALARIO_MINIMO_COTIZABLE", "kind": "AMOUNT", "validFrom": "2025-04-01", "source": "TSS, Resolución 01-2025 (salario mínimo según CNS-01-2025): vigente desde el 01-04-2025", "sourceUrl": "https://tss.gob.do/tesoreria-de-la-seguridad-social-informa-nuevos-topes-de-cotizacion-para-el-regimen-contributivo/", "value": "21674.80", "unit": "DOP" },
+    { "key": "TSS_SALARIO_MINIMO_COTIZABLE", "kind": "AMOUNT", "validFrom": "2026-02-01", "source": "TSS, Resolución 01-2025: segundo tramo, vigente desde el 01-02-2026", "sourceUrl": "https://tss.gob.do/tesoreria-de-la-seguridad-social-informa-nuevos-topes-de-cotizacion-para-el-regimen-contributivo/", "value": "23223.00", "unit": "DOP" },
+    { "key": "TSS_TOPE_AFP_SALARIOS", "kind": "AMOUNT", "validFrom": "2025-01-01", "source": "Ley 87-01 y Ley 13-20: tope del salario cotizable al SVDS", "value": "20", "unit": "salarios mínimos cotizables" },
+    { "key": "TSS_TOPE_SFS_SALARIOS", "kind": "AMOUNT", "validFrom": "2025-01-01", "source": "Ley 87-01 y Ley 13-20: tope del salario cotizable al SFS", "value": "10", "unit": "salarios mínimos cotizables" },
+    { "key": "TSS_TOPE_SRL_SALARIOS", "kind": "AMOUNT", "validFrom": "2025-01-01", "source": "Ley 87-01: tope del salario cotizable al SRL", "value": "4", "unit": "salarios mínimos cotizables" },
+    {
+      "key": "ISR_ASALARIADOS_ESCALA", "kind": "TABLE", "validFrom": "2025-01-01",
+      "source": "Código Tributario (Ley 11-92) art. 296; escala anual de la DGII para asalariados (sin indexar desde 2018)",
+      "notes": "Escala ANUAL. ISR = fijo + (renta − excedenteDe) × tasa. La nómina proyecta la renta del período al año y divide entre los períodos del año. Hay noticias de una escala nueva (Ley 30-26) desde 2027: verificar y cargarla como valor con vigencia.",
+      "valueJson": {
+        "moneda": "DOP",
+        "periodo": "anual",
+        "tramos": [
+          { "desde": "0.00", "hasta": "416220.00", "tasa": "0", "fijo": "0.00", "excedenteDe": "0.00" },
+          { "desde": "416220.01", "hasta": "624329.00", "tasa": "15", "fijo": "0.00", "excedenteDe": "416220.00" },
+          { "desde": "624329.01", "hasta": "867123.00", "tasa": "20", "fijo": "31216.00", "excedenteDe": "624329.00" },
+          { "desde": "867123.01", "hasta": null, "tasa": "25", "fijo": "79776.00", "excedenteDe": "867123.00" }
+        ]
+      }
+    }
+  ]
+}

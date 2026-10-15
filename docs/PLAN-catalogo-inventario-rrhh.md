@@ -98,11 +98,11 @@ costo para las entradas). Sirve para existencias iniciales, conteos físicos, me
 
 **Valores fiscales nuevos:** `docs/normativa-dgii/parametros/2026-10-15_nomina.json`, todos «Por validar»:
 - `TSS_AFP_EMPLEADO`, `TSS_AFP_EMPLEADOR`, `TSS_SFS_EMPLEADO`, `TSS_SFS_EMPLEADOR`, `TSS_SRL_EMPLEADOR` e `INFOTEP_EMPLEADOR`;
-- `TSS_SALARIO_MINIMO_COTIZABLE`: RD$23,223.00 desde el 01-feb-2026;
+- `TSS_SALARIO_MINIMO_COTIZABLE`: los tres valores de la TSS desde 2025;
 - `TSS_TOPE_AFP_SALARIOS`, `TSS_TOPE_SFS_SALARIOS` y `TSS_TOPE_SRL_SALARIOS`;
 - `ISR_ASALARIADOS_ESCALA`: exento hasta RD$416,220.00 al año; 15 %, 20 % y 25 %.
 
-Antes del 01-feb-2026 no hay salario mínimo cotizable cargado, así que la nómina de esas fechas da 422 hasta que se cargue.
+El salario mínimo cotizable tiene sus tres valores oficiales de la TSS desde 2025 (RD$19,352.50, RD$21,674.80 desde el 01-abr-2025 y RD$23,223.00 desde el 01-feb-2026).
 
 ## Queda fuera de esta versión (pendiente)
 

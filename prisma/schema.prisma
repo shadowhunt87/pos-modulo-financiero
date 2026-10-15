@@ -62,6 +62,11 @@ model Company {
   products             Product[]
   inventoryMovements   InventoryMovement[]
   inventoryAdjustments InventoryAdjustment[]
+  departments          Department[]
+  employees            Employee[]
+  payrollConcepts      PayrollConcept[]
+  payrollSettings      PayrollSettings?
+  payrollRuns          PayrollRun[]
   ecfConnection        EcfConnection?
 
   createdAt DateTime @default(now())
@@ -227,6 +232,13 @@ model Account {
   settingsCogs              AccountingSettings[]  @relation("SettingsCogs")
   settingsInventoryAdjust   AccountingSettings[]  @relation("SettingsInventoryAdjustment")
   inventoryAdjustments      InventoryAdjustment[]
+  payrollConcepts           PayrollConcept[]      @relation("PayrollConceptAccount")
+  payrollSalaryExpense      PayrollSettings[]     @relation("PayrollSalaryExpense")
+  payrollEmployerExpense    PayrollSettings[]     @relation("PayrollEmployerExpense")
+  payrollSalariesPayable    PayrollSettings[]     @relation("PayrollSalariesPayable")
+  payrollTssPayable         PayrollSettings[]     @relation("PayrollTssPayable")
+  payrollIsrPayable         PayrollSettings[]     @relation("PayrollIsrPayable")
+  payrollOtherDeductions    PayrollSettings[]     @relation("PayrollOtherDeductions")
 
   active Boolean @default(true)
 
@@ -411,6 +423,8 @@ model JournalEntry {
   closedFiscalYear     FiscalYear?           @relation("FiscalYearClosingEntry")
   inventoryMovements   InventoryMovement[]
   inventoryAdjustments InventoryAdjustment[]
+  payrollRuns          PayrollRun[]          @relation("PayrollPostEntry")
+  payrollPayments      PayrollRun[]          @relation("PayrollPaymentEntry")
   invoices             Invoice[]
   payments             Payment[]
   attachments          Attachment[]
@@ -449,6 +463,7 @@ enum SourceDocumentType {
   CASH_EXPENSE
   YEAR_END_CLOSING
   INVENTORY // P2: costo de ventas y ajustes de inventario
+  PAYROLL // P3: nómina (contabilización y pago)
   OTHER
 }
 
@@ -490,6 +505,7 @@ model CostCenter {
   code         String?
   lines        JournalEntryLine[]
   invoiceLines InvoiceLine[]
+  employees    Employee[]
   active       Boolean            @default(true)
 
   @@unique([companyId, name])
@@ -903,6 +919,7 @@ model BankAccount {
   payments        Payment[]
   reconciliations BankReconciliation[]
   rules           BankRule[]
+  payrollRuns     PayrollRun[]
 
   createdAt DateTime @default(now())
 
@@ -1972,4 +1989,230 @@ model InventoryAdjustmentLine {
   totalCost    Decimal             @db.Decimal(19, 4)
 
   @@index([adjustmentId])
+}
+
+// ============================================================
+// RRHH Y NÓMINA (P3). Valores legales (TSS, ISR, INFOTEP) en FiscalParameter, nunca aquí (R9)
+// ============================================================
+
+model Department {
+  id        String     @id @default(uuid())
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id])
+  name      String     @db.VarChar(100)
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  employees Employee[]
+
+  @@unique([companyId, name])
+}
+
+model Employee {
+  id                String                @id @default(uuid())
+  companyId         String
+  company           Company               @relation(fields: [companyId], references: [id])
+  code              String                @db.VarChar(20)
+  firstName         String                @db.VarChar(100)
+  lastName          String                @db.VarChar(100)
+  documentType      EmployeeDocumentType  @default(CEDULA)
+  documentNumber    String                @db.VarChar(20)
+  nss               String?               @db.VarChar(20) // número de seguridad social
+  sex               EmployeeSex?
+  birthDate         DateTime?             @db.Date
+  email             String?               @db.VarChar(200)
+  phone             String?               @db.VarChar(30)
+  address           String?               @db.VarChar(300)
+  departmentId      String?
+  department        Department?           @relation(fields: [departmentId], references: [id])
+  position          String?               @db.VarChar(100)
+  hireDate          DateTime              @db.Date
+  terminationDate   DateTime?             @db.Date
+  terminationReason String?               @db.VarChar(500)
+  status            EmployeeStatus        @default(ACTIVE)
+  payFrequency      PayFrequency          @default(MONTHLY)
+  baseSalary        Decimal               @db.Decimal(19, 4) // salario MENSUAL
+  paymentMethod     EmployeePaymentMethod @default(TRANSFER)
+  bankName          String?               @db.VarChar(100)
+  bankAccountNumber String?               @db.VarChar(40)
+  costCenterId      String?
+  costCenter        CostCenter?           @relation(fields: [costCenterId], references: [id])
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  payrollLines PayrollLine[]
+
+  @@unique([companyId, code])
+  @@unique([companyId, documentNumber])
+  @@index([companyId, status])
+}
+
+enum EmployeeDocumentType {
+  CEDULA
+  PASSPORT
+}
+
+enum EmployeeSex {
+  M
+  F
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  SUSPENDED // no entra en las nóminas mientras dure
+  TERMINATED
+}
+
+enum PayFrequency {
+  MONTHLY
+  BIWEEKLY // quincenal
+  WEEKLY
+}
+
+enum EmployeePaymentMethod {
+  TRANSFER
+  CHECK
+  CASH
+}
+
+// Ingresos y descuentos que se agregan a mano en una nómina (horas extra, comisión, préstamo, adelanto...)
+model PayrollConcept {
+  id         String             @id @default(uuid())
+  companyId  String
+  company    Company            @relation(fields: [companyId], references: [id])
+  code       String             @db.VarChar(20)
+  name       String             @db.VarChar(100)
+  kind       PayrollConceptKind
+  // Solo ingresos: si cotiza a la TSS y si paga ISR
+  affectsTss Boolean            @default(false)
+  affectsIsr Boolean            @default(false)
+  // Ingreso: cuenta de gasto (si no, la de sueldos). Descuento: cuenta por pagar o por cobrar (si no, la de otros descuentos)
+  accountId  String?
+  account    Account?           @relation("PayrollConceptAccount", fields: [accountId], references: [id])
+  active     Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  items      PayrollItem[]
+
+  @@unique([companyId, code])
+}
+
+enum PayrollConceptKind {
+  EARNING
+  DEDUCTION
+}
+
+model PayrollSettings {
+  id                                    String   @id @default(uuid())
+  companyId                             String   @unique
+  company                               Company  @relation(fields: [companyId], references: [id])
+  salaryExpenseAccountId                String?
+  salaryExpenseAccount                  Account? @relation("PayrollSalaryExpense", fields: [salaryExpenseAccountId], references: [id])
+  employerContributionsExpenseAccountId String?
+  employerContributionsExpenseAccount   Account? @relation("PayrollEmployerExpense", fields: [employerContributionsExpenseAccountId], references: [id])
+  salariesPayableAccountId              String?
+  salariesPayableAccount                Account? @relation("PayrollSalariesPayable", fields: [salariesPayableAccountId], references: [id])
+  tssPayableAccountId                   String?
+  tssPayableAccount                     Account? @relation("PayrollTssPayable", fields: [tssPayableAccountId], references: [id])
+  isrPayableAccountId                   String?
+  isrPayableAccount                     Account? @relation("PayrollIsrPayable", fields: [isrPayableAccountId], references: [id])
+  otherDeductionsPayableAccountId       String?
+  otherDeductionsPayableAccount         Account? @relation("PayrollOtherDeductions", fields: [otherDeductionsPayableAccountId], references: [id])
+  // Tasa de riesgos laborales que la TSS le asignó a la empresa (%); si falta, el valor fiscal TSS_SRL_EMPLEADOR
+  srlRate                               Decimal? @db.Decimal(9, 4)
+  updatedAt                             DateTime @updatedAt
+}
+
+model PayrollRun {
+  id                   String           @id @default(uuid())
+  companyId            String
+  company              Company          @relation(fields: [companyId], references: [id])
+  // BORR-… mientras es borrador; NOM-… al contabilizar
+  number               String
+  type                 PayrollRunType   @default(REGULAR)
+  frequency            PayFrequency
+  periodStart          DateTime         @db.Date
+  periodEnd            DateTime         @db.Date
+  payDate              DateTime         @db.Date
+  status               PayrollRunStatus @default(DRAFT)
+  notes                String?          @db.VarChar(500)
+  grossTotal           Decimal          @default(0) @db.Decimal(19, 4)
+  employeeTssTotal     Decimal          @default(0) @db.Decimal(19, 4)
+  isrTotal             Decimal          @default(0) @db.Decimal(19, 4)
+  otherDeductionsTotal Decimal          @default(0) @db.Decimal(19, 4)
+  netTotal             Decimal          @default(0) @db.Decimal(19, 4)
+  employerTotal        Decimal          @default(0) @db.Decimal(19, 4)
+  // Valores fiscales usados en el cálculo (clave, valor, id y estado): trazabilidad
+  parameters           Json?
+  journalEntryId       String?
+  journalEntry         JournalEntry?    @relation("PayrollPostEntry", fields: [journalEntryId], references: [id])
+  paymentEntryId       String?
+  paymentEntry         JournalEntry?    @relation("PayrollPaymentEntry", fields: [paymentEntryId], references: [id])
+  bankAccountId        String?
+  bankAccount          BankAccount?     @relation(fields: [bankAccountId], references: [id])
+  createdById          String
+  postedAt             DateTime?
+  paidAt               DateTime?
+  voidedAt             DateTime?
+  voidReason           String?          @db.VarChar(500)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  lines PayrollLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, periodStart])
+}
+
+enum PayrollRunType {
+  REGULAR
+  CHRISTMAS_BONUS // regalía pascual (salario de Navidad)
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  POSTED // contabilizada
+  PAID
+  VOIDED
+}
+
+// Un empleado en una nómina. Montos del período en moneda base.
+model PayrollLine {
+  id              String        @id @default(uuid())
+  runId           String
+  run             PayrollRun    @relation(fields: [runId], references: [id])
+  employeeId      String
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+  baseSalary      Decimal       @db.Decimal(19, 4) // salario mensual al calcular
+  periodDays      Int
+  daysWorked      Int
+  salary          Decimal       @db.Decimal(19, 4) // salario del período (prorrateado) o regalía
+  otherEarnings   Decimal       @default(0) @db.Decimal(19, 4)
+  grossTotal      Decimal       @default(0) @db.Decimal(19, 4)
+  tssBase         Decimal       @default(0) @db.Decimal(19, 4)
+  afpEmployee     Decimal       @default(0) @db.Decimal(19, 4)
+  sfsEmployee     Decimal       @default(0) @db.Decimal(19, 4)
+  isrBase         Decimal       @default(0) @db.Decimal(19, 4)
+  isr             Decimal       @default(0) @db.Decimal(19, 4)
+  otherDeductions Decimal       @default(0) @db.Decimal(19, 4)
+  netPay          Decimal       @default(0) @db.Decimal(19, 4)
+  afpEmployer     Decimal       @default(0) @db.Decimal(19, 4)
+  sfsEmployer     Decimal       @default(0) @db.Decimal(19, 4)
+  srlEmployer     Decimal       @default(0) @db.Decimal(19, 4)
+  infotepEmployer Decimal       @default(0) @db.Decimal(19, 4)
+  items           PayrollItem[]
+
+  @@unique([runId, employeeId])
+  @@index([employeeId])
+}
+
+// Novedad de un empleado en una nómina (ingreso o descuento de un concepto)
+model PayrollItem {
+  id          String         @id @default(uuid())
+  lineId      String
+  line        PayrollLine    @relation(fields: [lineId], references: [id])
+  conceptId   String
+  concept     PayrollConcept @relation(fields: [conceptId], references: [id])
+  description String?        @db.VarChar(200)
+  amount      Decimal        @db.Decimal(19, 4)
+
+  @@index([lineId])
 }

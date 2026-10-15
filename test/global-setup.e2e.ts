@@ -10,7 +10,10 @@ import { applyLoad, parseCatalog } from '../src/fiscal/fiscal-loader.js';
  */
 export default async function setup() {
   const env = loadEnv('test', process.cwd(), '');
-  const files = ['docs/normativa-dgii/parametros/2026-10-14_catalogo-inicial.json', 'docs/normativa-dgii/parametros/2026-10-14_calendario-fiscal.json'];
+  const files = [
+    'docs/normativa-dgii/parametros/2026-10-14_catalogo-inicial.json', 'docs/normativa-dgii/parametros/2026-10-14_calendario-fiscal.json',
+    'docs/normativa-dgii/parametros/2026-10-15_nomina.json',
+  ];
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
   try {
     for (const file of files) {

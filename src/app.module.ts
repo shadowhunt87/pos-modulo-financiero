@@ -27,6 +27,7 @@ import { AuditingModule } from './auditing/auditing.module.js';
 import { DgiiReturnsModule } from './dgii-returns/dgii-returns.module.js';
 import { GuidanceModule } from './guidance/guidance.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
+import { HrModule } from './hr/hr.module.js';
 import { validate } from './config/env.validation.js';
 
 @Module({
@@ -60,6 +61,7 @@ import { validate } from './config/env.validation.js';
     AuditingModule,
     DgiiReturnsModule,
     InventoryModule,
+    HrModule,
   ],
 })
 export class AppModule {}
