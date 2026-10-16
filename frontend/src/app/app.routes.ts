@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards';
+import { authGuard, notCashierGuard, roleGuard } from './core/guards';
 import { Shell } from './layout/shell';
 
 /**
@@ -20,10 +20,12 @@ import { Shell } from './layout/shell';
  */
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/auth/login').then((m) => m.Login), title: 'Iniciar sesión' },
+  // Caja del punto de venta: pantalla completa, sin el menú del sistema (la usa el cajero)
+  { path: 'pos/caja', loadComponent: () => import('./features/verticals/pos/caja/caja').then((m) => m.Caja), title: 'Caja', canActivate: [authGuard, roleGuard('CASHIER', 'APPROVER', 'ACCOUNTANT', 'ADMIN')] },
   {
     path: '',
     component: Shell,
-    canActivate: [authGuard],
+    canActivate: [authGuard, notCashierGuard],
     children: [
       { path: '', pathMatch: 'full', loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard), title: 'Panel' },
       { path: '', loadChildren: () => import('./features/catalog/catalog.routes').then((m) => m.routes) },
@@ -40,6 +42,7 @@ export const routes: Routes = [
       { path: '', loadChildren: () => import('./features/auditing/auditing.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/inventory/inventory.routes').then((m) => m.routes) },
       { path: '', loadChildren: () => import('./features/hr/hr.routes').then((m) => m.routes) },
+      { path: '', loadChildren: () => import('./features/verticals/pos/pos.routes').then((m) => m.routes) },
       { path: '**', loadComponent: () => import('./features/not-found').then((m) => m.NotFound), title: 'No encontrado' },
     ],
   },

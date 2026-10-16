@@ -11,6 +11,7 @@
 - El **siguiente paso** sugerido está arriba, junto a dónde estás, y no ocupa espacio en la pantalla.
 
 ### Módulos nuevos
+- **Punto de venta**: caja para el mostrador con lector de códigos, promociones, cobro mixto con cambio, ticket, devoluciones, cierre de turno con conteo y rol **Cajero**. Cada venta es una factura con su NCF.
 - **Productos y servicios**: tu catálogo con precio, impuesto y cuentas. Al facturar, elige el producto y se llena la línea.
 - **Inventario**: existencias con costo promedio, kárdex y ajustes. Las compras suman, las ventas restan y registran su costo.
 - **Recursos humanos**: empleados, nómina con TSS, ISR e INFOTEP, regalía pascual, pago desde el banco y reportes de la TSS y del IR-3.

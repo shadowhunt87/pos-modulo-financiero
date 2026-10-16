@@ -16,6 +16,45 @@ Al cerrar una sesión, agregar una entrada con este formato:
 
 ---
 
+## 2026-10-15 (5) — Punto de venta (POS) como vertical del núcleo
+
+**Rama:** `modulos-catalogo-inventario-rrhh`. Commits `feb44a7` (fase 1, núcleo), `c3601d4` (fase 2, backend) y el de la
+fase 3 (frontend). **Sin push.**
+
+**Qué se hizo** (pedido: revisar el `pos-backend/` de la carpeta de proyectos, alinearlo con el módulo financiero y hacerle
+un frontend):
+- **Revisión del paquete `pos-backend/`:** no estaba alineado. 6 modelos chocaban con el núcleo, escribía asientos directo,
+  llevaba su propio NCF, 607, 606 y e-CF, duplicaba clientes, inventario y compras, y sus pruebas borraban la base. **No se
+  ejecutó ni se copió.** Lo útil (caja, turnos, PIN, promociones) se reescribió sobre los servicios del núcleo
+  (`docs/PLAN-POS.md`, decisiones D-POS1 a D-POS6).
+- **Fase 1 (núcleo):** origen `VERTICAL` con `sourceModule`, cobros y anulaciones dentro de una transacción ajena,
+  reembolso a cliente y rol `CASHIER` (solo entra a rutas `@CashierAllowed()`).
+- **Fase 2 (backend `/pos`):** cada venta es una factura del núcleo con su NCF y sus cobros; la devolución es nota de crédito
+  más reembolso; turnos con entradas, salidas y sobrante o faltante asentados; PIN de supervisor con bloqueo; promociones.
+- **Fase 3 (frontend):** caja de pantalla completa `/pos/caja` y administración (configuración y terminales, productos en
+  caja, promociones, turnos con detalle, ventas del POS). Manual `18-punto-de-venta.md` y ayuda de cada pantalla.
+- **Probado en el navegador** con un cajero en la empresa demo (base de pruebas): abrir turno, código de barras,
+  promociones (10 % y 2×1), cobro en efectivo con cambio, cobro mixto tarjeta y efectivo, suspender y recuperar, salida
+  de efectivo, devolución y anulación con PIN de supervisor, cierre con conteo por denominación. Montos revisados a mano
+  y todos los asientos cuadran. El cajero que intenta abrir otra pantalla vuelve a la caja.
+- Arreglado en la prueba: la clase `.pos` de la caja chocaba con la clase global `.pos` (color de montos positivos) y
+  escondía el carrito; la lista de ventas ahora trae el nombre del cliente.
+
+**Para verla en la base local** (la de Carlos, puerto 5432): `npx prisma migrate deploy` (3 migraciones nuevas del POS) y
+`npm run build`. Luego, en el sistema: «Punto de venta › Configuración del POS» (cuenta de sobrantes y faltantes, terminal
+con su caja de efectivo y su banco, tu PIN de supervisor), «Productos en caja» y la secuencia B02 en NCF. El usuario
+cajero se crea con el rol «Cajero» en Configuración › Usuarios.
+
+**Quedó pendiente** (decidido en el plan): venta sin conexión, más de un almacén, kits y listas de precio, conciliación de
+liquidaciones de tarjeta, devolución de ventas a crédito no pagadas. El paquete inicial del frontend sigue por encima del
+presupuesto de 500 kB (ya lo estaba; el POS se carga aparte).
+
+**Ojo con:**
+- `sed -i` reemplaza el archivo y el `ng serve` a veces no se entera: si un cambio no aparece, reiniciar el servidor.
+- No usar `pos` como nombre de clase: ya existe en `styles.css`.
+
+---
+
 ## 2026-10-15 (4) — Rediseño del frontend (v0.4, «calma»)
 
 **Rama:** `modulos-catalogo-inventario-rrhh`. **Sin push.**

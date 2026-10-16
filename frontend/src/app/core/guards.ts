@@ -9,6 +9,12 @@ export const authGuard: CanActivateFn = (_route, state) => {
   return inject(Router).createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
+/** D-POS1: el cajero solo usa la caja; si intenta entrar al sistema contable, va a la caja. */
+export const notCashierGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
+  return auth.role() === 'CASHIER' ? inject(Router).createUrlTree(['/pos/caja']) : true;
+};
+
 /** Restringe una ruta a ciertos roles. La API igual valida; esto evita mostrar pantallas inútiles. */
 export function roleGuard(...roles: Role[]): CanActivateFn {
   return () => {

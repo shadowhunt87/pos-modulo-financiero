@@ -364,16 +364,24 @@ export class PosSalesService {
       ...(q.from || q.to ? { createdAt: { ...(q.from && { gte: new Date(`${q.from}T04:00:00Z`) }), ...(q.to && { lt: new Date(new Date(`${q.to}T04:00:00Z`).getTime() + 86_400_000) }) } } : {}),
       ...(text ? { OR: [{ number: { contains: text, mode: 'insensitive' } }, { ncf: { contains: text, mode: 'insensitive' } }, { invoiceNumber: { contains: text, mode: 'insensitive' } }] } : {}),
     };
-    // Un cajero solo ve las ventas de su turno abierto
+    // Un cajero ve las ventas de su turno abierto; de otros turnos, solo el ticket que busca por su número o NCF exacto
+    // (para una devolución), no la lista completa
     if (user.role === 'CASHIER') {
-      const own = await this.prisma.posShift.findMany({ where: { companyId: user.companyId, openedById: user.id, status: PosShiftStatus.OPEN }, select: { id: true } });
-      where.shiftId = { in: own.map((s) => s.id).filter((s) => !q.shiftId || s === q.shiftId) };
+      if (text) {
+        delete where.OR;
+        where.shiftId = undefined;
+        where.OR = [{ number: text.toUpperCase() }, { ncf: text.toUpperCase() }];
+      } else {
+        const own = await this.prisma.posShift.findMany({ where: { companyId: user.companyId, openedById: user.id, status: PosShiftStatus.OPEN }, select: { id: true } });
+        where.shiftId = { in: own.map((s) => s.id).filter((s) => !q.shiftId || s === q.shiftId) };
+      }
     }
     const [data, total] = await this.prisma.$transaction([
       this.prisma.posSale.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit, include: { payments: { select: { method: true, amount: true } } } }),
       this.prisma.posSale.count({ where }),
     ]);
-    return { data, total, page, limit };
+    const partners = await this.prisma.partner.findMany({ where: { companyId: user.companyId, id: { in: [...new Set(data.map((x) => x.partnerId))] } }, select: { id: true, name: true, taxId: true } });
+    return { data: data.map((x) => ({ ...x, partner: partners.find((p) => p.id === x.partnerId) ?? null })), total, page, limit };
   }
 
   // ------------------------------------------------------------------

@@ -83,6 +83,8 @@ export class PosController {
   current(@Query('terminalId', ParseUUIDPipe) terminalId: string, @CurrentUser() u: AuthUser) { return this.shifts.current(terminalId, u); }
   @Roles(...SUPERVISORS) @Get('shifts') listShifts(@Query() q: ListShiftsQuery, @CurrentUser() u: AuthUser) { return this.shifts.list(q, u); }
   @CashierAllowed() @Roles(...OPERATORS) @Get('shifts/:id') getShift(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() u: AuthUser) { return this.shifts.get(id, u); }
+  @CashierAllowed() @Roles(...OPERATORS) @Get('movement-accounts')
+  movementAccounts(@Query('terminalId', ParseUUIDPipe) terminalId: string, @CurrentUser() u: AuthUser) { return this.shifts.movementAccounts(terminalId, u); }
   @CashierAllowed() @Roles(...OPERATORS) @Post('shifts/:id/movements')
   movement(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CashMovementDto, @CurrentUser() u: AuthUser) { return this.shifts.cashMovement(id, dto, u); }
   @CashierAllowed() @Roles(...OPERATORS) @Post('shifts/:id/drawer')

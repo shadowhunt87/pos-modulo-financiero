@@ -86,6 +86,22 @@ export class PosShiftsService {
     }
   }
 
+  /** Cuentas que la caja puede usar de contrapartida en entradas y salidas (el cajero no ve el plan de cuentas). */
+  async movementAccounts(terminalId: string, user: AuthUser) {
+    const { companyId } = user;
+    const t = await this.terminal(this.prisma, companyId, terminalId);
+    const cash = await this.cashAccount(this.prisma, companyId, t.cashRegisterId);
+    const s = await this.prisma.accountingSettings.findUnique({ where: { companyId } });
+    const taxAccounts = await this.prisma.taxRate.findMany({ where: { companyId }, select: { salesAccountId: true, purchaseAccountId: true } });
+    const blocked = new Set([cash, s?.receivableAccountId, s?.payableAccountId, s?.customerAdvanceAccountId, s?.supplierAdvanceAccountId,
+      ...taxAccounts.flatMap((x) => [x.salesAccountId, x.purchaseAccountId])].filter((x): x is string => !!x));
+    const accounts = await this.prisma.account.findMany({
+      where: { companyId, active: true, isPostable: true, OR: [{ subledger: null }, { subledger: { notIn: ['RECEIVABLE', 'PAYABLE'] } }] },
+      select: { id: true, code: true, name: true, type: true }, orderBy: { code: 'asc' },
+    });
+    return accounts.filter((a) => !blocked.has(a.id));
+  }
+
   /** Entrada o salida de efectivo con su asiento (VERTICAL pos.movimiento). Una salida de un cajero pide PIN. */
   async cashMovement(shiftId: string, dto: CashMovementDto, user: AuthUser) {
     const { companyId } = user;

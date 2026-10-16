@@ -11,6 +11,9 @@
 | Numeración | `document-sequences.service.ts` | `nextFor(tx, companyId, 'pos.venta', 'TK')` numera documentos de verticales en la misma tabla. |
 | Acceso | `jwt-auth.guard.ts`, `decorators/cashier-allowed.decorator.ts` | Un usuario `CASHIER` solo entra a rutas `@CashierAllowed()`; en el resto recibe 403, también en lecturas. |
 | Pruebas tuyas ajustadas | `security.e2e-spec.ts` | Lecturas restringidas del POS agregadas a la política de rutas. |
+| Frontend: acceso | `core/auth.ts`, `core/guards.ts`, `shared/labels.ts` | Rol `CASHIER` («Cajero (solo punto de venta)»). `notCashierGuard` en el marco: el cajero que entra a otra pantalla va a `/pos/caja`. |
+| Frontend: rutas y menú | `app.routes.ts`, `layout/nav.ts` | Ruta `pos/caja` fuera del marco (pantalla completa) y rutas de administración cargadas aparte desde `features/verticals/pos/pos.routes.ts`. Sección «Punto de venta» en el menú. |
+| Manual | `public/manual/ayuda.json`, `15-novedades.md` | Ayuda de las rutas `/pos/*` y novedades. Capítulo nuevo `18-punto-de-venta.md`. |
 
 El paquete `pos-backend/` original **no se copió**: escribía asientos directo en las tablas, llevaba su propio contador de
 NCF y su propio 607 y 606, y sus 6 modelos chocaban con los del núcleo. Lo que se rescató (caja, turnos, PIN, promociones)

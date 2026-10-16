@@ -17,10 +17,39 @@
     { "slug": "auditoria", "archivo": "14-auditoria.md", "titulo": "Auditoría" },
     { "slug": "productos-e-inventario", "archivo": "16-productos-e-inventario.md", "titulo": "Productos e inventario" },
     { "slug": "nomina", "archivo": "17-nomina.md", "titulo": "Recursos humanos y nómina" },
+    { "slug": "punto-de-venta", "archivo": "18-punto-de-venta.md", "titulo": "Punto de venta" },
     { "slug": "novedades", "archivo": "15-novedades.md", "titulo": "Novedades" }
   ],
 
   "pantallas": {
+    "/pos/caja": {
+      "seccion": "punto-de-venta", "ancla": "vender",
+      "siguiente": { "texto": "Revisa el turno al cerrar", "ruta": "/pos/turnos" }
+    },
+    "/pos/configuracion": {
+      "seccion": "punto-de-venta", "ancla": "preparar-el-punto-de-venta",
+      "siguiente": { "texto": "Elige los productos que se ven en la caja", "ruta": "/pos/productos" }
+    },
+    "/pos/productos": {
+      "seccion": "punto-de-venta", "ancla": "preparar-el-punto-de-venta",
+      "siguiente": { "texto": "Abre la caja", "ruta": "/pos/caja" }
+    },
+    "/pos/promociones": {
+      "seccion": "punto-de-venta", "ancla": "vender",
+      "siguiente": { "texto": "Abre la caja", "ruta": "/pos/caja" }
+    },
+    "/pos/turnos": {
+      "seccion": "punto-de-venta", "ancla": "ventas-del-pos-y-turnos",
+      "siguiente": { "texto": "Mira las ventas del POS", "ruta": "/pos/reportes" }
+    },
+    "/pos/turnos/:id": {
+      "seccion": "punto-de-venta", "ancla": "cerrar-el-turno",
+      "siguiente": { "texto": "Vuelve a los turnos", "ruta": "/pos/turnos" }
+    },
+    "/pos/reportes": {
+      "seccion": "punto-de-venta", "ancla": "ventas-del-pos-y-turnos",
+      "siguiente": { "texto": "Revisa los turnos de caja", "ruta": "/pos/turnos" }
+    },
     "/products": {
       "seccion": "productos-e-inventario", "ancla": "crear-un-producto-o-servicio",
       "siguiente": { "texto": "Úsalo en una factura", "ruta": "/invoices/new" }

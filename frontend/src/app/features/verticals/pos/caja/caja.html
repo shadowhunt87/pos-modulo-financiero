@@ -1,0 +1,137 @@
+<div class="caja-app">
+  <header class="bar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="26" height="26"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 21.5V14M14 21.5V10.5M19 21.5v-5M24 21.5V12.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+      <div><strong>Caja{{ terminal() ? ' · ' + terminal()!.name : '' }}</strong>
+        <small>@if (shift(); as s) { Turno {{ s.number }} · } {{ auth.user()?.name }}</small></div>
+    </div>
+    @if (shift(); as s) {
+      <nav class="actions" aria-label="Acciones de la caja">
+        <button type="button" class="act" (click)="salesOpen.set(true)">Ventas y devoluciones</button>
+        <button type="button" class="act" (click)="showParked()">Suspendidas <kbd>F10</kbd></button>
+        <button type="button" class="act" (click)="cashOpen.set(true)">Efectivo</button>
+        <button type="button" class="act" (click)="startClose()">Cerrar turno</button>
+      </nav>
+    }
+    <button type="button" class="act exit" (click)="exit()">{{ auth.role() === 'CASHIER' ? 'Salir' : 'Volver al sistema' }}</button>
+  </header>
+
+  @if (loading()) {
+    <div class="center"><span class="spinner"></span> Preparando la caja…</div>
+  } @else if (fatal()) {
+    <div class="center"><div class="card"><h2>No se puede abrir la caja</h2><p class="dim">{{ fatal() }}</p></div></div>
+  } @else if (!terminalId()) {
+    <div class="center"><div class="card">
+      <h2>¿Qué caja es esta?</h2><p class="dim">Elige la terminal. Se recuerda en este equipo.</p>
+      <div class="choices">@for (t of ctx()?.terminals ?? []; track t.id) { <button type="button" class="choice" (click)="chooseTerminal(t.id)"><strong>{{ t.name }}</strong><span class="mono dim">{{ t.code }}</span></button> }</div>
+    </div></div>
+  } @else if (!shift()) {
+    <div class="center"><form class="card" (ngSubmit)="open()">
+      <h2>Abrir turno</h2><p class="dim">Cuenta el fondo de cambio con el que empiezas en la gaveta.</p>
+      <div class="field"><label for="op-cash">Fondo inicial (RD$)</label><input id="op-cash" name="cash" class="input big num" type="number" min="0" step="0.01" [(ngModel)]="openingCash" /></div>
+      <div class="btn-row" style="margin-top:16px"><button type="submit" class="btn btn-primary btn-lg" [disabled]="busy()">{{ busy() ? 'Abriendo…' : 'Abrir turno' }}</button>
+        @if ((ctx()?.terminals?.length ?? 0) > 1) { <button type="button" class="btn" (click)="terminalId.set(null)">Cambiar de caja</button> }</div>
+    </form></div>
+  } @else {
+    <main class="work">
+      <!-- Catálogo -->
+      <section class="catalog" aria-label="Productos">
+        <div class="search">
+          <input #searchBox class="input big" type="search" placeholder="Buscar o escanear el código (F2)" autocomplete="off" autofocus
+            [ngModel]="query()" (ngModelChange)="query.set($event)" (keydown.enter)="onSearchEnter()" aria-label="Buscar producto o escanear código de barras" />
+        </div>
+        <div class="cats" role="tablist" aria-label="Categorías">
+          <button type="button" class="chip" [class.on]="!categoryId()" (click)="categoryId.set(null)">Todo</button>
+          @for (c of catalog()?.categories ?? []; track c.id) {
+            <button type="button" class="chip" [class.on]="categoryId() === c.id" (click)="categoryId.set(c.id)"><i [style.background]="c.color || 'var(--line-strong)'"></i>{{ c.name }}</button>
+          }
+        </div>
+        <div class="grid">
+          @for (p of visibleProducts(); track p.id) {
+            <button type="button" class="tile" (click)="add(p)" [class.out]="p.tracksInventory && +p.stockQty <= 0">
+              <span class="name">{{ p.name }}</span>
+              <span class="code mono">{{ p.code }}</span>
+              <span class="price"><span class="cur">RD$</span>{{ priceWithTax(p) | money }}</span>
+              @if (p.tracksInventory) { <span class="stock" [class.low]="+p.stockQty <= 0">{{ +p.stockQty }} {{ p.unit }}</span> }
+            </button>
+          } @empty { <p class="dim empty">No hay productos con ese filtro.</p> }
+        </div>
+      </section>
+
+      <!-- Venta -->
+      <section class="ticket" aria-label="Venta actual">
+        <div class="who">
+          <button type="button" class="customer" (click)="customerOpen.set(true)">
+            <span class="dim">Cliente</span><strong>{{ customer()?.name ?? 'Elegir' }}</strong>@if (customer()?.taxId) { <span class="mono dim">{{ customer()!.taxId }}</span> }
+          </button>
+          <div class="field ncf"><label for="ncf">Comprobante</label>
+            <select id="ncf" class="select" [ngModel]="ncfType()" (ngModelChange)="ncfType.set($event)">@for (t of ncfOptions(); track t) { <option [value]="t">{{ t }}</option> }</select></div>
+        </div>
+
+        @if (lastSale(); as s) {
+          <div class="done" role="status">
+            <span class="ok">✓</span>
+            <h2>Venta cobrada</h2>
+            <p class="dim">Ticket {{ s.number }} · NCF {{ s.ncf }}</p>
+            @if (+s.changeGiven > 0) { <div class="change"><span>Cambio</span><strong><span class="cur">RD$</span>{{ s.changeGiven | money }}</strong></div> }
+            <div class="btn-row"><button type="button" class="btn" (click)="print(s.id)">Imprimir ticket</button>
+              <button type="button" class="btn btn-primary" (click)="newSale()">Nueva venta <kbd>Enter</kbd></button></div>
+            <label class="check small"><input type="checkbox" [checked]="autoPrint()" (change)="toggleAutoPrint()" /> Imprimir siempre al cobrar</label>
+          </div>
+        } @else {
+          <ul class="lines">
+            @for (l of lines(); track l.item.productId) {
+              <li>
+                <div class="l1"><span class="lname">{{ l.product.name }}</span><strong class="num">{{ l.total.toFixed(2) | money }}</strong></div>
+                <div class="l2">
+                  <span class="qty">
+                    <button type="button" class="q" (click)="setQty(l.item.productId, l.item.quantity - 1)" [attr.aria-label]="'Quitar uno de ' + l.product.name">−</button>
+                    <input class="input num" type="number" min="0" [ngModel]="l.item.quantity" (ngModelChange)="setQty(l.item.productId, $event)" [attr.aria-label]="'Cantidad de ' + l.product.name" />
+                    <button type="button" class="q" (click)="setQty(l.item.productId, l.item.quantity + 1)" [attr.aria-label]="'Agregar uno de ' + l.product.name">+</button>
+                  </span>
+                  <span class="dim">× {{ priceWithTax(l.product) | money }}</span>
+                  <span class="tools">
+                    <button type="button" class="link" (click)="editingDiscount.set(editingDiscount() === l.item.productId ? null : l.item.productId)">Descuento</button>
+                    <button type="button" class="link danger" (click)="setQty(l.item.productId, 0)">Quitar</button>
+                  </span>
+                </div>
+                @if (l.promoName) { <div class="promo">🏷 {{ l.promoName }} · −{{ l.promo.toFixed(2) | money }}</div> }
+                @if (editingDiscount() === l.item.productId) {
+                  <div class="disc"><label [for]="'d-' + l.item.productId">Descuento en RD$ (sin ITBIS)</label>
+                    <input [id]="'d-' + l.item.productId" class="input num" type="number" min="0" step="0.01" [ngModel]="l.item.discount" (ngModelChange)="setDiscount(l.item.productId, $event)" /></div>
+                } @else if (l.discount.gt(0)) { <div class="promo">Descuento · −{{ l.discount.toFixed(2) | money }}</div> }
+              </li>
+            } @empty {
+              <li class="emptycart"><span>🛒</span><p>Toca un producto o escanea su código para empezar.</p></li>
+            }
+          </ul>
+
+          <div class="sum">
+            <div class="row dim"><span>Subtotal (sin ITBIS)</span><span class="num">{{ totals().subtotal.toFixed(2) | money }}</span></div>
+            @if (totals().promo.plus(totals().discount).gt(0)) { <div class="row pos"><span>Ahorro</span><span class="num">−{{ totals().promo.plus(totals().discount).toFixed(2) | money }}</span></div> }
+            <div class="row dim"><span>ITBIS</span><span class="num">{{ totals().tax.toFixed(2) | money }}</span></div>
+            <div class="row total"><span>Total</span><strong class="num"><span class="cur">RD$</span>{{ totals().total.toFixed(2) | money }}</strong></div>
+          </div>
+          <div class="pay">
+            <button type="button" class="btn btn-primary paybtn" [disabled]="!lines().length" (click)="startPay()">Cobrar <kbd>F12</kbd></button>
+            <div class="btn-row">
+              <button type="button" class="btn" [disabled]="!lines().length" (click)="park()">Suspender <kbd>F9</kbd></button>
+              <button type="button" class="btn btn-ghost" [disabled]="!lines().length" (click)="clear()">Limpiar</button>
+            </div>
+          </div>
+        }
+      </section>
+    </main>
+  }
+</div>
+
+<app-pos-pay [open]="payOpen()" [total]="totals().total.toFixed(2)" [canCredit]="!isDefaultCustomer()" [busy]="busy()" [error]="payError()"
+  (confirmed)="pay($event)" (closed)="payOpen.set(false)" />
+<app-pos-approval [action]="approvalAction()" (approved)="approvalDone($event)" (closed)="approvalDone(null)" />
+<app-pos-customer [open]="customerOpen()" [defaultName]="settings()?.defaultPartner?.name ?? null" [fiscalCreditNcf]="settings()?.fiscalCreditNcfType ?? 'B01'"
+  (picked)="pickCustomer($event)" (pickDefault)="pickDefaultCustomer()" (closed)="customerOpen.set(false)" />
+<app-pos-parked [open]="parkedOpen()" [items]="parkedItems()" (resume)="resume($event)" (discard)="discard($event)" (closed)="parkedOpen.set(false)" />
+<app-pos-cash [open]="cashOpen()" [terminalId]="terminalId()" [busy]="busy()" (submitted)="cashSubmit($event)" (closed)="cashOpen.set(false)" />
+<app-pos-sales [open]="salesOpen()" [shiftId]="shift()?.id ?? null" [busy]="busy()" [error]="salesError()" [refreshKey]="salesRefresh()"
+  (printIt)="print($event)" (voidIt)="voidSale($event)" (returnIt)="returnSale($event)" (closed)="salesOpen.set(false)" />
+<app-pos-close [shift]="closeShift()" [busy]="busy()" [error]="closeError()" [result]="closeResult()" (confirmed)="confirmClose($event)" (closed)="closeShift.set(null)" (done)="closeDone()" />
