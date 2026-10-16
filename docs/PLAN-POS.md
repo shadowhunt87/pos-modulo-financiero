@@ -63,3 +63,24 @@ ver, ticket, anular, devolver), ventas suspendidas y autorizaciones.
   anular, devolver, entradas y salidas, cierre con conteo.
 - **Administración** (menú «Punto de venta»): configuración y terminales, productos en caja, promociones, turnos y reporte
   Z, ventas del POS.
+
+## Fase 4: POS completo (tienda) — 16-oct-2026
+
+Pedido: que el POS sea un sistema comercial completo (venta, facturación, clientes, productos, caja, almacén e
+inventario), con la contabilidad en el sistema financiero, roles que solo ven su área y enlaces del administrador al
+sistema contable. Frontend en un repositorio aparte: `pos-frontend` (Vue 3).
+
+**Decisiones tomadas con la opción recomendada** (el dueño autorizó decidir y documentar):
+
+| ID | Decisión | Por qué |
+|---|---|---|
+| D-POS7 | Roles nuevos `SELLER` (vendedor) y `WAREHOUSE` (almacén), con la misma regla del cajero: solo rutas `@CashierAllowed()` | Cada rol ve solo su área también en el backend, no solo en el menú |
+| D-POS8 | Rutas propias `/pos/store/*` que llaman a los servicios del núcleo, en lugar de abrir las rutas del núcleo a roles de tienda | No se tocan los permisos del sistema contable; la tienda tiene sus propias reglas (precio del servidor, límite de descuento, anulación) |
+| D-POS9 | La factura de la tienda toma el precio del producto (no se escribe a mano) y el descuento pasa por el mismo límite y PIN de la caja | Mismo control que en la caja |
+| D-POS10 | La compra es una factura `PURCHASE` del núcleo (NCF del proveedor o B11) y entra la mercancía al costo | Así quedan el kárdex, la cuenta por pagar, el 606 y el asiento sin código nuevo |
+| D-POS11 | El cobro de facturas lo hace el cajero (y supervisores); el vendedor factura pero no cobra; anular facturas es de supervisores | Separación de funciones: quien vende no maneja el dinero |
+| D-POS12 | Pagos a proveedores, anulación de cobros, notas de crédito manuales y reportes contables quedan en el sistema financiero | Es contabilidad; el POS solo enlaza |
+| D-POS13 | Usuarios: el administrador los crea desde el POS con las rutas del núcleo (`/auth/register`, `/users`), con su clave de confirmación | No se duplica la gestión de usuarios |
+
+**Pendiente:** venta sin conexión, cotizaciones, listas de precio, varios almacenes, transferencias entre almacenes,
+exportar a Excel y PDF, sesión compartida entre el POS y el sistema contable.

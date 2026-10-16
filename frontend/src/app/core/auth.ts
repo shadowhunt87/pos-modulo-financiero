@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { Api } from './api';
 
-export type Role = 'ADMIN' | 'ACCOUNTANT' | 'APPROVER' | 'VIEWER' | 'AUDITOR' | 'CASHIER';
+export type Role = 'ADMIN' | 'ACCOUNTANT' | 'APPROVER' | 'VIEWER' | 'AUDITOR' | 'CASHIER' | 'SELLER' | 'WAREHOUSE';
 
 export interface SessionUser {
   id: string;

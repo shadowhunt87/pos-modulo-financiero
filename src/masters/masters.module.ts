@@ -29,6 +29,6 @@ import { ProductsService } from './products/products.service.js';
     AccountingSettingsService, JournalsService, DocumentSequencesService, AccountClassificationService,
     ProductsService,
   ],
-  exports: [NcfService, AccountingSettingsService, JournalsService, DocumentSequencesService, PartnersService],
+  exports: [NcfService, AccountingSettingsService, JournalsService, DocumentSequencesService, PartnersService, ProductsService],
 })
 export class MastersModule {}

@@ -4,7 +4,7 @@ export interface Option { value: string; label: string }
 
 const mk = (m: Record<string, string>): Option[] => Object.entries(m).map(([value, label]) => ({ value, label }));
 
-export const ROLE = { ADMIN: 'Administrador', ACCOUNTANT: 'Contador', APPROVER: 'Aprobador', VIEWER: 'Solo lectura', AUDITOR: 'Auditora (solo lectura + auditoría)', CASHIER: 'Cajero (solo punto de venta)' } as const;
+export const ROLE = { ADMIN: 'Administrador', ACCOUNTANT: 'Contador', APPROVER: 'Aprobador', VIEWER: 'Solo lectura', AUDITOR: 'Auditora (solo lectura + auditoría)', CASHIER: 'Cajero (solo punto de venta)', SELLER: 'Vendedor (solo punto de venta)', WAREHOUSE: 'Almacén (solo punto de venta)' } as const;
 export const ACCOUNT_TYPE = { ASSET: 'Activo', LIABILITY: 'Pasivo', EQUITY: 'Patrimonio', INCOME: 'Ingreso', EXPENSE: 'Gasto' } as const;
 export const ACCOUNT_CATEGORY: Record<string, string> = {
   CASH_AND_EQUIVALENTS: 'Efectivo y equivalentes', ACCOUNTS_RECEIVABLE: 'Cuentas por cobrar', INVENTORY: 'Inventarios',

@@ -12,7 +12,7 @@ import {
 import { PosConfigService } from './pos-config.service.js';
 import { PosSalesService } from './pos-sales.service.js';
 import { PosShiftsService } from './pos-shifts.service.js';
-import { MANAGERS, OPERATORS, SUPERVISORS, isSupervisor } from './pos-common.js';
+import { APPROVAL_REQUESTERS, CATALOG_EDITORS, CATALOG_READERS, MANAGERS, OPERATORS, SUPERVISORS, isSupervisor } from './pos-common.js';
 import { ArrayMaxSize, IsArray, IsOptional, IsString, MaxLength, ValidateNested, IsNotEmpty, Matches, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -53,9 +53,10 @@ export class PosController {
   @Roles(...MANAGERS) @Patch('terminals/:id')
   updateTerminal(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTerminalDto, @CurrentUser() u: AuthUser) { return this.config.updateTerminal(id, dto, u); }
 
-  @Roles(...MANAGERS) @Get('categories') listCategories(@CurrentUser() u: AuthUser) { return this.config.listCategories(u); }
-  @Roles(...MANAGERS) @Post('categories') createCategory(@Body() dto: CategoryDto, @CurrentUser() u: AuthUser) { return this.config.saveCategory(null, dto, u); }
-  @Roles(...MANAGERS) @Patch('categories/:id')
+  // Categorías: las ve quien ve el catálogo; las edita quien edita productos (también almacén)
+  @CashierAllowed() @Roles(...CATALOG_READERS) @Get('categories') listCategories(@CurrentUser() u: AuthUser) { return this.config.listCategories(u); }
+  @CashierAllowed() @Roles(...CATALOG_EDITORS) @Post('categories') createCategory(@Body() dto: CategoryDto, @CurrentUser() u: AuthUser) { return this.config.saveCategory(null, dto, u); }
+  @CashierAllowed() @Roles(...CATALOG_EDITORS) @Patch('categories/:id')
   updateCategory(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CategoryDto, @CurrentUser() u: AuthUser) { return this.config.saveCategory(id, dto, u); }
 
   @Roles(...MANAGERS) @Get('product-settings') listProductSettings(@CurrentUser() u: AuthUser) { return this.config.listProductSettings(u); }
@@ -69,7 +70,7 @@ export class PosController {
 
   // ---------------- PIN y autorizaciones ----------------
   @Roles(...SUPERVISORS) @Put('pin') setPin(@Body() dto: SetPinDto, @CurrentUser() u: AuthUser) { return this.config.setPin(dto, u); }
-  @CashierAllowed() @Roles(...OPERATORS) @Post('approvals')
+  @CashierAllowed() @Roles(...APPROVAL_REQUESTERS) @Post('approvals')
   approve(@Body() dto: CreateApprovalDto, @CurrentUser() u: AuthUser) { return this.config.createApproval(dto, u); }
 
   // ---------------- Catálogo y clientes de la caja ----------------

@@ -178,6 +178,8 @@ enum UserRole {
   VIEWER // solo lectura, reportes
   AUDITOR // lee toda la contabilidad; solo escribe en su módulo /auditing (PLAN-v0.2 §5)
   CASHIER // POS (D-POS1): solo entra a las rutas del punto de venta marcadas @CashierAllowed()
+  SELLER // POS: vendedor (clientes y facturas); igual que el cajero, solo rutas @CashierAllowed()
+  WAREHOUSE // POS: almacén (productos, inventario y compras); igual que el cajero, solo rutas @CashierAllowed()
 }
 
 // ============================================================

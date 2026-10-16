@@ -77,6 +77,7 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 | **UI v2** | menú por secciones en acordeón (`frontend/src/app/layout/nav.ts`; al mover una opción, actualizar las rutas «Sección › Opción» de `public/manual`), diseño renovado con Inter (`@fontsource-variable/inter`), avisos fiscales agrupados |
 | **P1, P2, P3** (rama `modulos-catalogo-inventario-rrhh`) | Catálogo de productos (`/products`), inventario con costo promedio (`/inventory`) y RRHH y nómina dominicana (`/hr`). Backend y frontend; plan en `docs/PLAN-catalogo-inventario-rrhh.md` y aviso en `AVISO-SOCIO-V04.md` |
 | **POS** (misma rama) | Punto de venta como vertical del núcleo: backend `src/verticals/pos` (API `/pos`), caja de pantalla completa `/pos/caja` para el rol nuevo «Cajero» y administración en el menú «Punto de venta». Plan en `docs/PLAN-POS.md`, aviso en `AVISO-SOCIO-V05.md`, manual en `18-punto-de-venta.md` |
+| **POS completo** (16-oct, misma rama) | Tienda en `/pos/store/*` y roles `SELLER` (vendedor) y `WAREHOUSE` (almacén), que solo entran al POS. Frontend propio `pos-frontend` (Vue) con caja, facturas, clientes, productos, inventario, compras, proveedores y usuarios; la contabilidad sigue aquí. Plan: `docs/PLAN-POS.md` (fase 4); aviso: `AVISO-SOCIO-V06.md` |
 | docs | `AVISO-SOCIO-N1.md` y `AVISO-SOCIO-V03.md` (archivos del socio que cambiaron), `scripts/reparar-borrador-ecf.sql` |
 
 ### Dónde está cada cosa
@@ -105,6 +106,10 @@ Cada paquete es un commit con su ID en el mensaje (`git log --oneline fase-1..in
 4. **Nota que se le dio:** desarrollo **8/10**; proyecto listo para producción **6/10**.
 
 ## 7. Qué falta y por dónde seguir (en este orden)
+
+0. **Repositorios (16-oct):** el trabajo vigente se publica en `pos` → `https://github.com/shadowhunt87/pos-modulo-financiero`
+   (rama `main`). `origin` (Carlos) queda como respaldo del punto anterior; no subir ahí sin preguntar. El frontend del POS
+   está en `https://github.com/shadowhunt87/pos-frontend`.
 
 1. **Probar el POS** con un cajero de verdad (bitácora del 15-oct (5): comandos para la base local y cómo crear el cajero).
 1. **Probar catálogo, inventario y RRHH** (backend y frontend listos en la rama `modulos-catalogo-inventario-rrhh`). Antes,

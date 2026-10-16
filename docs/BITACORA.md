@@ -16,6 +16,78 @@ Al cerrar una sesión, agregar una entrada con este formato:
 
 ---
 
+## 2026-10-16 (6) — POS completo (tienda): roles vendedor y almacén, frontend propio en Vue
+
+**Rama:** `modulos-catalogo-inventario-rrhh`. Publicada como `main` en `https://github.com/shadowhunt87/pos-modulo-financiero`
+(remoto `pos`). Los remotos `origin` (Carlos) y `mio` **no se tocaron**: el de Carlos queda como respaldo del punto anterior.
+Frontend nuevo: `../../pos-frontend` → `https://github.com/shadowhunt87/pos-frontend`.
+
+**Qué se hizo** (pedido del dueño: un punto de venta completo, con venta, facturación, clientes, productos, caja,
+almacén e inventario; la contabilidad se queda en este sistema; roles que solo ven su área y enlaces del administrador
+a la contabilidad). El dueño autorizó decidir con la mejor opción y documentar: decisiones D-POS7 a D-POS13 en
+`docs/PLAN-POS.md` (fase 4) y archivos del socio en `docs/AVISO-SOCIO-V06.md`.
+- **Arranque y diagnóstico:**
+  - el paquete suelto `pos-backend/` no arranca solo (no es una app) y ya estaba reemplazado por `src/verticals/pos`;
+  - a la base local le faltaban 6 migraciones (el dueño las aplicó con `./node_modules/.bin/prisma migrate deploy`);
+  - pgAdmin se reiniciaba sin parar por el correo `admin@financial.local`.
+- **Backend:**
+  - roles `SELLER` y `WAREHOUSE`, con migración `20261016150000_pos_store_roles`;
+  - la regla del cajero se generaliza a los tres roles de tienda;
+  - rutas `/pos/store/*`: productos, existencias, kárdex, ajustes, compras, proveedores, clientes, facturas, cobros y
+    resumen. Usan `ProductsService`, `InventoryService`, `InvoicingService`, `PaymentsService` y `PartnersService` sin
+    cambiarlos;
+  - `POST /pos/approvals` admite al vendedor.
+- **Frontend Angular:** conoce los roles nuevos. Un vendedor o almacén que entra aquí recibe el aviso y se le cierra la
+  sesión.
+- **Frontend `pos-frontend`** (Vue):
+  - caja, inicio, facturas (nueva, detalle, cobro, anulación, impresión), clientes, productos, inventario (existencias,
+    ajustes, kárdex), compras, proveedores, turnos, reportes, promociones, configuración, usuarios y contabilidad (enlaces);
+  - menú y rutas por rol;
+  - 56 pruebas.
+- **Errores encontrados y corregidos en las pruebas reales:**
+  - el vendedor recibía 403 al pedir el PIN;
+  - las fechas sin hora salían un día antes (medianoche UTC pasada a Santo Domingo);
+  - el token con los roles nuevos se rechazaba en el frontend;
+  - la ventana del PIN quedaba detrás de la de ventas;
+  - la página se desplazaba de lado en el celular (textos `sr-only` dentro de tablas con desplazamiento);
+  - los mensajes genéricos de Nest salían en inglés.
+
+**Verificación:**
+- Backend: `tsc` sin errores, 45 unitarias y **504 e2e en verde** (con la base de pruebas limpia).
+- `ng build` del Angular.
+- `pos-frontend`: `vue-tsc`, build y 56 pruebas.
+- Recorridos reales en la base de pruebas con Playwright, un usuario por rol, y barrido de las 16 pantallas a 390 y
+  768 px sin desplazamiento lateral. Montos revisados a mano:
+  - compra de 24 y merma de 1: existencia 23 a 58.50;
+  - factura de 6 × 95 − 120 + 18 % = 531; cobro de 200: saldo 331;
+  - venta de caja con 2x1: 312.70; cambio de 500: 187.30.
+
+**Para verlo en la base local** (lo corre el dueño):
+1. `./node_modules/.bin/prisma migrate deploy` (migración de los roles nuevos).
+2. `npm run build` y reiniciar el backend.
+3. En el sistema contable:
+   - «Cuentas automáticas»: inventario, costo de ventas y ajustes de inventario;
+   - secuencias B02, B01, B04 y, si compra a informales, B11.
+4. En `pos-frontend`: `npm run dev`.
+
+**Quedó pendiente:**
+- venta sin conexión, cotizaciones, notas de crédito manuales fuera de la caja y listas de precio;
+- varios almacenes, exportar a Excel y PDF;
+- pagos a proveedores desde el POS (se hacen aquí);
+- sesión compartida entre los dos frontends;
+- campo de fecha propio en el POS (el nativo sale en mm/dd/aaaa en navegadores en inglés).
+
+**Ojo con:**
+- El contenedor `financial-db-test` guardaba datos de sesiones viejas. `exports.e2e-spec` falla si ya existe el RNC
+  131999999: reiniciar el contenedor (`docker restart financial-db-test`, vive en memoria) y aplicar `test:db:migrate`
+  antes de la suite.
+- `security.e2e-spec` lleva una foto de las lecturas restringidas: cada ruta GET nueva con `@Roles` va ahí.
+- El dueño corre su backend en el 3000 y `pos-frontend` en el 5174. Para pruebas, usar el 3001 (`.env.test`) y otro puerto
+  de Vite (`API_PROXY_TARGET=http://localhost:3001 npx vite --port 5175`).
+- `nest build` usa SWC y **no revisa tipos**: correr `npx tsc --noEmit -p tsconfig.build.json`.
+
+---
+
 ## 2026-10-15 (5) — Punto de venta (POS) como vertical del núcleo
 
 **Rama:** `modulos-catalogo-inventario-rrhh`. Commits `feb44a7` (fase 1, núcleo), `c3601d4` (fase 2, backend) y el de la
