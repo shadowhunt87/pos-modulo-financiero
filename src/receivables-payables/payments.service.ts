@@ -24,6 +24,8 @@ const r2 = (d: Dec): Dec => d.toDecimalPlaces(2, 4);
 interface Settle {
   inv: { id: string; number: string; exchangeRate: Dec };
   amount: Dec; // en moneda del pago
+  /** Nota de crédito de venta saldada con dinero (reembolso al cliente) */
+  refund?: boolean;
 }
 
 @Injectable()
@@ -66,15 +68,17 @@ export class PaymentsService {
 
     return rows.map((r) => {
       const inv = byId.get(r.invoiceId)!;
-      if (inv.type === InvoiceType.CREDIT_NOTE) throw new UnprocessableEntityException(`${inv.number} es una nota de crédito: usa /receivables-payables/apply-credit`);
+      // Reembolso (POS): un pago al cliente que salda su nota de crédito de venta (le devuelve el dinero)
+      const refund = !wantSales && inv.type === InvoiceType.CREDIT_NOTE && inv.relatedInvoice?.type === InvoiceType.SALE;
+      if (inv.type === InvoiceType.CREDIT_NOTE && !refund) throw new UnprocessableEntityException(`${inv.number} es una nota de crédito: usa /receivables-payables/apply-credit`);
       const isSales = inv.type === InvoiceType.SALE || (inv.type === InvoiceType.DEBIT_NOTE && inv.relatedInvoice?.type === InvoiceType.SALE);
-      if (isSales !== wantSales) throw new UnprocessableEntityException(`${inv.number} no corresponde a ${wantSales ? 'un cobro' : 'un pago'}`);
+      if (!refund && isSales !== wantSales) throw new UnprocessableEntityException(`${inv.number} no corresponde a ${wantSales ? 'un cobro' : 'un pago'}`);
       if (inv.partnerId !== partnerId) throw new UnprocessableEntityException(`${inv.number} es de otro tercero`);
       if (!OPEN_STATUSES.includes(inv.status)) throw new UnprocessableEntityException(`${inv.number} no está pendiente (${inv.status})`);
       if (inv.currency !== currency) throw new UnprocessableEntityException(`${inv.number} está en ${inv.currency}; el pago es en ${currency}`);
       const amount = D(r.amount);
       if (amount.gt(inv.balance)) throw new UnprocessableEntityException(`El monto aplicado a ${inv.number} (${amount}) excede su saldo (${inv.balance})`);
-      return { inv: { id: inv.id, number: inv.number, exchangeRate: inv.exchangeRate }, amount };
+      return { inv: { id: inv.id, number: inv.number, exchangeRate: inv.exchangeRate }, amount, refund };
     });
   }
 
@@ -130,6 +134,18 @@ export class PaymentsService {
   // Registrar cobro / pago
   // ------------------------------------------------------------------
   async create(dto: CreatePaymentDto, user: AuthUser) {
+    return this.createGuarded(dto, user, () => this.createTx(dto, user));
+  }
+
+  /**
+   * Registra el cobro o pago dentro de una transacción ajena (contrato de verticales §4.3.8): así el POS cobra en la misma
+   * transacción de la venta. Devuelve el id. Una referencia externa repetida choca con el índice único.
+   */
+  async createInTx(tx: Tx, dto: CreatePaymentDto, user: AuthUser): Promise<string> {
+    return this.createCore(tx, dto, user);
+  }
+
+  private async createGuarded<T>(dto: CreatePaymentDto, user: AuthUser, run: () => Promise<T>): Promise<T> {
     // Reintento del otro sistema con la misma referencia: 409 con el id del cobro que ya existe. Se mira
     // ANTES de validar: la factura ya quedó pagada y un 422 haría creer al otro sistema que se rechazó.
     const existing = () => dto.externalRef
@@ -140,7 +156,7 @@ export class PaymentsService {
     const before = await existing();
     if (before) throw conflict(before);
     try {
-      return await this.createTx(dto, user);
+      return await run();
     } catch (e) {
       // Dos pedidos simultáneos: el índice único deja pasar uno
       const after = isUniqueViolation(e) ? await existing() : null;
@@ -150,7 +166,12 @@ export class PaymentsService {
   }
 
   private async createTx(dto: CreatePaymentDto, user: AuthUser) {
-    const id = await this.prisma.$transaction(async (tx) => {
+    const id = await this.prisma.$transaction((tx) => this.createCore(tx, dto, user));
+    return this.get(id, user);
+  }
+
+  private async createCore(tx: Tx, dto: CreatePaymentDto, user: AuthUser): Promise<string> {
+    {
       const { companyId } = user;
       if (!!dto.bankAccountId === !!dto.cashRegisterId) {
         throw new BadRequestException('Indica bankAccountId o cashRegisterId (solo uno)');
@@ -162,8 +183,11 @@ export class PaymentsService {
       const partner = await tx.partner.findFirst({ where: { id: dto.partnerId, companyId } });
       if (!partner) throw new NotFoundException('Tercero no encontrado');
       if (!partner.active) throw new UnprocessableEntityException('El tercero está inactivo');
-      if (received ? partner.type === PartnerType.SUPPLIER : partner.type === PartnerType.CUSTOMER) {
-        throw new UnprocessableEntityException(received ? 'El tercero no es cliente' : 'El tercero no es proveedor');
+      // Reembolso a un cliente: todas las aplicaciones son notas de crédito de venta
+      const refund = !received && (dto.allocations?.length ?? 0) > 0 && (await this.allRefunds(tx, companyId, dto.allocations!.map((a) => a.invoiceId)));
+      const customerSide = received || refund;
+      if (customerSide ? partner.type === PartnerType.SUPPLIER : partner.type === PartnerType.CUSTOMER) {
+        throw new UnprocessableEntityException(customerSide ? 'El tercero no es cliente' : 'El tercero no es proveedor');
       }
 
       const currency = dto.currency ?? company.baseCurrency;
@@ -178,12 +202,16 @@ export class PaymentsService {
       const rate = await this.resolveRate(tx, companyId, company.baseCurrency, currency, date, dto.exchangeRate);
       const amount = D(dto.amount);
       const settles = await this.validateAllocations(tx, user, dto.direction, partner.id, currency, dto.allocations ?? []);
+      if (settles.some((s) => s.refund) && settles.some((s) => !s.refund)) {
+        throw new UnprocessableEntityException('Un reembolso a cliente no se mezcla con pagos a proveedores');
+      }
       const allocated = settles.reduce((s, x) => s.plus(x.amount), ZERO);
       if (allocated.gt(amount)) throw new UnprocessableEntityException('Lo aplicado a facturas excede el monto del pago');
       const remainder = amount.minus(allocated);
+      if (refund && remainder.gt(0)) throw new UnprocessableEntityException('El reembolso debe ser igual a lo aplicado a las notas de crédito');
 
       const keys: SettingsKey[] = [];
-      if (settles.length) keys.push(received ? 'receivableAccountId' : 'payableAccountId');
+      if (settles.length) keys.push(customerSide ? 'receivableAccountId' : 'payableAccountId');
       if (remainder.gt(0)) keys.push(received ? 'customerAdvanceAccountId' : 'supplierAdvanceAccountId');
       const cfg = (await this.settings.require(companyId, keys)) as Partial<Record<SettingsKey, string>>;
 
@@ -203,23 +231,27 @@ export class PaymentsService {
 
       const lines = await this.settlementLines(user, {
         received, partnerId: partner.id, foreign: currency !== company.baseCurrency, currency, rate,
-        funds: { accountId: src.glAccountId, description: `${received ? 'Cobro' : 'Pago'} ${number}`, amount },
-        settles, controlAccountId: received ? cfg.receivableAccountId : cfg.payableAccountId,
+        funds: { accountId: src.glAccountId, description: `${received ? 'Cobro' : refund ? 'Reembolso' : 'Pago'} ${number}`, amount },
+        settles, controlAccountId: customerSide ? cfg.receivableAccountId : cfg.payableAccountId,
         advance: remainder.gt(0) ? { accountId: (received ? cfg.customerAdvanceAccountId : cfg.supplierAdvanceAccountId)!, amount: remainder } : undefined,
       });
       const entry = await this.posting.post(tx, user, {
-        date, description: `${received ? 'Cobro' : 'Pago'} ${number} - ${partner.name}`, reference: dto.reference ?? number,
+        date, description: `${received ? 'Cobro' : refund ? 'Reembolso' : 'Pago'} ${number} - ${partner.name}`, reference: dto.reference ?? number,
         journalType: dto.bankAccountId ? JournalType.BANK : JournalType.CASH,
         sourceType: SourceDocumentType.PAYMENT, sourceId: pay.id,
         currency, exchangeRate: rate, lines,
       });
       await tx.payment.update({ where: { id: pay.id, companyId }, data: { journalEntryId: entry.id } });
       await writeAudit(tx, user, 'Payment', pay.id, AuditAction.CREATE, {
-        number, direction: dto.direction, amount: amount.toString(), allocated: allocated.toString(), advance: remainder.toString(),
+        number, direction: dto.direction, amount: amount.toString(), allocated: allocated.toString(), advance: remainder.toString(), ...(refund ? { refund: true } : {}),
       });
       return pay.id;
-    });
-    return this.get(id, user);
+    }
+  }
+
+  private async allRefunds(tx: Tx, companyId: string, invoiceIds: string[]) {
+    const invs = await tx.invoice.findMany({ where: { companyId, id: { in: invoiceIds } }, include: { relatedInvoice: { select: { type: true } } } });
+    return invs.length > 0 && invs.every((i) => i.type === InvoiceType.CREDIT_NOTE && i.relatedInvoice?.type === InvoiceType.SALE);
   }
 
   // ------------------------------------------------------------------
@@ -268,7 +300,13 @@ export class PaymentsService {
   // Anular: revierte todos los asientos del pago y restaura los saldos
   // ------------------------------------------------------------------
   async void(id: string, dto: VoidPaymentDto, user: AuthUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction((tx) => this.voidInTx(tx, id, dto, user));
+    return this.get(id, user);
+  }
+
+  /** Anula dentro de una transacción ajena (el POS anula la venta completa en una sola transacción). */
+  async voidInTx(tx: Tx, id: string, dto: VoidPaymentDto, user: AuthUser) {
+    {
       const { companyId } = user;
       const pay = await tx.payment.findFirst({ where: { id, companyId }, include: { allocations: true } });
       if (!pay) throw new NotFoundException('Pago no encontrado');
@@ -286,8 +324,7 @@ export class PaymentsService {
       for (const [invoiceId, amount] of byInvoice) await releaseFromInvoice(tx, companyId, invoiceId, amount);
 
       await writeAudit(tx, user, 'Payment', id, AuditAction.VOID, { reason: dto.reason, entries: entries.length });
-    });
-    return this.get(id, user);
+    }
   }
 
   // ------------------------------------------------------------------

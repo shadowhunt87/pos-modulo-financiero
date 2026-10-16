@@ -619,7 +619,13 @@ export class InvoicingService {
   // Anular
   // ------------------------------------------------------------------
   async void(id: string, dto: VoidInvoiceDto, user: AuthUser) {
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction((tx) => this.voidInTx(tx, id, dto, user));
+    return this.get(id, user);
+  }
+
+  /** Anula dentro de una transacción ajena (el POS anula cobro y factura juntos). Mismas reglas que `void`. */
+  async voidInTx(tx: Tx, id: string, dto: VoidInvoiceDto, user: AuthUser) {
+    {
       const inv = await tx.invoice.findFirst({ where: { id, companyId: user.companyId } });
       if (!inv) throw new NotFoundException('Factura no encontrada');
       if (inv.status === InvoiceStatus.DRAFT) throw new UnprocessableEntityException('Un borrador se elimina, no se anula');
@@ -658,8 +664,7 @@ export class InvoicingService {
       if (inv.journalEntryId) await this.posting.voidEntry(tx, user, inv.journalEntryId, `Anulación ${inv.number}: ${dto.reason}`);
       await this.inventory.onInvoiceVoided(tx, user, id, `Anulación ${inv.number}: ${dto.reason}`);
       await writeAudit(tx, user, 'Invoice', id, AuditAction.VOID, { reason: dto.reason, reasonCode: dto.reasonCode ?? null, ncf: inv.ncf });
-    });
-    return this.get(id, user);
+    }
   }
 
   /** e-NCF propio: solo existe si lo trae la importación (ya emitido en el portal del proveedor). */

@@ -39,6 +39,24 @@ export class DocumentSequencesService {
     return row.prefix + String(row.nextNumber - 1).padStart(row.padding, '0');
   }
 
+  /**
+   * V1a (contrato §4.3.5): numeración de un documento de vertical. `docId` es su identificador en minúsculas
+   * («pos.venta»), así no choca con las claves del núcleo, que van en mayúsculas. Ej: "TK-000001".
+   */
+  async nextFor(tx: Prisma.TransactionClient, companyId: string, docId: string, defaultPrefix: string) {
+    if (!/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(docId)) throw new UnprocessableEntityException(`Identificador de documento inválido: ${docId}`);
+    await tx.documentSequence.upsert({
+      where: { companyId_docType: { companyId, docType: docId } },
+      update: {},
+      create: { companyId, docType: docId, prefix: defaultPrefix + '-', nextNumber: 1 },
+    });
+    const row = await tx.documentSequence.update({
+      where: { companyId_docType: { companyId, docType: docId } },
+      data: { nextNumber: { increment: 1 } },
+    });
+    return row.prefix + String(row.nextNumber - 1).padStart(row.padding, '0');
+  }
+
   async list(user: AuthUser) {
     const rows = await this.prisma.documentSequence.findMany({ where: { companyId: user.companyId }, orderBy: { docType: 'asc' } });
     const have = new Set(rows.map((r) => r.docType));

@@ -177,6 +177,7 @@ enum UserRole {
   APPROVER // aprueba asientos, concilia bancos
   VIEWER // solo lectura, reportes
   AUDITOR // lee toda la contabilidad; solo escribe en su módulo /auditing (PLAN-v0.2 §5)
+  CASHIER // POS (D-POS1): solo entra a las rutas del punto de venta marcadas @CashierAllowed()
 }
 
 // ============================================================
@@ -392,8 +393,10 @@ model JournalEntry {
   lines          JournalEntryLine[]
 
   // Trazabilidad: de qué documento nació el asiento (para drill-down)
-  sourceType SourceDocumentType @default(MANUAL)
-  sourceId   String?
+  sourceType   SourceDocumentType @default(MANUAL)
+  sourceId     String?
+  // V1a: con sourceType VERTICAL, de qué vertical y documento viene (p. ej. "pos.turno")
+  sourceModule String?            @db.VarChar(60)
 
   // Moneda del asiento (las líneas guardan además su monto en moneda original)
   currency     String  @default("DOP")
@@ -437,6 +440,7 @@ model JournalEntry {
   @@index([companyId, status, date])
   @@index([companyId, sourceType, sourceId])
   @@index([fiscalPeriodId])
+  @@index([companyId, sourceModule, sourceId])
 }
 
 enum JournalEntryStatus {
@@ -464,6 +468,7 @@ enum SourceDocumentType {
   YEAR_END_CLOSING
   INVENTORY // P2: costo de ventas y ajustes de inventario
   PAYROLL // P3: nómina (contabilización y pago)
+  VERTICAL // V1a: asiento propio de una vertical; el origen exacto va en JournalEntry.sourceModule
   OTHER
 }
 

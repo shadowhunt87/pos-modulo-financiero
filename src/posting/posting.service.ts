@@ -8,6 +8,9 @@ import { isUniqueViolation, writeAudit } from '../common/audit.js';
 import { JournalsService } from '../masters/journals/journals.service.js';
 
 type Tx = Prisma.TransactionClient;
+/** Identificador de origen de una vertical: «<clave>.<documento>» en minúsculas (contrato §3.2). */
+export const VERTICAL_SOURCE = /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/;
+const FORBIDDEN_VERTICAL_JOURNALS: JournalType[] = [JournalType.SALES, JournalType.PURCHASES, JournalType.OPENING, JournalType.CLOSING];
 
 export interface PostLine {
   accountId: string;
@@ -29,6 +32,8 @@ export interface PostEntryInput {
   type?: JournalEntryType;
   sourceType: SourceDocumentType;
   sourceId?: string;
+  /** V1a: obligatorio con sourceType VERTICAL, «<vertical>.<documento>» (p. ej. "pos.turno") */
+  sourceModule?: string;
   currency?: string;
   exchangeRate?: Prisma.Decimal;
   lines: PostLine[];
@@ -64,6 +69,17 @@ export class PostingService {
   }
 
   async post(tx: Tx, user: AuthUser, input: PostEntryInput) {
+    // V1a (contrato de verticales §3.2): un asiento de vertical dice de qué documento viene y no usa diarios del núcleo
+    if (input.sourceType === SourceDocumentType.VERTICAL) {
+      if (!input.sourceModule || !VERTICAL_SOURCE.test(input.sourceModule) || !input.sourceId) {
+        throw new BadRequestException('Un asiento de vertical lleva sourceModule («vertical.documento») y sourceId');
+      }
+      if (FORBIDDEN_VERTICAL_JOURNALS.includes(input.journalType)) {
+        throw new BadRequestException(`Una vertical no asienta en el diario ${input.journalType}: las ventas y compras van por facturas`);
+      }
+    } else if (input.sourceModule) {
+      throw new BadRequestException('sourceModule solo va con sourceType VERTICAL');
+    }
     const lines = input.lines.filter((l) => l.debit.gt(0) || l.credit.gt(0));
     if (lines.length < 2) throw new UnprocessableEntityException('El asiento necesita al menos dos líneas');
     for (const [i, l] of lines.entries()) {
@@ -125,6 +141,7 @@ export class PostingService {
         reference: input.reference,
         sourceType: input.sourceType,
         sourceId: input.sourceId,
+        sourceModule: input.sourceModule ?? null,
         currency: input.currency ?? 'DOP',
         exchangeRate: input.exchangeRate ?? new Prisma.Decimal(1),
         status: JournalEntryStatus.POSTED,
@@ -193,6 +210,7 @@ export class PostingService {
           reference: entry.reference,
           sourceType: entry.sourceType,
           sourceId: entry.sourceId,
+          sourceModule: entry.sourceModule,
           currency: entry.currency,
           exchangeRate: entry.exchangeRate,
           status: JournalEntryStatus.POSTED,
