@@ -59,6 +59,10 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   company('Product'), company('InventoryMovement'), company('InventoryAdjustment'),
   company('Department'), company('Employee'), company('PayrollConcept'), company('PayrollSettings'),
   company('PayrollRun', { jsonColumns: ['parameters'] }),
+  // Vertical «pos» (docs/PLAN-POS.md)
+  company('PosSettings'), company('PosTerminal'), company('PosShift', { jsonColumns: ['countDetail'] }), company('PosCashMovement'),
+  company('PosDrawerEvent'), company('PosSale'), company('PosReturn', { jsonColumns: ['lines'] }), company('PosParkedSale', { jsonColumns: ['payload'] }),
+  company('PosApproval'), company('PosCategory'), company('PosProductSetting'), company('PosBarcode'), company('PosPromotion'),
 
   child('JournalEntryLine', (c): Prisma.JournalEntryLineWhereInput => ({ journalEntry: { companyId: c } })),
   child('InvoiceLine', (c): Prisma.InvoiceLineWhereInput => ({ invoice: { companyId: c } })),
@@ -70,6 +74,8 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
   child('InventoryAdjustmentLine', (c): Prisma.InventoryAdjustmentLineWhereInput => ({ adjustment: { companyId: c } })),
   child('PayrollLine', (c): Prisma.PayrollLineWhereInput => ({ run: { companyId: c } })),
   child('PayrollItem', (c): Prisma.PayrollItemWhereInput => ({ line: { run: { companyId: c } } })),
+  child('PosSaleLine', (c): Prisma.PosSaleLineWhereInput => ({ sale: { companyId: c } })),
+  child('PosSalePayment', (c): Prisma.PosSalePaymentWhereInput => ({ sale: { companyId: c } })),
 
   // Auditoría (D47): el dueño recibe el encargo, los hallazgos comunicados y sus archivos; nunca los papeles de la auditora
   { model: 'AuditEngagement', cls: 'ROW_FILTERED', where: byCompany, reason: 'Encargo completo: lo crea y lo ve el ADMIN' },
@@ -91,6 +97,7 @@ export const EXPORT_REGISTRY: ExportEntry[] = [
 
   { model: 'UserTwoFactor', cls: 'SECRET', reason: 'Secreto de la verificación en dos pasos (cifrado) y sus contadores' },
   { model: 'UserRecoveryCode', cls: 'SECRET', reason: 'Huellas de los códigos de emergencia' },
+  { model: 'PosUserPin', cls: 'SECRET', reason: 'Huella del PIN de supervisor del POS y su bloqueo' },
 ];
 
 /** Columnas que parecen secretas o de archivo, pero no lo son (con motivo). */

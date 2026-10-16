@@ -387,6 +387,13 @@ describe('Seguridad (e2e)', () => {
         '/hr/departments -> ADMIN,ACCOUNTANT', '/hr/employees -> ADMIN,ACCOUNTANT', '/hr/employees/:id -> ADMIN,ACCOUNTANT',
         '/hr/payroll-concepts -> ADMIN,ACCOUNTANT', '/hr/payroll-runs -> ADMIN,ACCOUNTANT', '/hr/payroll-runs/:id -> ADMIN,ACCOUNTANT',
         '/hr/payroll-settings -> ADMIN,ACCOUNTANT', '/hr/reports/ir3 -> ADMIN,ACCOUNTANT', '/hr/reports/tss -> ADMIN,ACCOUNTANT',
+        // POS (docs/PLAN-POS.md): la caja es para cajeros y supervisores; configuración y reportes, para administración
+        '/pos/catalog -> CASHIER,APPROVER,ACCOUNTANT,ADMIN', '/pos/categories -> ACCOUNTANT,ADMIN', '/pos/context -> CASHIER,APPROVER,ACCOUNTANT,ADMIN',
+        '/pos/customers -> CASHIER,APPROVER,ACCOUNTANT,ADMIN', '/pos/parked -> CASHIER,APPROVER,ACCOUNTANT,ADMIN', '/pos/product-settings -> ACCOUNTANT,ADMIN',
+        '/pos/promotions -> ACCOUNTANT,ADMIN', '/pos/reports/sales -> APPROVER,ACCOUNTANT,ADMIN', '/pos/sales -> CASHIER,APPROVER,ACCOUNTANT,ADMIN',
+        '/pos/sales/:id -> CASHIER,APPROVER,ACCOUNTANT,ADMIN', '/pos/sales/:id/ticket -> CASHIER,APPROVER,ACCOUNTANT,ADMIN', '/pos/settings -> ACCOUNTANT,ADMIN',
+        '/pos/shifts -> APPROVER,ACCOUNTANT,ADMIN', '/pos/shifts/:id -> CASHIER,APPROVER,ACCOUNTANT,ADMIN',
+        '/pos/shifts/current -> CASHIER,APPROVER,ACCOUNTANT,ADMIN', '/pos/terminals -> ACCOUNTANT,ADMIN',
         '/service-keys/ -> ADMIN',
         '/users/ -> ADMIN', '/users/:id -> ADMIN', '/users/security-events -> ADMIN',
       ]);

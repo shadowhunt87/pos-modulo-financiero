@@ -2221,3 +2221,320 @@ model PayrollItem {
 
   @@index([lineId])
 }
+
+// ============================================================
+// VERTICAL «pos»: PUNTO DE VENTA (docs/PLAN-POS.md)
+// Solo datos propios de la caja. Ventas, NCF, cobros, clientes, productos e inventario son del núcleo: aquí se guardan
+// sus ids (sin @relation, para no tocar modelos del núcleo) y el núcleo es la fuente de verdad.
+// ============================================================
+
+model PosSettings {
+  id                     String   @id @default(uuid())
+  companyId              String   @unique
+  // Cliente del núcleo para las ventas sin cliente («Consumidor final»)
+  defaultPartnerId       String
+  // Comprobante por defecto y el de crédito fiscal (datos de la empresa, no fijos en el código)
+  defaultNcfType         String   @default("B02") @db.VarChar(3)
+  fiscalCreditNcfType    String   @default("B01") @db.VarChar(3)
+  // Un descuento manual mayor a este % pide PIN de supervisor
+  maxDiscountPct         Decimal  @default(10) @db.Decimal(5, 2)
+  // Sobrantes y faltantes al cerrar la caja
+  cashOverShortAccountId String?
+  receiptFooter          String?  @db.VarChar(300)
+  updatedAt              DateTime @updatedAt
+}
+
+model PosTerminal {
+  id                    String     @id @default(uuid())
+  companyId             String
+  code                  String     @db.VarChar(20)
+  name                  String     @db.VarChar(100)
+  // Caja del núcleo donde entra el efectivo; bancos del núcleo para tarjeta y transferencia
+  cashRegisterId        String
+  cardBankAccountId     String?
+  transferBankAccountId String?
+  active                Boolean    @default(true)
+  createdAt             DateTime   @default(now())
+  shifts                PosShift[]
+
+  @@unique([companyId, code])
+}
+
+enum PosShiftStatus {
+  OPEN
+  CLOSED
+}
+
+model PosShift {
+  id             String            @id @default(uuid())
+  companyId      String
+  terminalId     String
+  terminal       PosTerminal       @relation(fields: [terminalId], references: [id])
+  number         String            @db.VarChar(30)
+  status         PosShiftStatus    @default(OPEN)
+  openedById     String
+  openedAt       DateTime          @default(now())
+  openingCash    Decimal           @db.Decimal(19, 4)
+  closedById     String?
+  closedAt       DateTime?
+  expectedCash   Decimal?          @db.Decimal(19, 4)
+  countedCash    Decimal?          @db.Decimal(19, 4)
+  difference     Decimal?          @db.Decimal(19, 4)
+  // Conteo por denominación al cerrar: { "2000": 3, "100": 7, ... }
+  countDetail    Json?
+  closeNotes     String?           @db.VarChar(500)
+  // Asiento del sobrante o faltante (VERTICAL, pos.turno)
+  journalEntryId String?
+  sales          PosSale[]
+  movements      PosCashMovement[]
+  drawerEvents   PosDrawerEvent[]
+
+  @@unique([companyId, number])
+  @@index([companyId, terminalId, status])
+}
+
+enum PosCashMovementType {
+  IN
+  OUT
+}
+
+// Entrada o salida de efectivo de la gaveta (fondo, depósito al banco, pago menor...). Asiento VERTICAL pos.movimiento
+model PosCashMovement {
+  id             String              @id @default(uuid())
+  companyId      String
+  shiftId        String
+  shift          PosShift            @relation(fields: [shiftId], references: [id])
+  type           PosCashMovementType
+  amount         Decimal             @db.Decimal(19, 4)
+  reason         String              @db.VarChar(300)
+  accountId      String
+  journalEntryId String?
+  createdById    String
+  approvedById   String?
+  createdAt      DateTime            @default(now())
+
+  @@index([shiftId])
+}
+
+model PosDrawerEvent {
+  id           String   @id @default(uuid())
+  companyId    String
+  shiftId      String
+  shift        PosShift @relation(fields: [shiftId], references: [id])
+  reason       String   @db.VarChar(300)
+  createdById  String
+  approvedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([shiftId])
+}
+
+enum PosSaleStatus {
+  COMPLETED
+  VOIDED
+}
+
+// Un ticket de caja. Su factura del núcleo (invoiceId) es la que vale para el fisco y la contabilidad
+model PosSale {
+  id            String           @id @default(uuid())
+  companyId     String
+  shiftId       String
+  shift         PosShift         @relation(fields: [shiftId], references: [id])
+  terminalId    String
+  number        String           @db.VarChar(30)
+  clientUuid    String           @db.VarChar(64)
+  invoiceId     String
+  // Número y NCF de la factura: no cambian una vez emitida (sirven para buscar el ticket)
+  invoiceNumber String           @db.VarChar(30)
+  ncf           String?          @db.VarChar(19)
+  partnerId     String
+  ncfType       String           @db.VarChar(3)
+  // Montos del ticket tal como se emitió (el estado de la factura se lee del núcleo, no se copia)
+  subtotal      Decimal          @db.Decimal(19, 4)
+  discountTotal Decimal          @db.Decimal(19, 4)
+  promoTotal    Decimal          @default(0) @db.Decimal(19, 4)
+  taxTotal      Decimal          @db.Decimal(19, 4)
+  total         Decimal          @db.Decimal(19, 4)
+  paidTotal     Decimal          @db.Decimal(19, 4)
+  changeGiven   Decimal          @default(0) @db.Decimal(19, 4)
+  status        PosSaleStatus    @default(COMPLETED)
+  createdById   String
+  createdAt     DateTime         @default(now())
+  voidedAt      DateTime?
+  voidedById    String?
+  voidReason    String?          @db.VarChar(500)
+  lines         PosSaleLine[]
+  payments      PosSalePayment[]
+  returns       PosReturn[]
+
+  @@unique([companyId, clientUuid])
+  @@unique([companyId, number])
+  @@index([companyId, shiftId])
+  @@index([companyId, createdAt])
+  @@index([companyId, ncf])
+}
+
+model PosSaleLine {
+  id            String  @id @default(uuid())
+  saleId        String
+  sale          PosSale @relation(fields: [saleId], references: [id])
+  productId     String
+  description   String  @db.VarChar(300)
+  quantity      Decimal @db.Decimal(19, 4)
+  unitPrice     Decimal @db.Decimal(19, 4)
+  // Descuento manual y de promoción (montos, no %)
+  discount      Decimal @default(0) @db.Decimal(19, 4)
+  promoDiscount Decimal @default(0) @db.Decimal(19, 4)
+  promotionId   String?
+  taxRateId     String?
+  returnedQty   Decimal @default(0) @db.Decimal(19, 4)
+
+  @@index([saleId])
+}
+
+enum PosPayMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+model PosSalePayment {
+  id        String       @id @default(uuid())
+  saleId    String
+  sale      PosSale      @relation(fields: [saleId], references: [id])
+  method    PosPayMethod
+  // Lo aplicado a la venta; en efectivo, lo entregado puede ser mayor (el resto es el cambio)
+  amount    Decimal      @db.Decimal(19, 4)
+  tendered  Decimal?     @db.Decimal(19, 4)
+  reference String?      @db.VarChar(100)
+  // Cobro del núcleo
+  paymentId String?
+
+  @@index([saleId])
+}
+
+// Devolución: nota de crédito del núcleo + reembolso
+model PosReturn {
+  id              String       @id @default(uuid())
+  companyId       String
+  saleId          String
+  sale            PosSale      @relation(fields: [saleId], references: [id])
+  shiftId         String
+  number          String       @db.VarChar(30)
+  creditNoteId    String
+  refundPaymentId String?
+  method          PosPayMethod
+  total           Decimal      @db.Decimal(19, 4)
+  reason          String       @db.VarChar(500)
+  // [{ saleLineId, productId, quantity }]
+  lines           Json
+  createdById     String
+  approvedById    String?
+  createdAt       DateTime     @default(now())
+
+  @@unique([companyId, number])
+  @@index([saleId])
+  @@index([shiftId])
+}
+
+model PosParkedSale {
+  id          String   @id @default(uuid())
+  companyId   String
+  terminalId  String
+  label       String   @db.VarChar(100)
+  // Carrito tal cual (líneas, cliente, descuentos)
+  payload     Json
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, terminalId])
+}
+
+// Autorización de supervisor con PIN: sirve una vez y por poco tiempo
+model PosApproval {
+  id            String   @id @default(uuid())
+  companyId     String
+  action        String   @db.VarChar(30)
+  approvedById  String
+  requestedById String
+  used          Boolean  @default(false)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([companyId, expiresAt])
+}
+
+// PIN de supervisor (huella bcrypt) con bloqueo por intentos
+model PosUserPin {
+  id          String    @id @default(uuid())
+  companyId   String
+  userId      String    @unique
+  pinHash     String
+  failedCount Int       @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
+}
+
+model PosCategory {
+  id        String  @id @default(uuid())
+  companyId String
+  name      String  @db.VarChar(60)
+  color     String? @db.VarChar(9)
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  @@unique([companyId, name])
+}
+
+// Cómo se ve un producto del núcleo en la caja
+model PosProductSetting {
+  id         String  @id @default(uuid())
+  companyId  String
+  productId  String  @unique
+  categoryId String?
+  showInPos  Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  @@index([companyId, categoryId])
+}
+
+model PosBarcode {
+  id        String @id @default(uuid())
+  companyId String
+  productId String
+  code      String @db.VarChar(40)
+
+  @@unique([companyId, code])
+  @@index([productId])
+}
+
+enum PosPromotionType {
+  PERCENT // % de descuento
+  BUY_X_PAY_Y // 2x1, 3x2...
+  FIXED_PRICE // precio especial por unidad
+}
+
+model PosPromotion {
+  id          String           @id @default(uuid())
+  companyId   String
+  name        String           @db.VarChar(100)
+  type        PosPromotionType
+  // PERCENT: % ; FIXED_PRICE: precio por unidad
+  value       Decimal?         @db.Decimal(19, 4)
+  buyQty      Int?
+  payQty      Int?
+  productIds  String[]
+  categoryIds String[]
+  startsAt    DateTime?
+  endsAt      DateTime?
+  // 0 = domingo … 6 = sábado; vacío = todos
+  weekdays    Int[]
+  // «HH:MM», hora de Santo Domingo; puede cruzar medianoche
+  timeFrom    String?          @db.VarChar(5)
+  timeTo      String?          @db.VarChar(5)
+  priority    Int              @default(0)
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+
+  @@index([companyId, active])
+}
