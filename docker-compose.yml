@@ -42,7 +42,7 @@ services:
     container_name: financial-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@financial.local
+      PGADMIN_DEFAULT_EMAIL: admin@sirtech.do
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "127.0.0.1:5050:80"
